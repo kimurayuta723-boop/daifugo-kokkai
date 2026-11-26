@@ -857,6 +857,21 @@ html,body{overflow-x:clip}
 .cfg .lsub{font-size:12px;letter-spacing:.14em;color:var(--sub);margin:16px 0 6px;padding-top:10px;border-top:1px solid var(--rule)}
 .is-tv .cfg .lsub{font-size:.85em}
 
+/* 狭いスマホ(320px前後)でも、ロゴ・見出し・戻るボタンが折れないように */
+.logo{white-space:nowrap}
+.home .logo{font-size:clamp(30px,11vw,44px)}
+.home .links .link{white-space:nowrap}
+.zukan-head h1{font-size:clamp(22px,7vw,30px);white-space:nowrap}
+.zukan-head .btn{flex:none;white-space:nowrap}
+.field input{width:100%;box-sizing:border-box}
+/* 待機画面(スマホ):始めるを大きく、ほかの3つは1列に小さく並べて、参加者の一覧を見える広さを残す */
+.ph-bar.lobbybar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ph-bar.lobbybar .btn.main{grid-column:1/-1}
+.ph-bar.lobbybar .btn:not(.main){min-height:40px;font-size:13px;padding:0 8px}
+.ph-bar.lobbybar .btn[data-act=cfg-open]{grid-column:1/-1}
+.quip{font-family:var(--serif);font-weight:700;color:var(--gold2);letter-spacing:.04em}
+.panel .quip{margin-top:8px;font-size:15px}
+
 </style>
 <script>
 /* ===== Firebaseの設定 =====
@@ -1236,6 +1251,7 @@ function startRound(G, now) {
   G.round++; G._rnd = null;
   G.rev = false; G.field = emptyField(); G.passed = []; G.finished = []; G.ochi = null;
   G.rlog = { revs: [], fouls: [], locals: [], passes: {}, cuts: {}, ochi: null, geko: null, fate: null };
+  G.passRun = {};
   G.pile = []; G.clears = 0; G.blockedOnce = {}; G.dir = 1; G.jback = false; G.fouls = []; G.after = null; G.fate = null; G.fateWin = null; G.pending = null; G.results = null; G.vote = null;
   G.hands = {};
   const ids = G.players.map(p => p.id);
@@ -1286,7 +1302,7 @@ function beginPlay(G, now) {
   }
   if (lawParam(G.laws, 'gyakuten')) { G.rev = true; say(G, '逆転開会法により、今回は革命が起きた状態で始まります。', 'law'); lawHit(G, 'gyakuten'); }
   G.open = null;
-  if (lawParam(G.laws, 'koukai') && G.order) { G.open = G.order[0]; say(G, `情報公開法により、${pName(G, G.open)}さんの手札が公開されました。`, 'law'); lawHit(G, 'koukai', G.open); }
+  if (lawParam(G.laws, 'koukai') && G.order) { G.open = G.order[0]; rl(G).openPid = G.open; say(G, `情報公開法により、${pName(G, G.open)}さんの手札が公開されました。`, 'law'); lawHit(G, 'koukai', G.open); }
   let lead;
   if (G.order) lead = G.order[G.order.length - 1];
   else lead = G.players.find(p => G.hands[p.id].includes('D3')).id;
@@ -1474,6 +1490,7 @@ function doPlay(G, pid, ids, now) {
   G.field.top = p; G.field.topIds = cardSort(ids); G.field.topPid = pid; G.field.plays++;
   G.field.stack = (G.field.stack || []).concat([{ ids: G.field.topIds, pid, k: G.ver }]).slice(-4);
   G.lastPid = pid; G.leadPass = 0;
+  if (G.passRun) G.passRun[pid] = 0;
   const s = st(G, pid); s.plays++; if (!prevTop) s.leads++; if (ids.length >= 2) s.multi++;
   const strongN = ids.filter(c => { const r = parse(c).r; return r === 15 || r === JOKER_V; }).length;
   if (strongN) { if (hand.length >= 6) s.strongEarly += strongN; if (hand.length <= 2) s.strongLate += strongN; }
@@ -1481,10 +1498,10 @@ function doPlay(G, pid, ids, now) {
   {
     const nm = pName(G, pid), d = describe(p);
     say(G, !prevTop ? vary(G, [`${nm}さんが${d}を出しました。`, `${nm}さんが${d}から切り出します。`, `${nm}さんが${d}で口火を切りました。`, `${nm}さんの発言は${d}から。`])
-      : strongN && !G.rev ? vary(G, [`${nm}さんが${d}を投入。強気の一手です。`, `${nm}さん、ここで${d}。`, `${nm}さんが${d}で押さえにかかります。`])
+      : strongN && !G.rev ? vary(G, [`${nm}さんが${d}を投入。強気の一手です。`, `${nm}さん、ここで${d}。`, `${nm}さんが${d}で押さえにかかります。`, `${nm}さんが${d}を出しました。出し惜しみはしない主義のようです。`, `${nm}さんが${d}。議場がどよめきます。`])
       : vary(G, [`${nm}さんが${d}を出しました。`, `${nm}さんは${d}で応じます。`, `${nm}さんが${d}を重ねました。`, `${nm}さんの答弁は${d}。`, `${nm}さんが${d}を出しました。`]));
     hits.forEach(k => lawHit(G, k, pid, k === 'strong' ? `${nm}さんが最強の数字で場を押さえました。` : `${nm}さんが優遇されたマークで、同じ強さの札を重ねました。`));
-    if (hand.length === 1) say(G, vary(G, [`${nm}さん、残り一枚です。`, `${nm}さんの手札はあと一枚。`, `${nm}さん、上がりまであと一枚。議場がざわつきます。`]));
+    if (hand.length === 1) say(G, vary(G, [`${nm}さん、残り一枚です。`, `${nm}さんの手札はあと一枚。`, `${nm}さん、上がりまであと一枚。議場がざわつきます。`, `${nm}さん、残り一枚。全員の視線が集まります。`, `${nm}さんの手札は残り一枚。誰か止めてください。`]));
   }
   // 当たり札法
   if (G.fate && ids.includes(G.fate) && hand.length === 0) {
@@ -1516,7 +1533,7 @@ function doPlay(G, pid, ids, now) {
     G.rev = !G.rev; s.revs++;
     const hadLaws = G.laws.length > 0;
     if (G.laws.some(l => l.key === 'double')) rl(G).dblLost = pid;
-    { const nm = pName(G, pid), how = p.type === 'seq' ? '階段で' : ''; say(G, vary(G, [`${nm}さんが${how}革命を起こしました。`, `革命です。${nm}さんが${how}強さをひっくり返しました。`, `${nm}さん、${how}まさかの革命。`]), 'rev'); }
+    { const nm = pName(G, pid), how = p.type === 'seq' ? '階段で' : ''; say(G, vary(G, [`${nm}さんが${how}革命を起こしました。`, `革命です。${nm}さんが${how}強さをひっくり返しました。`, `${nm}さん、${how}まさかの革命。`, `革命です。さっきまでの強い札が、急に頼りなくなりました。`, `${nm}さんが${how}革命。強い札を温存していた人の顔色が変わりました。`]), 'rev'); }
     rl(G).revs.push(pid);
     if (p.type === 'set' && p.n === 3) lawHit(G, 'rev3', pid);
     moment(G, pid, hadLaws ? 6 : 5, hadLaws ? `第${G.round}回、革命を起こして法律をすべて廃止した` : `第${G.round}回、革命を起こした`);
@@ -1530,7 +1547,7 @@ function doPlay(G, pid, ids, now) {
     }
     abolish(G);
   }
-  if (cut && !special) { s.kiri++; say(G, vary(G, ['8切りで場が流れます。', '8切り。ここで場を流します。', '8切りが出ました。場が流れます。']), 'cut'); rl(G).cuts[pid] = (rl(G).cuts[pid] || 0) + 1; }
+  if (cut && !special) { s.kiri++; say(G, vary(G, ['8切りで場が流れます。', '8切り。ここで場を流します。', '8切りが出ました。場が流れます。', '8切り。議論は打ち切りです。', '8切りで強制終了。異議は受け付けません。']), 'cut'); rl(G).cuts[pid] = (rl(G).cuts[pid] || 0) + 1; }
   proceed(G, now);
   return true;
 }
@@ -1560,7 +1577,7 @@ function finishCheck(G, pid, now, ret) {
   } else if (G.hands[pid].length === 0) {
     G.finished.push(pid);
     const place = G.finished.length;
-    { const nm = pName(G, pid); say(G, place === 1 ? vary(G, [`${nm}さんが1番目に上がりました。`, `${nm}さんが一番乗りで上がりました。`, `${nm}さん、真っ先に上がりました。`]) : vary(G, [`${nm}さんが${place}番目に上がりました。`, `${nm}さん、${place}番目で上がりです。`, `${nm}さんが${place}番目に議場を後にしました。`]), 'out'); }
+    { const nm = pName(G, pid); say(G, place === 1 ? vary(G, [`${nm}さんが1番目に上がりました。`, `${nm}さんが一番乗りで上がりました。`, `${nm}さん、真っ先に上がりました。`, `${nm}さんが1番目に上がり。お先に失礼、という顔です。`]) : vary(G, [`${nm}さんが${place}番目に上がりました。`, `${nm}さん、${place}番目で上がりです。`, `${nm}さんが${place}番目に議場を後にしました。`, `${nm}さん、${place}番目で上がり。ひとまず安全圏です。`]), 'out'); }
     // 都落ち
     if (place === 1 && G.cfg.ochi && G.order && G.order[0] !== pid && isActive(G, G.order[0])) {
       G.ochi = G.order[0]; st(G, G.ochi).ochi++;
@@ -1578,7 +1595,11 @@ function finishCheck(G, pid, now, ret) {
   afterMove(G, ret, now);
 }
 function afterMove(G, ret, now) {
-  if (active(G).length <= 1) { endRound(G, now); return; }
+  if (active(G).length <= 1) {
+    const lastOne = active(G)[0];
+    if (lastOne) { const nm = pName(G, lastOne); say(G, vary(G, [`最後まで残ったのは${nm}さん。長い答弁でした。`, `${nm}さんがひとり残されました。お疲れさまでした。`, `議場に残ったのは${nm}さんだけ。手札がまだ重そうです。`])); }
+    endRound(G, now); return;
+  }
   const pid = ret.pid;
   if (ret.kind === 'cut') { clearField(G, pid); G.cpuAt = now + 2200; return; }
   G.skipNext = ret.skip || 0;
@@ -1589,7 +1610,7 @@ function advance(G, from, now) {
   const cont = act.filter(id => !G.passed.includes(id) && id !== G.lastPid);
   if (!G.field.top) { G.turn = isActive(G, from) ? nextActive(G, from) : nextActive(G, from); G.cpuAt = now + 1500; return; }
   if (cont.length === 0) {
-    say(G, vary(G, ['場が流れました。', '続く人はなく、場が流れました。', '異議なし。場が流れます。', '誰も出さず、場が流れました。']));
+    say(G, vary(G, ['場が流れました。', '続く人はなく、場が流れました。', '異議なし。場が流れます。', '誰も出さず、場が流れました。', '反論なし。場が流れます。', '誰も続かず、場が流れました。静かな議場です。']));
     clearField(G, G.lastPid);
   } else {
     let t = nextActive(G, from, cont);
@@ -1626,6 +1647,9 @@ function doPass(G, pid, now) {
   if (candidates(G.hands[pid], ctx).length) s.passOpt++;
   G.passed.push(pid);
   rl(G).passes[pid] = (rl(G).passes[pid] || 0) + 1;
+  // 同じ人のパスが続いたら、ときどきツッコミを入れる
+  G.passRun = G.passRun || {}; G.passRun[pid] = (G.passRun[pid] || 0) + 1;
+  if (G.passRun[pid] === 4) { const nm = pName(G, pid); say(G, vary(G, [`${nm}さん、4回続けてパス。起きていますか。`, `${nm}さん、またパス。答弁はまだでしょうか。`, `${nm}さん、4連続のパス。何かを待っている顔です。`])); } else
   { const nm = pName(G, pid); say(G, vary(G, [`${nm}さんはパス。`, `${nm}さん、見送りです。`, `${nm}さんはパス。`, `${nm}さん、ここは静観します。`, `${nm}さんは今回は見送り。`])); }
   G.blockedOnce = G.blockedOnce || {};
   if (lawParam(G.laws, 'agari') && G.hands[pid].length === 1 && !G.blockedOnce[pid]) {
@@ -1744,7 +1768,8 @@ function commentary(G, order, prev) {
   if (G.streak && G.streak.n >= 3) add('streak', 7, [
     `${nm(top)}、${G.streak.n}期連続の大富豪。もはや長期政権です。`,
     `${G.streak.n}回続けて大富豪の${nm(top)}。この牙城を崩すのは誰でしょうか。`,
-    `${nm(top)}の政権は${G.streak.n}期目に入りました。野党の奮起が待たれます。`]);
+    `${nm(top)}の政権は${G.streak.n}期目に入りました。野党の奮起が待たれます。`,
+    `${nm(top)}、${G.streak.n}期連続。そろそろ誰か止めてください。`]);
   else if (G.streak && G.streak.n === 2) add('streak', 4, [
     `${nm(top)}が大富豪を守りました。この政権、なかなか崩れません。`,
     `${nm(top)}、二期連続の大富豪。手札交換の有利を生かしました。`,
@@ -1752,11 +1777,13 @@ function commentary(G, order, prev) {
   if (prev && prev[n - 1] === last && n > 2) add('stuck', 5, [
     `${nm(last)}は二回続けて大貧民。そろそろ風向きが変わってほしいところです。`,
     `${nm(last)}、また大貧民に。それでも一票の重みは変わりません。`,
-    `連続の大貧民となった${nm(last)}。次の採決では存在感を示せるでしょうか。`]);
+    `連続の大貧民となった${nm(last)}。次の採決では存在感を示せるでしょうか。`,
+    `${nm(last)}、2回続けて大貧民。札の神様とけんか中かもしれません。`]);
   if (prev && prev[0] === last) add('fall', 6, [
     `前回の大富豪、${nm(last)}が今回は大貧民。栄枯盛衰です。`,
     `${nm(last)}、頂点から最下位へ。議場の風は冷たいものです。`,
-    `大富豪だった${nm(last)}が一転して大貧民。政治の世界は一寸先が闇です。`]);
+    `大富豪だった${nm(last)}が一転して大貧民。政治の世界は一寸先が闇です。`,
+    `${nm(last)}、天国から地獄へ。議場の空気は正直です。`]);
   if (prev) {
     const up = order.map((id, i) => [id, prev.indexOf(id) - i]).filter(x => x[1] >= 2 && x[0] !== top).sort((a, b) => b[1] - a[1])[0];
     if (up) add('climb', 4, [
@@ -1768,12 +1795,14 @@ function commentary(G, order, prev) {
   if (pm && pm[1] >= 9) add('pass', 3, [
     `${nm(pm[0])}のパスは${pm[1]}回。沈黙は金、とは限りません。`,
     `${pm[1]}回のパスで機をうかがった${nm(pm[0])}。慎重派の議員です。`,
-    `${nm(pm[0])}、この回は${pm[1]}回の見送り。答弁の機会を待ち続けました。`]);
+    `${nm(pm[0])}、この回は${pm[1]}回の見送り。答弁の機会を待ち続けました。`,
+    `${nm(pm[0])}のパスは${pm[1]}回。そろそろ何か出してください。`]);
   const cm = Object.entries(L.cuts).sort((a, b) => b[1] - a[1])[0];
   if (cm && cm[1] >= 2) add('cut', 4, [
     `${nm(cm[0])}の8切りが${cm[1]}回。場を流す名人です。`,
     `8切り${cm[1]}回。${nm(cm[0])}は議事進行を握っていました。`,
-    `都合が悪くなると8切り。${nm(cm[0])}の強行採決が${cm[1]}回ありました。`]);
+    `都合が悪くなると8切り。${nm(cm[0])}の強行採決が${cm[1]}回ありました。`,
+    `8切り${cm[1]}回。${nm(cm[0])}、議論を打ち切りすぎです。`]);
   if (L.dblLost) add('dblLost', 7, [
     `${nm(L.dblLost)}の革命で倍点法も廃止。得点二倍の夢は消えました。`,
     `倍点法は革命とともに失効。${nm(L.dblLost)}が二倍の得点を帳消しにしました。`]);
@@ -1792,6 +1821,20 @@ function commentary(G, order, prev) {
       `「${ln}」の上乗せで、点差が少し動きました。`,
       `「${ln}」が得点に効いています。採決の重みを感じる回でした。`]);
   }
+  const lhit = L.hits || {};
+  if (lhit.koukai && L.openPid) add('koukai', 6, L.openPid === top ? [
+      `手札を公開された${nm(L.openPid)}が、それでも大富豪。見られても勝てる手札でした。`,
+      `丸見えの手札で大富豪を守った${nm(L.openPid)}。ほかの皆さん、何を見ていたのでしょう。`]
+    : [`手札を公開された${nm(L.openPid)}は${(G.results.find(r => r.id === L.openPid) || {}).title || ''}に。情報公開の威力です。`,
+      `${nm(L.openPid)}、丸見えの答弁で狙い撃ちに。情報公開法が効きました。`]);
+  if (lhit.seiken && prev) add('seiken', 6, prev[0] === top ? [
+      `強い札を手放しても、${nm(top)}は大富豪を守りました。政権交代法、空振りです。`,
+      `政権交代法をはね返した${nm(top)}。しぶとい政権です。`]
+    : [`政権交代法で強い札を手放した${nm(prev[0])}。政権はあっさり${nm(top)}へ移りました。`,
+      `強い札が下に流れた回。政権交代法の名前どおりの結果です。`]);
+  if (lhit.gyakuten) add('gyakuten', 5, [
+    `逆転開会法で2が最弱の回でした。配られた手札を見て固まった人がいたはずです。`,
+    `最初から革命の回。いつもの強い札が足を引っ張りました。`]);
   if (L.locals.length >= 4) add('locals', 5, [
     `ローカルルールが${L.locals.length}回も発動。もはや誰も強さを覚えていません。`,
     `特殊ルールが${L.locals.length}回。議事録の担当者は大忙しです。`,
@@ -1811,7 +1854,9 @@ function commentary(G, order, prev) {
     `${nm(top)}が大富豪の座に。${nm(second)}は一歩及びませんでした。`,
     `勝負を決めたのは終盤の札さばき。${nm(top)}に軍配が上がりました。`,
     `${nm(top)}、大富豪として次の法案を指定する権利を得ました。`,
-    `${nm(last)}は大貧民に。ただし採決では、同数のときの決定権を持ちます。`]);
+    `${nm(last)}は大貧民に。ただし採決では、同数のときの決定権を持ちます。`,
+    `${nm(top)}が大富豪に。本人はもう次の法案のことを考えている顔です。`,
+    `大富豪は${nm(top)}。勝ったのは札か、それとも日頃の行いか。`]);
   // 直近2回に使った種類は後回しにする(同じ出来事が続いても言い回しが偏らないように)
   const recent = G.cHist || [];
   c.forEach(x => { if (recent.includes(x.key)) x.score -= 3; x.score += R(G) * 1.5; });
@@ -1888,6 +1933,14 @@ function tally(G, now) {
     if (win === v.marked) { st(G, top).markWins++; moment(G, top, 3, `重要法案「${LAWS[win].name()}」を通した`); }
     else moment(G, top, 4, `重要法案「${LAWS[v.marked].name()}」を否決された`);
   }
+  // 採決のひとこと
+  const voters = Object.keys(v.votes), forWin = voters.filter(id => v.votes[id] === win);
+  v.quip = voters.length >= 3 && forWin.length === voters.length ? '全会一致。珍しく議場の意見がそろいました。'
+    : v.marked && win !== v.marked ? '大富豪の求心力に、陰りが見えます。'
+    : v.tieBy ? '大貧民にも、見せ場はあります。'
+    : top && forWin.length === 1 && forWin[0] === top ? '賛成は大富豪ただ一人。それでも票の重みで押し切りました。'
+    : top && v.votes[top] && v.votes[top] !== win && forWin.length >= 3 ? '大富豪の票を、数の力が上回りました。'
+    : null;
   enact(G, win);
 }
 function enact(G, win) {
@@ -2125,7 +2178,7 @@ function pubView(G, now) {
     pending: G.pending ? { type: G.pending.type, pid: G.pending.pid || null, cands: G.pending.cands || null, key: G.pending.key || null } : null,
     vote: G.vote ? {
       options: G.vote.options, marked: G.vote.marked || null, deadline: G.vote.deadline, voted: Object.keys(G.vote.votes || {}),
-      result: G.vote.result, counts: G.vote.result ? G.vote.counts : null, tie: G.vote.tie, tieBy: G.vote.tieBy || null, expired: G.vote.expired,
+      result: G.vote.result, quip: G.vote.result ? G.vote.quip || null : null, counts: G.vote.result ? G.vote.counts : null, tie: G.vote.tie, tieBy: G.vote.tieBy || null, expired: G.vote.expired,
       votes: G.vote.result ? G.vote.votes : null,
     } : null,
     results: G.results, order: G.order, titles: TITLES[n] || [],
@@ -3005,7 +3058,7 @@ function fieldInfo(pub) {
   if (pub.jback) parts.push('<span class="chip on">11バック中</span>');
   if (pub.dir === -1) parts.push('<span class="chip">逆回り</span>');
   if (f.lock) parts.push(`<span class="chip">${f.lock.map(s => I.suit(s, (s === 'H' || s === 'D') ? 'red' : '')).join('')}縛り</span>`);
-  if (pub.laws.some(l => l.key === 'mawashi')) parts.push(`<span class="chip">手札まわしまで ${5 - (pub.clears % 5)}回</span>`);
+  if (pub.laws.some(l => l.key === 'mawashi')) parts.push(`<span class="chip">手札回しまで ${5 - (pub.clears % 5)}回</span>`);
   if (pub.fate) parts.push(`<span class="chip">当たり札 ${esc(E.label(pub.fate))}</span>`);
   return parts.join('');
 }
@@ -3040,7 +3093,7 @@ function vEntry() {
   return `<div class="home">
     ${I.hall()}
     <h1>${logo('lg')}</h1>
-    <div class="rule">法をつくる大富豪</div>
+    <div class="rule">法を作る大富豪</div>
     <p class="lead">開会前と回が終わるたびに、みんなの投票で法律が一つ増えます。<br>革命が起きると、法律はすべて廃止。<br>最後に、立ち回りから今夜の本性を診断します。</p>
     <div class="stack">
       ${resumeHtml()}
@@ -3048,7 +3101,7 @@ function vEntry() {
       <button class="btn" data-act="go-host">スマホだけで議場を開く</button>
       <button class="btn" data-act="go-join">議場に入る</button>
     </div>
-    <div class="links"><button class="link" data-act="lawbook-open">法律の一覧を見る</button><button class="link" data-act="types-open">診断の16タイプを見る</button></div>
+    <div class="links"><button class="link" data-act="lawbook-open">法律の一覧</button><button class="link" data-act="types-open">診断の16タイプ</button></div>
     <p class="note">テレビで議場を開くと、場と法律はテレビに、手札は各自のスマホに出ます。スマホだけで遊ぶときは、議場を開いた人のスマホが親になります。親の画面は最後まで開いたままにしてください。${LOCAL ? '<br>いまは試用モードです(同じブラウザのタブ同士でだけつながります)。' : ''}</p>
   </div>`;
 }
@@ -3131,7 +3184,7 @@ function briefPages(pub) {
   const item = (art, h, p) => `<div class="bitem doc">${art}<h4>${h}</h4><p>${p}</p></div>`;
   P.push({ t: '本日の議事次第', roomy: true, h: `<div class="bgrid" style="--n:4">
     ${item(I.medal(`<rect class="w" x="14" y="10" width="22" height="32" rx="3"/><rect class="w" x="28" y="20" width="22" height="32" rx="3"/><path class="s" d="M39 30l3.5 4.5L39 39l-3.5-4.5z" style="color:#ad2a20"/>`), '一 大富豪を遊ぶ', 'ふつうの大富豪です。手札をなくした順に、大富豪・富豪…と階級が決まります。')}
-    ${c.lawsOn ? item(I.law('strong'), '二 法律をつくる', '開会前と、回が終わるたびに、法案が三つ出て、全員の投票で新しい法律が一つ決まります。') : item(I.gavel(), '二 法律はなし', '今夜は法律をつくりません。ルールどおりの大富豪で競います。')}
+    ${c.lawsOn ? item(I.law('strong'), '二 法律を作る', '開会前と、回が終わるたびに、法案が三つ出て、全員の投票で新しい法律が一つ決まります。') : item(I.gavel(), '二 法律はなし', '今夜は法律を作りません。ルールどおりの大富豪で競います。')}
     ${item(I.rank('大富豪'), '三 得点を競う', `回ごとに階級で得点が入ります。${pub.cfg.rounds ? `<span class="nw">全${pub.cfg.rounds}回</span>を終えたら閉会し、` : '最後に'}合計点の1位を今夜の総理大臣に指名します。`)}
     ${item(I.type('APCG'), '四 本性を診断', 'パスの仕方、強い札の使いどき、考える時間、投票先から、16タイプのどれかに分けます。')}</div>` });
   const strength = `<div class="strength">${['C3', 'H7', 'S11', 'D14', 'C15', 'X1'].map((id, i) => (i ? '<span class="arrow">‹</span>' : '') + cardHtml(id)).join('')}</div>`;
@@ -3148,7 +3201,7 @@ function briefPages(pub) {
   const locs = E.LOCAL_RULES.filter(r => c[r.key]);
   if (locs.length) P.push({ t: '今夜のローカルルール', h: `<div class="bgrid" style="--n:3">${locs.map(r => item('', r.name, r.text + '。')).join('')}</div>` });
   if (c.lawsOn) P.push({ t: '立法の手続き', roomy: true, h: `<div class="bgrid" style="--n:4">
-    ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24M20 38h16"/>'), '一 三つの法案', '開会前と、回が終わるたびに、法案がランダムに三つ出ます。「大富豪に有利」「貧民・大貧民に有利」の法案は、階級で損得が分かれます。')}
+    ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24M20 38h16"/>'), '一 三つの法案', '開会前と、回が終わるたびに、くじで選ばれた法案が三つ出ます。「大富豪に有利」「貧民・大貧民に有利」の法案は、階級で損得が分かれます。')}
     ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h12"/><path class="g" d="M40 32l3 6.2 6.8 1-4.9 4.8 1.2 6.8-6.1-3.2-6.1 3.2 1.2-6.8-4.9-4.8 6.8-1z"/>'), '二 大富豪が指定', '回の終わりには、大富豪が三つのうち一つを「重要法案」に指定します。大富豪がその案に入れると3票になります。')}
     ${item(I.medal('<path class="w" d="M16 26h32v24H16z"/><path class="g" d="M24 10h16v20H24z"/><path d="M22 26h20"/>'), '三 全員で投票', `三つから一つを選びます。大富豪は2票、重要法案に入れると3票。同数のときは大貧民の票で決まります(開会前は全員1票、同数はくじ)。交渉は自由です。`)}
     ${item(I.medal('<path class="a" d="M14 18h36v28H14z" opacity=".15"/><path class="as" d="M14 18h36v28H14z" stroke-width="3"/><path d="M22 32h20"/>'), '四 可決', `決まった法律は次の回から有効です。法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`)}</div>` });
@@ -3198,7 +3251,7 @@ function cfgSummary(c) {
   const off = E.RULES.filter(r => !c[r.key]).map(r => r.name);
   const loc = E.LOCAL_RULES.filter(r => c[r.key]).map(r => r.name);
   const lawN = E.LAW_KEYS.filter(k => E.lawUsable(c, k)).length;
-  return `会期は${roundsText(c)}。${off.length ? `基本ルールのうち${off.join('・')}はなし。` : '基本ルールはすべてあり。'}${loc.length ? `ローカルルールは${loc.join('・')}。` : ''}${c.lawsOn ? `法律の候補は${lawN}つ、上限は${c.maxLaws}つ。` : '法律は作りません。'}`;
+  return `会期は${roundsText(c)}。${off.length ? `基本ルールのうち${off.join('・')}はなし。` : '基本ルールはすべてあり。'}${loc.length ? `ローカルルールは${loc.join('・')}。` : ''}${c.lawsOn ? `法律の候補は${lawN}種類、上限は${c.maxLaws}つ。` : '法律は作りません。'}`;
 }
 function vTv(pub) {
   if (S.showTypes) return vTypes(pub);
@@ -3319,7 +3372,7 @@ function vTvEnacted(pub) {
   const law = pub.laws.find(l => l.key === v.result);
   return `<div class="eyebrow">投票の結果 ― 第${law ? E.KANJI[law.no - 1] : ''}条として定めます</div><div class="big">${esc(pub.lawInfo[v.result].name)}</div>
     <div class="bills" style="--n:${v.options.length}">${cards}</div>
-    <p class="sub" style="margin-top:1.4em">${v.marked ? (v.result === v.marked ? '大富豪の重要法案が通りました。' : `大富豪の重要法案「${esc(pub.lawInfo[v.marked].name)}」は否決されました。`) : ''}${v.tie ? (v.tieBy ? `同数のため、大貧民の${esc(pname(pub, v.tieBy))}さんの票で決まりました。` : '同数のため、くじで決まりました。') : ''}${v.expired ? `法律は${E.KANJI[pub.cfg.maxLaws - 1]}つまでのため、「${esc(v.expired)}」は失効しました。` : ''}${['strong', 'ban', 'fav'].includes(v.result) ? '数字やマークは、次の回のカード交換のあとに大富豪が決めます。' : ''}</p>`;
+    <p class="sub" style="margin-top:1.4em">${v.marked ? (v.result === v.marked ? '大富豪の重要法案が通りました。' : `大富豪の重要法案「${esc(pub.lawInfo[v.marked].name)}」は否決されました。`) : ''}${v.tie ? (v.tieBy ? `同数のため、大貧民の${esc(pname(pub, v.tieBy))}さんの票で決まりました。` : '同数のため、くじで決まりました。') : ''}${v.expired ? `法律は${E.KANJI[pub.cfg.maxLaws - 1]}つまでのため、「${esc(v.expired)}」は失効しました。` : ''}${v.quip ? `<br><b class="quip">${esc(v.quip)}</b>` : ''}${['strong', 'ban', 'fav'].includes(v.result) ? '数字やマークは、次の回のカード交換のあとに大富豪が決めます。' : ''}</p>`;
 }
 function vTvDiag(pub) {
   const n = pub.players.length, step = S.diagStep;
@@ -3414,7 +3467,7 @@ function vPhone(pub, priv) {
         <table class="mini-table">${pub.players.map(p => `<tr><td>${esc(p.name)}</td><td>${p.cpu ? 'CPU' : p.id === S.pid ? 'あなた' : ''}</td></tr>`).join('')}</table></div>`;
       if (isLeader && S.showCfg) { body = `<div class="panel"><h2>ルールと法律の設定</h2>${cfgHtml(pub)}</div>`; bar = '<div class="ph-bar one"><button class="btn main" data-act="cfg-close">決めた</button></div>'; break; }
       body += `<p class="ph-note" style="margin-top:12px">${esc(cfgSummary(pub.cfg))}</p>`;
-      if (isLeader) bar = `<div class="ph-bar col">${ctl}<button class="btn" data-act="cfg-open">ルールと法律の設定</button></div>`;
+      if (isLeader) bar = `<div class="ph-bar lobbybar">${ctl}<button class="btn" data-act="cfg-open">ルールと法律の設定</button></div>`;
       break;
     }
     case 'brief': {
@@ -3480,7 +3533,7 @@ function phEnacted(pub) {
   const v = pub.vote;
   if (!v || !v.result) return '<div class="panel"><h2>新しい法案はありません</h2></div>';
   return `<div class="panel enacted"><span class="opt-art">${I.law(v.result)}</span>${stamp('可決')}<h2>${esc(pub.lawInfo[v.result].name)}</h2>
-    <p>${v.options.map(k => `${esc(pub.lawInfo[k].name)} ${v.counts[k]}票`).join('、')}${v.expired ? `。「${esc(v.expired)}」は失効しました` : ''}。</p></div>`;
+    <p>${v.options.map(k => `${esc(pub.lawInfo[k].name)} ${v.counts[k]}票`).join('、')}${v.expired ? `。「${esc(v.expired)}」は失効しました` : ''}。</p>${v.quip ? `<p class="quip">${esc(v.quip)}</p>` : ''}</div>`;
 }
 // 情報公開法:大富豪の手札を見せる
 function openHandHtml(pub) {
@@ -3553,8 +3606,8 @@ function phPlay(pub, priv, m) {
       const p = E.bestPlay(sel, ctx);
       canPlay = !!p;
       note = p ? `${esc(E.describe(p))}として出せます` : explain(sel, ctx);
-      if (p) hint = '上に払っても出せます';
-    } else note = cands.length ? (f.top ? '出す札を選ぶか、パスしてください' : '親です。好きな札から出せます') : '出せる札がありません';
+      if (p) hint = '札を上へはじいても出せます';
+    } else note = cands.length ? (f.top ? '出す札を選ぶか、パスしてください' : '場が空いています。好きな札から出せます') : '出せる札がありません';
     const canPass = !!f.top || !cands.length;
     bar = `<div class="ph-bar"><button class="btn" data-act="pass" ${canPass ? '' : 'disabled'}>パス</button><button class="btn main" data-act="play" ${canPlay ? '' : 'disabled'}>出す</button></div>`;
   } else {
