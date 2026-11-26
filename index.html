@@ -382,8 +382,6 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 /* 8切り:卓を斜めに裂く金の線 */
 .fx-cut::before{content:"";position:absolute;left:-10%;right:-10%;top:50%;height:6px;background:var(--gold2);transform:rotate(-18deg) scaleX(0);transform-origin:left;animation:slash .85s cubic-bezier(.7,0,.3,1) forwards}
 @keyframes slash{60%{transform:rotate(-18deg) scaleX(1);opacity:1}100%{transform:rotate(-18deg) scaleX(1);opacity:0}}
-.fx-cut b{font-family:var(--serif);font-size:9vw;color:var(--gold2);letter-spacing:.2em;animation:pop 2.1s forwards}
-.is-ph .fx-cut b{font-size:20vw}
 @keyframes pop{0%{transform:scale(.6);opacity:0}25%{transform:scale(1);opacity:1}75%{opacity:1}100%{opacity:0;transform:scale(1.08)}}
 /* 紙吹雪(金と生成り) */
 .fx-confetti i{position:absolute;top:-4vh;width:.9vw;height:1.4vw;background:var(--gold2);animation:fall var(--t) var(--d) linear forwards;opacity:.95}
@@ -391,9 +389,7 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .is-ph .fx-confetti i{width:7px;height:11px}
 @keyframes fall{to{transform:translate(var(--x),110vh) rotate(var(--rot))}}
 /* 冠が降りてくる(大富豪が決まったとき) */
-.fx-crown .ill{width:12vw;height:12vw;color:var(--gold2);--acc:var(--gold);--sw:3px;animation:crown 3.4s cubic-bezier(.2,1.3,.4,1) forwards}
-.fx-crown b{position:absolute;bottom:22vh;font-family:var(--serif);font-size:3.4vw;color:var(--gold2);letter-spacing:.2em;animation:pop 3.4s forwards}
-.is-ph .fx-crown .ill{width:30vw;height:30vw}.is-ph .fx-crown b{font-size:22px}
+.fx-crown .ill{animation:crown 3.4s cubic-bezier(.2,1.3,.4,1) forwards}
 @keyframes crown{0%{transform:translateY(-60vh) rotate(-20deg)}35%{transform:translateY(0) rotate(0)}80%{opacity:1}100%{opacity:0}}
 /* 槌の一打で画面が揺れる */
 .shake{animation:shake .35s}
@@ -519,15 +515,11 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 
 /* ローカルルールの演出 */
 .fx-rule{display:grid;place-items:center}
-.fx-rule .big{font-family:var(--serif);font-weight:900;font-size:10vw;color:var(--gold2);letter-spacing:.06em;animation:pop 2.7s forwards;margin:0;text-shadow:none}
-.is-ph .fx-rule .big{font-size:20vw}
-.fx-rule small{display:block;font-size:.2em;letter-spacing:.3em;color:var(--fg);margin-top:.4em}
 .fx-skip .chev{position:absolute;top:50%;font-size:14vw;color:var(--gold);opacity:0;animation:hop 2s forwards;font-family:var(--serif)}
 @keyframes hop{0%{transform:translate(-40vw,-50%);opacity:0}30%{opacity:1}100%{transform:translate(40vw,-50%);opacity:0}}
 .fx-rev9 .ring{position:absolute;width:34vw;height:34vw;border:1.2vw solid var(--gold);border-right-color:transparent;border-radius:50%;animation:spin 2.3s cubic-bezier(.5,0,.3,1) forwards;opacity:.9}
 @keyframes spin{from{transform:rotate(0)}to{transform:rotate(-540deg);opacity:0}}
-.fx-back11{animation:inv 2.4s forwards}
-@keyframes inv{0%{backdrop-filter:invert(0)}20%{backdrop-filter:invert(1)}100%{backdrop-filter:invert(0)}}
+
 .fx-give .flycard{position:absolute;top:45%;left:30%;width:7vw;animation:fly 2s cubic-bezier(.5,0,.3,1) forwards}
 @keyframes fly{to{transform:translate(32vw,-6vh) rotate(380deg);opacity:0}}
 .fx-drop .fallcard{position:absolute;top:30%;width:6vw;animation:drop 2.2s cubic-bezier(.5,0,.8,.4) forwards}
@@ -554,10 +546,7 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .rank .ill .k{fill:var(--gold2)} .rank .ill .w{fill:var(--fg)} .rank .ill{color:var(--gold2)}
 .doc .rank .ill .k{fill:#1f1a15} .doc .rank .ill .w{fill:#fffdf7} .doc .rank .ill{color:#1f1a15}
 
-/* ローカルルールの演出は議場を少し暗くして読みやすく */
-.fx-rule{background:rgba(26,8,12,.6);animation:dim 2.9s forwards}
-.fx-rule.fx-back11{background:none}
-@keyframes dim{0%{opacity:0}12%{opacity:1}78%{opacity:1}100%{opacity:0}}
+
 
 .type-card .tc-nm{padding:0 1.4vw;text-align:center;line-height:1.3}
 .ph-diag .type-card .tc-nm{font-size:13px;letter-spacing:.08em;padding:0 14px}
@@ -566,8 +555,8 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .tv-head .round small{font-size:.5em;letter-spacing:.08em;margin-left:.7em;color:var(--gold);font-weight:500}
 .rtable .pt small{display:block;font-size:.62em;letter-spacing:.1em;color:var(--gold);font-weight:500}
 /* 7人の結果表:行を詰めて解説まで画面に収める */
-.rtable.many{font-size:1.18em;margin-top:.3em}
-.rtable.many td{padding:.42em .2em}
+.rtable.many{font-size:1.12em;margin-top:.2em}
+.rtable.many td{padding:.3em .2em}
 /* 会期の行は名前と切り替えだけ */
 .tg.sess{grid-template-columns:1fr auto}
 .tg.sess .nm{white-space:nowrap}
@@ -576,7 +565,6 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .sheet .cfg .lawcol .tg{padding:.3em 0}
 .sheet .cfg .lawcol .tg .ill{width:1.7em;height:1.7em}
 /* 最終回の告知:場を暗くして中央に出す */
-.fx-round{background:rgba(26,6,10,.78);animation:fadeout .7s 2.6s forwards}
 .fx-round .fx-title{padding:2.2vw 7vw;border-top:1.5px solid var(--gold);border-bottom:1.5px solid var(--gold)}
 .fx-round .fx-title small{margin-bottom:.4em}
 .fx-round .fx-title{animation:pop 3s forwards}
@@ -585,6 +573,98 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .ph .tg.sess{grid-template-columns:1fr;gap:.5em;padding-left:0}
 .ph .tg.sess .seg{justify-self:start}
 .nw{white-space:nowrap}
+/* 1 今の番:欄を書類色に反転させ、遠くからも分かるようにする */
+.tv-p{border-radius:.5vw .5vw 0 0;transition:background .3s,color .3s}
+.tv-p.turn{background:var(--doc);border-top-color:var(--gold);--acc:var(--shu);--pp:var(--doc)}
+.tv-p.turn .nm,.tv-p.turn .ct{color:#2a1a10}
+.tv-p.turn .tt,.tv-p.turn .ct small{color:#6b5a48}
+.tv-p.turn .st{color:#8a2b17}
+.tv-p.turn .rank{color:#2a1a10}
+/* 2 順位の動き・総合順位の帯 */
+.rtable .chg{font-family:var(--num);width:3em;letter-spacing:.05em}
+.standing{display:flex;align-items:baseline;gap:1.4em;margin-top:.9em;padding:.6em 0 .2em;border-top:1px solid var(--gold);font-size:1.05em}
+.standing .sh{font-family:var(--serif);font-weight:700;color:var(--gold2);white-space:nowrap;letter-spacing:.1em}
+.standing .sh small{display:block;font-family:var(--sans);font-weight:400;font-size:.72em;color:var(--sub);letter-spacing:.04em}
+.standing ol{list-style:none;display:flex;flex-wrap:wrap;gap:.3em 1.5em;margin:0;padding:0;min-width:0}
+.standing li{display:flex;align-items:baseline;gap:.4em;white-space:nowrap}
+.standing .sp{font-family:var(--num);color:var(--sub);font-size:.85em}
+.standing .st{font-family:var(--num);font-weight:700;color:var(--gold2)}
+.standing .st::after{content:"点";font-family:var(--sans);font-weight:400;font-size:.7em;color:var(--sub);margin-left:.15em}
+.standing li:first-child .sn{font-weight:700}
+/* 3 紙吹雪は画面の上だけに降らせ、下の表や文字にかからないようにする */
+.fx-confetti{height:30vh;bottom:auto}
+.fx-confetti i{animation-name:falltop}
+@keyframes falltop{0%{transform:translate(0,0) rotate(0);opacity:.95}70%{opacity:.9}100%{transform:translate(calc(var(--x)*.4),30vh) rotate(var(--rot));opacity:0}}
+/* 4 設定の法律の絵:メダルを外し金の線で一回り大きく */
+.sheet .cfg .lawcol .tg .ill{width:2.1em;height:2.1em;color:var(--gold2);--sw:2px}
+.cfg .tg .ill .g,.cfg .tg .ill .w{fill:none}
+/* 6 開会前の説明:縦の中央に置き、テレビ向けに字を大きく */
+.sheet.full .brief{align-content:safe center}
+.sheet.full .brief.roomy{font-size:1.14em}
+.sheet.full .brief.roomy .bitem .ill{width:5.6vw;height:5.6vw}
+/* 7 待機画面のURLは控えめに */
+.url{font-size:.82em;opacity:.55;margin-top:1.2em}
+/* 今の番の欄では、階級の絵を書類色の上でも見える濃さに */
+.tv-p.turn .rank .ill{filter:brightness(.62) saturate(1.3)}
+/* 基本の頁:出し方は説明が長いので二列ぶん使い、頁を二段に収める */
+.sheet .bgrid .bitem.wide{grid-column:span 2}
+/* 7人で総合順位の帯があるとき:表と解説を詰め、操作ボタンまで収める */
+.rtable.tight td{padding:.2em .2em}
+.rtable.tight ~ .standing{margin-top:.5em;padding-top:.45em}
+.rtable.tight ~ .comment{margin-top:.7em;padding:.7vw 1.4vw}
+.rtable.tight ~ .comment p{font-size:1.18em;line-height:1.6}
+.rtable.tight ~ .comment .ill{width:3.4vw;height:3.4vw}
+.sheet .cfg .lawcol .tg{padding:.2em 0}
+.sheet .cfg .lawcol .tg .ill{width:1.75em;height:1.75em}
+
+/* ---------- 演出の共通の型 ----------
+   議場を暗くする → 中央に動き(絵・札・線) → 金の明朝の題字。説明文は付けない(状況は場の下の文で伝える) */
+.fx-dimmed{background:rgba(26,8,12,.8);animation:dim var(--dur) forwards}
+@keyframes dim{0%{opacity:0}10%{opacity:1}80%{opacity:1}100%{opacity:0}}
+.fx-dimmed .big{position:relative;z-index:2;font-family:var(--serif);font-weight:900;font-size:9vw;color:var(--gold2);letter-spacing:.08em;line-height:1.1;text-align:center;margin:0;animation:pop calc(var(--dur) * .92) forwards}
+.is-ph .fx-dimmed .big{font-size:18vw}
+.fx-dimmed .big small{display:block;font-size:.3em;font-weight:700;letter-spacing:.5em;color:var(--gold);margin-top:.5em}
+/* 大富豪:冠の後ろに金の輪を置き、背景から浮かせる */
+.fx-crown{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.6vw}
+.fx-crown .halo{position:absolute;width:22vw;height:22vw;border:2px solid var(--gold);border-radius:50%;top:calc(50% - 22vw);left:calc(50% - 11vw);animation:halo var(--dur) forwards}
+.fx-crown .ill{width:14vw;height:14vw;color:var(--gold2);--acc:var(--shu);--sw:3px;position:relative;z-index:2}
+.fx-crown .ill .k{fill:var(--gold2)}
+.fx-crown .big{font-size:5vw}
+.is-ph .fx-crown .ill{width:34vw;height:34vw}.is-ph .fx-crown .halo{width:56vw;height:56vw;top:calc(50% - 52vw);left:calc(50% - 28vw)}.is-ph .fx-crown .big{font-size:9vw}
+@keyframes halo{0%{transform:scale(.4);opacity:0}30%{transform:scale(1);opacity:.9}80%{opacity:.9}100%{transform:scale(1.15);opacity:0}}
+/* 8切りの線は題字の後ろへ */
+.fx-cut{display:grid;place-items:center}
+.fx-cut::before{z-index:1}
+/* 11バック:3と2が入れ替わる */
+.fx-back11 .swap{position:absolute;top:calc(50% - 17vw);left:50%;width:0;height:0}
+.fx-back11 .swap>span{position:absolute;--cw:7vw;top:0}
+.fx-back11 .sw-a{left:-12vw;animation:swapR 2.2s cubic-bezier(.6,0,.3,1) .2s both}
+.fx-back11 .sw-b{left:5vw;animation:swapL 2.2s cubic-bezier(.6,0,.3,1) .2s both}
+@keyframes swapR{0%{transform:none;opacity:0}12%{opacity:1}55%{transform:translate(17vw,-3vw)}85%{opacity:1;transform:translate(17vw,0)}100%{transform:translate(17vw,0);opacity:0}}
+@keyframes swapL{0%{transform:none;opacity:0}12%{opacity:1}55%{transform:translate(-17vw,3vw)}85%{opacity:1;transform:translate(-17vw,0)}100%{transform:translate(-17vw,0);opacity:0}}
+.is-ph .fx-back11 .swap>span{--cw:16vw}.is-ph .fx-back11 .swap{top:calc(50% - 40vw)}
+.is-ph .fx-back11 .sw-a{left:-26vw}.is-ph .fx-back11 .sw-b{left:10vw}
+/* 絵は題字の上側に置いて重ならないように */
+.fx-spade .bigsuit{position:absolute;top:calc(50% - 25vw);width:15vw;height:15vw}
+.is-ph .fx-spade .bigsuit{width:34vw;height:34vw;top:calc(50% - 55vw)}
+.fx-gavel .ill,.fx-round .fx-title{position:relative;z-index:2}
+.fx-gavel{align-content:center;gap:1vw}
+.fx-gavel .ill{width:12vw;height:12vw}
+.fx-dimmed{background:rgba(24,6,10,.86)}
+/* 冠と輪は同じ中心に */
+.fx-crown .cw{position:relative;display:grid;place-items:center;width:22vw;height:22vw}
+.fx-crown .cw .halo{position:absolute;inset:0;width:auto;height:auto;top:0;left:0}
+.is-ph .fx-crown .cw{width:58vw;height:58vw}
+.is-ph .fx-crown .cw .halo{width:auto;height:auto;top:0;left:0}
+/* スマホでは動きの部品も画面幅に合わせて大きく */
+.is-ph .fx-gavel .ill{width:30vw;height:30vw}
+.is-ph .fx-rev9 .ring{width:78vw;height:78vw;border-width:2.6vw}
+.is-ph .fx-skip .chev{font-size:30vw}
+.is-ph .fx-foul .stampbig{font-size:24vw;border-width:2vw}
+.is-ph .fx-give .flycard{width:16vw}.is-ph .fx-drop .fallcard{width:14vw}
+.is-ph .fx-back11 .sw-a{animation-name:swapRp}.is-ph .fx-back11 .sw-b{animation-name:swapLp}
+@keyframes swapRp{0%{transform:none;opacity:0}12%{opacity:1}55%{transform:translate(36vw,-6vw)}85%{opacity:1;transform:translate(36vw,0)}100%{transform:translate(36vw,0);opacity:0}}
+@keyframes swapLp{0%{transform:none;opacity:0}12%{opacity:1}55%{transform:translate(-36vw,6vw)}85%{opacity:1;transform:translate(-36vw,0)}100%{transform:translate(-36vw,0);opacity:0}}
 
 </style>
 <script>
@@ -1324,7 +1404,7 @@ function endRound(G, now) {
   G.results = order.map((id, i) => {
     const pts = POINTS[TITLES[n][i]] * mul;
     G.points[id] = (G.points[id] || 0) + pts;
-    return { id, title: TITLES[n][i], prev: prev ? TITLES[n][prev.indexOf(id)] : null, pts, total: G.points[id], x2: mul === 2 };
+    return { id, title: TITLES[n][i], prev: prev ? TITLES[n][prev.indexOf(id)] : null, prevPos: prev ? prev.indexOf(id) : null, pts, total: G.points[id], x2: mul === 2 };
   });
   // 大富豪の連続記録
   G.streak = G.streak && G.streak.id === order[0] ? { id: order[0], n: G.streak.n + 1 } : { id: order[0], n: 1 };
@@ -1776,17 +1856,48 @@ const CORE = {
   DP: `<path class="w" d="M60 24l26 8v20c0 20-12 30-26 38-14-8-26-18-26-38V32z"/><path class="g" d="M60 32l18 6v13c0 14-8 22-18 28-10-6-18-14-18-28V38z"/><path class="k" d="M50 50l-2-9 6 4 6-8 6 8 6-4-2 9z"/>`,
   DR: `<path d="M60 18v8"/><path class="k" d="M48 26h24v5H48z"/><path class="w" d="M46 31h28c5 9 5 33 0 42H46c-5-9-5-33 0-42z"/><path d="M45 40h30M44 52h32M45 64h30"/><path class="a" d="M54 46h12v14H54z" opacity=".85"/><path class="k" d="M48 73h24v5H48z"/>`,
 };
-const CHARM = {
-  C: `<path d="M48 100h24M60 93v13M52 100l-4 6.5h8zM68 100l-4 6.5h8z"/><circle class="g" cx="60" cy="92" r="2"/>`,
-  I: `<path class="g" d="M63 91l-9 10h6.5l-4.5 10 11-12h-6.5l4-8z"/>`,
+/* 16タイプそれぞれの図柄。枠(金の輪)は共通で、群は月桂樹、孤は星を添える */
+const EMBLEM = {
+  // 敏腕幹事長:議事の段取り表
+  APCG: `<rect class="w" x="40" y="28" width="40" height="56" rx="3"/><path class="g" d="M50 23h20v10H50z"/><circle class="a" cx="60" cy="28" r="2"/><path class="as" d="M46 45l3 3 5-6M46 58l3 3 5-6M46 71l3 3 5-6"/><path d="M60 46h13M60 59h13M60 72h9"/>`,
+  // 冷徹な宰相:盤上の王
+  APCS: `<path class="k" d="M40 84h40v6H40z"/><path class="g" d="M45 84c2-10 5-18 6-30h18c1 12 4 20 6 30z"/><path class="w" d="M47 48h26v7H47z"/><path class="g" d="M50 48c-2-6 0-12 10-14 10 2 12 8 10 14z"/><path d="M60 21v12M55 26h10"/><circle class="a" cx="60" cy="41" r="2.2"/>`,
+  // 人気の大臣:拡声器
+  APIG: `<path class="k" d="M30 50h8v16h-8z"/><path class="g" d="M38 52l34-16v44L38 64z"/><ellipse class="w" cx="72" cy="58" rx="5" ry="22"/><path d="M44 64l-4 14h8l3-11"/><path class="as" d="M84 46c4 4 4 20 0 24M90 40c7 7 7 29 0 36"/>`,
+  // 独走する首相:突き進む矢と小さな冠
+  APIS: `<path class="g" d="M36 76l28-28-6-6 28-8-8 28-6-6-28 28z"/><path class="a" d="M32 44l2-10 5 4 3-7 3 7 5-4 2 10z"/><path d="M24 70l9-9M30 90l9-9M22 82l6-6"/>`,
+  // 革命の参謀:作戦地図
+  ARCG: `<path class="w" d="M30 34l20-6 20 6 20-6v50l-20 6-20-6-20 6z"/><path d="M50 28v50M70 34v50"/><path class="as" d="M36 70c8-4 10-14 20-14s12 10 22-2" stroke-dasharray="3 4"/><path class="as" d="M77 44l7 7M84 44l-7 7"/><circle class="g" cx="39" cy="45" r="4.5"/>`,
+  // 孤高の革命家:ひとつの松明
+  ARCS: `<path class="k" d="M55 62h10l-3 28h-4z"/><path class="g" d="M47 53h26l-4 10H51z"/><path class="a" d="M60 17c10 10 16 18 12 28-2 5-6 7-12 7s-10-2-12-7c-3-8 2-12 6-16 0 6 2 8 4 9-1-8 0-14 2-21z"/><path class="g" d="M60 31c5 6 7 10 5 15-1 3-3 4-5 4s-4-1-5-4c-1-4 1-7 3-9 0 3 1 4 2 4 0-4 0-7 0-10z"/>`,
+  // 民衆の旗手:翻る旗
+  ARIG: `<path d="M40 22v68"/><circle class="g" cx="40" cy="20" r="3.5"/><path class="a" d="M40 26c12-6 20 4 32-2s12-2 16 2v26c-4-4-8-6-16-2s-20-4-32 2z"/><path class="g" d="M40 54c12-6 20 4 32-2s12-2 16 2v6c-4-4-8-6-16-2s-20-4-32 2z"/><path d="M32 90h16"/>`,
+  // 一匹狼の反逆児:月と狼
+  ARIS: `<path class="g" d="M57 15a9 9 0 1 0 9 14 7 7 0 1 1-9-14z"/><path class="w" d="M36 36l12 12h24l12-12 2 22-8 14-18 18-18-18-8-14z"/><path d="M40 42l6 8M80 42l-6 8"/><path class="as" d="M47 58l8 2M73 58l-8 2"/><path d="M60 64v12M52 70l8 6 8-6"/><path class="k" d="M56 76h8l-4 5z"/>`,
+  // 老練な官僚:判と書類
+  DPCG: `<path class="w" d="M28 66h64v22H28z"/><path d="M34 74h12M34 81h10"/><circle class="g" cx="60" cy="24" r="7"/><path class="g" d="M55 30h10l3 16H52z"/><path class="k" d="M47 46h26v9H47z"/><rect class="as" x="56" y="69" width="18" height="15" rx="1.5"/><path class="as" d="M60 73h10M65 73v8M60 81h10"/>`,
+  // 沈黙の書記官:羽根ペンと墨壺
+  DPCS: `<path class="w" d="M88 20c-14 4-28 16-32 42l4 2c8-20 18-30 28-44z"/><path d="M52 74l36-54M66 50l6 1M70 43l6 1M75 36l5 1"/><path class="g" d="M38 64h18v6H38z"/><path class="k" d="M34 70h26v18H34z"/><path class="a" d="M76 74c2 3 3 4 3 6a3 3 0 0 1-6 0c0-2 1-3 3-6z"/>`,
+  // 空気を読む陣笠:陣笠
+  DPIG: `<path class="g" d="M24 66c10-16 22-26 36-28 14 2 26 12 36 28-12 6-60 6-72 0z"/><path class="k" d="M22 66c14 8 62 8 76 0v4c-14 8-62 8-76 0z"/><circle class="a" cx="60" cy="37" r="3.5"/><circle class="w" cx="60" cy="54" r="7"/><path d="M60 48v12M54 54h12"/>`,
+  // 気まぐれな傍聴人:オペラグラス
+  DPIS: `<path d="M45 48c0-8 30-8 30 0"/><circle class="w" cx="45" cy="60" r="12"/><circle class="w" cx="75" cy="60" r="12"/><circle class="g" cx="45" cy="60" r="6.5"/><circle class="g" cx="75" cy="60" r="6.5"/><path class="k" d="M55 54h10v8H55z"/><path d="M78 72l8 18"/><path class="as" d="M86 30v10M81 35h10"/>`,
+  // 裏で糸を引く黒幕:操り人形
+  DRCG: `<path class="g" d="M32 24h56v6H32z"/><path class="g" d="M57 16h6v24h-6z"/><path class="thin" d="M36 30l8 32M84 30l-8 32M60 40v12"/><circle class="w" cx="60" cy="57" r="6"/><path class="a" d="M54 63h12l2 15H52z"/><path d="M54 65l-10-3M66 65l10-3M56 78l-3 11M64 78l3 11"/>`,
+  // 機をうかがう隠者:砂時計
+  DRCS: `<path class="k" d="M38 22h44v6H38zM38 86h44v6H38z"/><path class="w" d="M44 28h32c0 14-12 21-12 29s12 15 12 29H44c0-14 12-21 12-29S44 42 44 28z"/><path class="g" d="M48 36h24c-2 6-8 10-12 15-4-5-10-9-12-15z"/><path class="g" d="M48 86c2-8 8-12 12-12s10 4 12 12z"/><path class="as" d="M60 57v14"/><path d="M41 28v58M79 28v58"/>`,
+  // 声なき多数派:並ぶ人々
+  DRIG: `<circle class="w" cx="38" cy="46" r="8"/><path class="w" d="M24 82c0-14 6-22 14-22s14 8 14 22z"/><circle class="w" cx="82" cy="46" r="8"/><path class="w" d="M68 82c0-14 6-22 14-22s14 8 14 22z"/><circle class="g" cx="60" cy="42" r="10"/><path class="g" d="M42 88c0-18 8-28 18-28s18 10 18 28z"/><circle class="a" cx="60" cy="74" r="3"/>`,
+  // 天邪鬼な風来坊:風車
+  DRIS: `<path d="M60 54l7 36"/><path class="g" d="M60 52V26c12 0 16 14 0 26z"/><path class="a" d="M60 52h26c0 12-14 16-26 0z"/><path class="w" d="M60 52v26c-12 0-16-14 0-26z"/><path class="g" d="M60 52H34c0-12 14-16 26 0z"/><circle class="k" cx="60" cy="52" r="3"/><path d="M88 28c3 2 5 5 6 8M26 76c-3-2-5-5-6-8"/>`,
 };
 function type(code) {
   if (code === 'rebel') return sv('0 0 120 120', CORE.AR, 'type-ic');
   if (!code || code.length !== 4) return '';
-  const core = CORE[code.slice(0, 2)] || '', charm = CHARM[code[2]] || '';
+  const body = EMBLEM[code] || `<g transform="translate(-3 -5) scale(1.05)">${CORE[code.slice(0, 2)] || ''}</g>`;
   const ring = `<circle class="g" cx="60" cy="60" r="58"/>${beads(60, 60, 54.5, 36, 1.3)}<circle class="pp" cx="60" cy="60" r="51"/>`;
-  const deco = code[3] === 'G' ? laurel() : `<path class="g" d="M60 4.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/>`;
-  return sv('0 0 120 120', ring + (code[3] === 'G' ? deco : '') + `<g transform="translate(-3 -5) scale(1.05)">${core}</g>` + charm + (code[3] === 'S' ? deco : ''), 'type-ic');
+  const star = `<path class="g" d="M60 4.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/>`;
+  return sv('0 0 120 120', ring + (code[3] === 'G' ? laurel() : '') + body + (code[3] === 'S' ? star : ''), 'type-ic');
 }
 function flag() { return sv('0 0 120 120', CORE.AR, 'type-ic'); }
 
@@ -2249,7 +2360,7 @@ async function startHost(code, mode, me) {
   };
   HOST = await hostNet(code, onAct);
   HOST.local = (pid, a) => onAct(pid, a);
-  if (qs.has('debug')) window.__dbg = { G: () => G, out };
+  if (qs.has('debug')) window.__dbg = { G: () => G, out, fx, ruleFx, I };
   if (G.phase === 'lobby') try { const saved = JSON.parse(store.get('dfg-cfg') || 'null'); if (saved) E.act(G, null, { t: 'cfg', cfg: saved }); } catch (e) { /* 前回の設定が読めなければ初期値 */ }
   const warp = qs.has('fast') ? 6000 : 0;
   setInterval(() => { if (E.tick(G, Date.now() + warp, id => autoIds.has(id))) out(); }, qs.has('fast') ? 60 : 250);
@@ -2424,7 +2535,7 @@ function controls(pub, compact) {
 function briefPages(pub) {
   const c = pub.cfg, P = [];
   const item = (art, h, p) => `<div class="bitem doc">${art}<h4>${h}</h4><p>${p}</p></div>`;
-  P.push({ t: '本日の議事次第', h: `<div class="bgrid" style="--n:4">
+  P.push({ t: '本日の議事次第', roomy: true, h: `<div class="bgrid" style="--n:4">
     ${item(I.medal(`<rect class="w" x="14" y="10" width="22" height="32" rx="3"/><rect class="w" x="28" y="20" width="22" height="32" rx="3"/><path class="s" d="M39 30l3.5 4.5L39 39l-3.5-4.5z" style="color:#ad2a20"/>`), '一 大富豪を遊ぶ', 'ふつうの大富豪です。手札をなくした順に、大富豪・富豪…と階級が決まります。')}
     ${c.lawsOn ? item(I.law('strong'), '二 法律をつくる', '回が終わるたびに、大富豪の廃案と全員の投票で、新しい法律が一つ決まります。') : item(I.gavel(), '二 法律はなし', '今夜は法律をつくりません。ルールどおりの大富豪で競います。')}
     ${item(I.rank('大富豪'), '三 得点を競う', `回ごとに階級で得点が入ります。${pub.cfg.rounds ? `<span class="nw">全${pub.cfg.rounds}回</span>を終えたら閉会し、` : '最後に'}合計点で総合順位を決めます。`)}
@@ -2438,10 +2549,11 @@ function briefPages(pub) {
     c.exchange ? item('', 'カード交換', '2回目からは、大貧民が強い札2枚を大富豪へ、貧民が1枚を富豪へ渡し、受け取った側は好きな札を返します。') : '',
     c.ochi ? item('', '都落ち', '大富豪が1番に上がれなかったら、その場で大貧民になります。') : '',
   ].filter(Boolean);
+  basics[0] = basics[0].replace('class="bitem doc"', 'class="bitem doc wide"');
   P.push({ t: '大富豪の基本', h: `<p class="sub" style="font-size:1.1em">弱い札から順に、3・4・5…K・A・2・ジョーカー。${c.jokers ? `ジョーカーは${c.jokers}枚入っています。` : 'ジョーカーは入っていません。'}</p>${strength}<div class="bgrid" style="--n:${basics.length > 4 ? 4 : 3}">${basics.join('')}</div>` });
   const locs = E.LOCAL_RULES.filter(r => c[r.key]);
   if (locs.length) P.push({ t: '今夜のローカルルール', h: `<div class="bgrid" style="--n:3">${locs.map(r => item('', r.name, r.text + '。')).join('')}</div>` });
-  if (c.lawsOn) P.push({ t: '法律のつくり方', h: `<div class="bgrid" style="--n:4">
+  if (c.lawsOn) P.push({ t: '法律のつくり方', roomy: true, h: `<div class="bgrid" style="--n:4">
     ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24M20 38h16"/>'), '一 三つの法律案', '回が終わると、法律案がランダムに三つ出ます。')}
     ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24"/><path class="as" d="M16 46l32-32M16 14l32 32" stroke-width="3"/>'), '二 大富豪が廃案', '大富豪が、気に入らない一つを廃案にします。')}
     ${item(I.medal('<path class="w" d="M16 26h32v24H16z"/><path class="g" d="M24 10h16v20H24z"/><path d="M22 26h20"/>'), '三 全員で投票', `残った二つから一つを選びます。大富豪だけ2票。全員が入れるか、主催者が締め切ったら開票です。交渉は自由です。`)}
@@ -2454,7 +2566,7 @@ function briefPages(pub) {
 function vTvBrief(pub) {
   const P = briefPages(pub), st = Math.min(pub.brief, P.length - 1), pg = P[st];
   return `<div class="eyebrow">開会前の説明 ${st + 1}/${P.length}</div><div class="brief-steps">${P.map((_, i) => `<i class="${i <= st ? 'on' : ''}"></i>`).join('')}</div>
-    <div class="big" style="font-size:2.6em;margin:0 0 .3em">${pg.t}</div><div class="brief">${pg.h}</div>`;
+    <div class="big" style="font-size:2.6em;margin:0 0 .3em">${pg.t}</div><div class="brief ${pg.roomy ? 'roomy' : ''}">${pg.h}</div>`;
 }
 
 function tvSide(pub) {
@@ -2480,7 +2592,7 @@ function cfgHtml(pub) {
   const vote = c.lawsOn ? `<div class="tg na sess"><span><span class="nm">法律の上限</span><span class="tx">超えると古い順に失効</span></span>${seg('maxLaws', [1, 2, 3, 4, 5], c.maxLaws, v => v + 'つ')}</div>` : '';
   const laws = tg('lawsOn', c.lawsOn, '法律を作る', '回が終わるたびに投票で法律を一つ決める') + vote + (c.lawsOn ? E.LAW_KEYS.map(k => {
     const w = why(k);
-    return tg('law:' + k, c.laws[k] && !w, pub.lawInfo[k].name, w || pub.lawInfo[k].text, I.law(k), w ? 'why' : 'lt');
+    return tg('law:' + k, c.laws[k] && !w, pub.lawInfo[k].name, w || pub.lawInfo[k].text, I.lawPlain(k), w ? 'why' : 'lt');
   }).join('') : '');
   const session = `<h3>会期</h3><div class="tg na sess"><span><span class="nm">回数</span><span class="tx">最終回が終わると閉会。「なし」は回数を決めない</span></span>${seg('rounds', E.ROUND_OPTS, c.rounds, v => v ? v + '回' : 'なし')}</div>`;
   const locals = E.LOCAL_RULES.map(r => tg('rule:' + r.key, c[r.key], r.name, r.text)).join('');
@@ -2496,7 +2608,7 @@ function vTv(pub) {
   if (S.showTypes) return vTypes(pub);
   if (pub.phase === 'lobby') return vTvLobby(pub);
   if (pub.phase === 'brief') return sheet(pub, vTvBrief(pub), true);
-  if (pub.phase === 'roundEnd') return sheet(pub, `<div class="eyebrow">${pub.last ? `最終回(第${pub.round}回)` : `第${pub.round}回${pub.cfg.rounds ? ` / 全${pub.cfg.rounds}回` : ''}`}の結果${pub.results[0] && pub.results[0].x2 ? '　倍点令により得点二倍' : ''}</div><div class="big">大富豪は${esc(pname(pub, pub.order[0]))}さん</div>${resultsTable(pub)}${commentHtml(pub)}`);
+  if (pub.phase === 'roundEnd') return sheet(pub, `<div class="eyebrow">${pub.last ? `最終回(第${pub.round}回)` : `第${pub.round}回${pub.cfg.rounds ? ` / 全${pub.cfg.rounds}回` : ''}`}の結果${pub.results[0] && pub.results[0].x2 ? '　倍点令により得点二倍' : ''}</div><div class="big">大富豪は${esc(pname(pub, pub.order[0]))}さん</div>${resultsTable(pub)}${standingHtml(pub)}${commentHtml(pub)}`);
   if (pub.phase === 'veto') return sheet(pub, vTvVeto(pub));
   if (pub.phase === 'vote') return sheet(pub, vTvVote(pub));
   if (pub.phase === 'enacted') return sheet(pub, vTvEnacted(pub));
@@ -2536,8 +2648,22 @@ function vTvLobby(pub) {
     <div class="actions">${controls(pub)}<button class="btn push" data-act="cfg-open">ルールと法律の設定</button></div>
   </main>${tvSide(pub)}</div>`;
 }
+/* 前回からの順位の動き */
+function moveMark(r, i) {
+  if (r.prevPos == null) return '';
+  const d = r.prevPos - i;
+  return d > 0 ? `↑${d}` : d < 0 ? `↓${-d}` : '―';
+}
+/* 総合順位の帯(2回目から) */
+function standingHtml(pub) {
+  if (!pub.results || pub.round < 2) return '';
+  const top = pub.results.slice().sort((a, b) => b.total - a.total);
+  let rank = 0, prevT = null;
+  const items = top.map((r, i) => { if (r.total !== prevT) { rank = i + 1; prevT = r.total; } return `<li><span class="sp">${rank}</span><span class="sn">${esc(pname(pub, r.id))}</span><span class="st">${r.total}</span></li>`; }).join('');
+  return `<div class="standing"><div class="sh">総合順位<small>${pub.last ? '最終' : `第${pub.round}回まで${pub.cfg.rounds ? `・残り${pub.cfg.rounds - pub.round}回` : ''}`}</small></div><ol>${items}</ol></div>`;
+}
 function resultsTable(pub) {
-  return `<table class="rtable ${pub.results.length >= 6 ? 'many' : ''}">${pub.results.map((r, i) => `<tr style="animation-delay:${i * 0.12}s"><td class="pos">${i + 1}</td><td class="ttl">${rankTag(r.title)}</td><td>${esc(pname(pub, r.id))}</td><td class="chg">${r.prev ? `前回は${r.prev}` : ''}</td><td class="pt">+${r.pts}点</td><td class="tot">計 ${r.total}点</td></tr>`).join('')}</table>`;
+  return `<table class="rtable ${pub.results.length >= 6 ? 'many' : ''} ${pub.results.length >= 6 && pub.round >= 2 ? 'tight' : ''}">${pub.results.map((r, i) => `<tr style="animation-delay:${i * 0.12}s"><td class="pos">${i + 1}</td><td class="ttl">${rankTag(r.title)}</td><td>${esc(pname(pub, r.id))}</td><td class="chg">${moveMark(r, i)}</td><td class="pt">+${r.pts}点</td><td class="tot">計 ${r.total}点</td></tr>`).join('')}</table>`;
 }
 function billHtml(pub, key, i, extra) {
   const L = pub.lawInfo[key];
@@ -2849,14 +2975,17 @@ function render() {
 }
 /* ---------- 演出と効果音 ---------- */
 const bigSound = pub => S.view === 'tv' || pub.mode === 'phone';
+/* 演出:主役の演出はすべて、議場を暗くしてから中央に「動き+短い題字」を出す */
+const DIM_FX = ['crown', 'cut', 'gavel', 'round'];
 function fx(kind, html, ms) {
   const el = document.createElement('div'); el.className = 'fx fx-' + kind; el.innerHTML = html || '';
+  if (kind.startsWith('rule') || DIM_FX.includes(kind)) { el.classList.add('fx-dimmed'); el.style.setProperty('--dur', (ms || 2600) + 'ms'); }
   document.body.appendChild(el); setTimeout(() => el.remove(), ms || 2600);
 }
 function confetti(n) {
   let h = '';
   for (let i = 0; i < n; i++) h += `<i style="left:${Math.random() * 100}%;--t:${3 + Math.random() * 2.2}s;--d:${Math.random() * 1.2}s;--x:${(Math.random() - 0.5) * 30}vw;--rot:${(Math.random() - 0.5) * 1080}deg"></i>`;
-  fx('confetti', h, 6800);
+  fx('confetti', h, 4200);
 }
 function shake() { $app.classList.remove('shake'); void $app.offsetWidth; $app.classList.add('shake'); }
 function fxCheck(prev, pub) {
@@ -2877,9 +3006,9 @@ function fxCheck(prev, pub) {
   if (pub.phase !== prev.phase) {
     if (pub.phase === 'roundEnd' && pub.order) {
       const fl = document.querySelector('.flash'); if (fl) fl.classList.remove('on');
-      if (big) { fx('crown', `${I.rank('大富豪')}<b>大富豪 ${esc(pname(pub, pub.order[0]))}さん</b>`, 3600); confetti(tv ? 70 : 30); SFX.play('crown'); }
+      if (big) { fx('crown', `<span class="cw"><span class="halo"></span>${I.rank('大富豪')}</span><div class="big">${esc(pname(pub, pub.order[0]))}さん<small>大富豪</small></div>`, 3600); confetti(tv ? 70 : 30); SFX.play('crown'); }
     }
-    if (pub.phase === 'veto' && big) { fx('gavel', I.gavel(), 2400); SFX.play('knock3'); setTimeout(shake, 250); setTimeout(shake, 610); setTimeout(shake, 970); }
+    if (pub.phase === 'veto' && big) { fx('gavel', I.gavel() + '<div class="big">審議</div>', 2400); SFX.play('knock3'); setTimeout(shake, 250); setTimeout(shake, 610); setTimeout(shake, 970); }
     if (pub.phase === 'vote' && big) SFX.play('bellVote');
     if (pub.phase === 'enacted' && pub.vote && pub.vote.result) {
       S.newLawKey = pub.vote.result; setTimeout(() => { S.newLawKey = null; }, 1500);
@@ -2894,8 +3023,8 @@ function fxCheck(prev, pub) {
   // 革命・8切り・法律・上がり
   const f = pub.flash, pf = prev.flash;
   if (f && (!pf || f.n !== pf.n)) {
-    if (f.kind === 'rev') { fx('rev', `<div class="fx-big">革命<small>${esc(f.text)}</small></div><div class="fx-flag">${I.flag()}</div>`, 3900); SFX.play(big ? 'revolution' : 'whoosh'); if (navigator.vibrate) try { navigator.vibrate([80, 50, 80, 50, 160]); } catch (e) { /* 振動できない端末 */ } }
-    else if (f.kind === 'cut') { fx('cut', '<b>八切り</b>', 2200); SFX.play('whoosh'); }
+    if (f.kind === 'rev') { fx('rev', `<div class="fx-big">革命</div><div class="fx-flag">${I.flag()}</div>`, 3900); SFX.play(big ? 'revolution' : 'whoosh'); if (navigator.vibrate) try { navigator.vibrate([80, 50, 80, 50, 160]); } catch (e) { /* 振動できない端末 */ } }
+    else if (f.kind === 'cut') { fx('cut', '<div class="big">8切り</div>', 2200); SFX.play('whoosh'); }
     else if (f.kind === 'law' && big) SFX.play('gavel');
     else if (f.kind && f.kind.startsWith('r-')) ruleFx(f.kind.slice(2), big);
     else if (f.kind === 'out' && big) SFX.play('out');
@@ -2905,15 +3034,15 @@ function fxCheck(prev, pub) {
 }
 function ruleFx(k, big) {
   const fl = document.querySelector('.flash'); if (fl) fl.classList.remove('on');
-  const B = (t, sub) => `<div class="big">${t}${sub ? `<small>${sub}</small>` : ''}</div>`;
+  const B = t => `<div class="big">${t}</div>`;
   switch (k) {
-    case 'skip5': fx('rule fx-skip', `<span class="chev">»</span><span class="chev" style="animation-delay:.15s">»</span>${B('5飛ばし', '次の人を飛ばします')}`, 2900); SFX.play('whoosh'); break;
-    case 'rev9': fx('rule fx-rev9', `<span class="ring"></span>${B('9リバース', '順番が逆回りに')}`, 2900); SFX.play('reverse'); break;
-    case 'back11': fx('rule fx-back11', B('11バック', '場が流れるまで強さが逆'), 2900); SFX.play('reverse'); break;
+    case 'skip5': fx('rule fx-skip', `<span class="chev">»</span><span class="chev" style="animation-delay:.15s">»</span>${B('5飛ばし')}`, 2900); SFX.play('whoosh'); break;
+    case 'rev9': fx('rule fx-rev9', `<span class="ring"></span>${B('9リバース')}`, 2900); SFX.play('reverse'); break;
+    case 'back11': fx('rule fx-back11', `<span class="swap"><span class="sw-a">${cardHtml('C3')}</span><span class="sw-b">${cardHtml('S15')}</span></span>${B('11バック')}`, 2900); SFX.play('reverse'); break;
     case 'give7': fx('rule fx-give', `<span class="flycard">${I.back()}</span>${B('7渡し')}`, 2900); SFX.play('deal'); break;
     case 'drop10': fx('rule fx-drop', `<span class="fallcard" style="left:42%">${I.back()}</span><span class="fallcard" style="left:52%;--rot:-140deg;animation-delay:.12s">${I.back()}</span>${B('10捨て')}`, 2900); SFX.play('drop'); break;
-    case 'spade3': fx('rule fx-spade', `${I.suit('S', 'bigsuit')}${B('スペ3返し', 'ジョーカー撃破')}`, 3000); SFX.play('stamp'); setTimeout(shake, 120); break;
-    case 'storm': { let h = ''; for (let i = 0; i < 90; i++) h += `<i style="top:${Math.random() * 100}%;--t:${1.2 + Math.random() * 1.1}s;--d:${Math.random() * 0.9}s"></i>`; fx('rule fx-storm', h + B('砂嵐', '3の3枚で場が流れます'), 3100); SFX.play('storm'); break; }
+    case 'spade3': fx('rule fx-spade', `${I.suit('S', 'bigsuit')}${B('スペ3返し')}`, 3000); SFX.play('stamp'); setTimeout(shake, 120); break;
+    case 'storm': { let h = ''; for (let i = 0; i < 90; i++) h += `<i style="top:${Math.random() * 100}%;--t:${1.2 + Math.random() * 1.1}s;--d:${Math.random() * 0.9}s"></i>`; fx('rule fx-storm', h + B('砂嵐'), 3100); SFX.play('storm'); break; }
     case 'foul': fx('rule fx-foul', '<div class="stampbig">反則</div>', 3200); SFX.play('foul'); setTimeout(shake, 150); break;
   }
 }
