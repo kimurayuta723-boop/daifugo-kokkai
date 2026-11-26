@@ -1,0 +1,2620 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4a101a">
+<title>大富豪国会</title>
+<style>
+/* 方針:議場の臙脂と金、木の卓、生成りの法律文書。強い色は「権威(金)」と「判(朱)」だけに使う */
+:root{
+  --bg:#5a1521; --bg2:#4a101a; --fg:#f3ead6; --sub:#d0bda0; --rule:#7d3442; --gold:#cfab5c; --gold2:#e8d39b;
+  --doc:#f4ecda; --docink:#1f1a15; --docsub:#6e6455; --docrule:#d9cdb5;
+  --table:#3b2418; --tableline:#cfab5c;
+  --shu:#c9451f; --suitred:#ad2a20; --cardface:#fffdf7;
+  --acc:var(--gold); --pp:var(--bg);
+  --sans:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Meiryo",sans-serif;
+  --serif:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP","Noto Serif CJK JP",serif;
+  --num:"Avenir Next","Helvetica Neue","Arial",var(--sans);
+  --damask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Cpath d='M18 2l16 16-16 16L2 18z' fill='none' stroke='%23681c29' stroke-width='1'/%3E%3Ccircle cx='18' cy='18' r='2' fill='%23681c29'/%3E%3C/svg%3E");
+}
+/* 革命中:議場が暗転し、金が朱に変わる */
+body.rev{--bg:#171412;--bg2:#100e0c;--fg:#f3ead6;--sub:#a99c88;--rule:#3c3631;--gold:#d9562d;--gold2:#f08a5f;--table:#241a14;--tableline:#d9562d;
+  --damask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Cpath d='M18 2l16 16-16 16L2 18z' fill='none' stroke='%23262120' stroke-width='1'/%3E%3C/svg%3E")}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg) var(--damask);color:var(--fg);font-family:var(--sans);letter-spacing:.04em;line-height:1.75;
+  font-feature-settings:"palt" 1;-webkit-font-smoothing:antialiased;transition:background-color .7s,color .7s;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;letter-spacing:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
+.sub{color:var(--sub)}
+.small{font-size:.82em}
+
+/* 挿絵:線は大きさによらず同じ太さ。差し色は場所に応じて金か朱 */
+.ill{display:block;stroke-width:var(--sw,2px)}
+.ill *{vector-effect:non-scaling-stroke}
+.ill .a{fill:var(--acc)} .ill .as{stroke:var(--acc)} .ill .k{fill:currentColor;stroke:none} .ill .pp{fill:var(--pp)}
+.doc{--acc:var(--shu);--pp:var(--doc);background:var(--doc);color:var(--docink)}
+.doc .sub{color:var(--docsub)}
+.suit{display:block}
+
+/* ボタン:主な操作は金、それ以外は線だけ */
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 1.5em;border:1.5px solid var(--gold);color:var(--fg);border-radius:999px;font-weight:600}
+.btn.main{background:var(--gold);color:#2a1a10;border-color:var(--gold)}
+.btn:disabled{opacity:.32;cursor:default}
+.link{text-decoration:underline;text-underline-offset:.3em;color:var(--sub);padding:8px}
+.iconbtn{display:inline-flex;align-items:center;gap:.4em;font-size:13px;color:var(--sub);padding:6px 10px;border:1px solid var(--rule);border-radius:99px}
+.iconbtn .ill{width:16px;height:16px;--sw:1.5px}
+
+/* ロゴ */
+.logo{display:inline-flex;align-items:center;gap:.3em;font-family:var(--serif);font-weight:700;letter-spacing:.16em;line-height:1;color:var(--gold2)}
+.logo .seal{width:1.2em;height:1.2em;transform:rotate(-7deg);flex:none}
+.logo .seal rect,.logo .seal text{stroke:var(--gold2)} .logo .seal text{fill:var(--gold2);stroke:none}
+.logo.lg{font-size:40px}
+.logo.sm{font-size:1em;letter-spacing:.12em}
+
+/* ---------- 札 ---------- */
+.card{position:relative;display:block;flex:none;width:var(--cw,56px);height:calc(var(--cw,56px)*1.4);background:var(--cardface);--acc:var(--shu);--pp:var(--cardface);
+  border:1px solid #2b2a27;border-radius:calc(var(--cw,56px)*.09);color:#1f1e1c;font-family:var(--num);letter-spacing:0;text-align:left}
+.card.red{color:var(--suitred)}
+.card .ix{position:absolute;display:flex;flex-direction:column;align-items:center;gap:.1em;line-height:1;font-weight:700;font-size:calc(var(--cw,56px)*.23)}
+.card .ix.tl{left:7%;top:5%}
+.card .ix.br{right:7%;bottom:5%;transform:rotate(180deg)}
+.card .ix .suit{width:.74em;height:.74em}
+.card .ctr{position:absolute;inset:24% 20%;display:flex;align-items:center;justify-content:center}
+.card .ctr .suit{width:70%;height:auto}
+.card .ctr.ace .suit{width:96%}
+.card .ctr.pic{inset:15% 15% 13%;border:1px solid currentColor;border-radius:3px;overflow:hidden;--sw:1.3px}
+.card .ctr.pic .ill{width:100%;height:100%;margin-top:6%}
+.card.joker .ctr.pic{border:0;inset:16% 12% 10%}
+.card .jx{writing-mode:vertical-rl;font-size:.52em;letter-spacing:.12em;font-weight:700;color:var(--shu)}
+.card.sel{border-color:var(--gold);outline:2px solid var(--gold);outline-offset:-1px}
+.card.fate::before{content:"当たり";position:absolute;left:50%;top:-1.9em;transform:translateX(-50%);white-space:nowrap;font-family:var(--sans);
+  font-size:calc(var(--cw,56px)*.2);color:#2a1a10;background:var(--gold);padding:.15em .6em;border-radius:99px;font-weight:700}
+.card.strong{animation:glint 1.2s ease-out}
+@keyframes glint{0%{outline:3px solid var(--gold2);outline-offset:4px}100%{outline:3px solid transparent;outline-offset:14px}}
+
+/* 裏向きの札の束 */
+.backs{position:relative;display:inline-block;height:calc(var(--bw,16px)*1.4);width:calc(var(--bw,16px) + (var(--k) - 1)*var(--bs,4px));flex:none}
+.backs span{position:absolute;bottom:0;left:calc(var(--i)*var(--bs,4px));width:var(--bw,16px);transform-origin:50% 120%;transform:rotate(calc((var(--i) - (var(--k) - 1)/2)*1.6deg))}
+.back{display:block;width:100%;height:auto}
+
+/* 場の札の山 */
+.pile{position:relative;display:grid;place-items:center;width:100%;height:calc(var(--cw)*1.85)}
+.pile .play{grid-area:1/1;display:flex;transform:translate(var(--x),var(--y)) rotate(var(--r))}
+.pile .card{width:var(--cw);height:calc(var(--cw)*1.4)}
+.pile .play .card+.card{margin-left:calc(var(--cw)*-.36)}
+.pile .play.under .card{filter:brightness(.9)}
+.pile .play.toss{animation:toss .42s cubic-bezier(.2,.85,.25,1)}
+@keyframes toss{from{transform:translate(var(--x),60%) rotate(calc(var(--r) + 14deg)) scale(1.12);opacity:0}to{transform:translate(var(--x),var(--y)) rotate(var(--r));opacity:1}}
+.pile.empty::before{content:"";grid-area:1/1;width:var(--cw);height:calc(var(--cw)*1.4);border:1.5px dashed var(--tableline);opacity:.5;border-radius:calc(var(--cw)*.09)}
+.pile.empty span{grid-area:1/1;font-family:var(--serif);color:var(--sub);font-size:.9em;letter-spacing:.14em;writing-mode:vertical-rl}
+
+.chips{display:inline-flex;flex-wrap:wrap;gap:.5em}
+.chip{display:inline-flex;align-items:center;gap:.25em;border:1px solid var(--gold);color:var(--gold2);border-radius:99px;padding:.15em .9em;font-size:.9em;white-space:nowrap}
+.chip.on{background:var(--gold);color:#2a1a10}
+.chip .suit{width:.95em;height:.95em}
+.chip .suit.red{color:#ff8a7a}
+.rank{display:inline-flex;align-items:center;gap:.3em;white-space:nowrap}
+.rank .ill{width:1.35em;height:1.35em;--sw:1.6px}
+
+/* ---------- 入口 ---------- */
+.entry{max-width:440px;margin:0 auto;padding:7vh 28px 48px}
+.entry h1{margin:8px 0 0;text-align:center}
+.entry .lead{margin:18px 0 36px;color:var(--sub);font-size:15px;line-height:1.95;text-align:center}
+.entry .stack{display:grid;gap:12px}
+.entry .note{margin-top:36px;font-size:13px;color:var(--sub);line-height:1.95}
+.entry-head{margin-bottom:44px;font-size:20px}
+.entry-h{font-family:var(--serif);font-size:26px;font-weight:700;letter-spacing:.1em;color:var(--gold2)}
+.hero-fan{position:relative;height:150px;--cw:76px;margin:0 auto 26px;width:100%}
+.hero-fan .card{position:absolute;left:50%;bottom:0;transform-origin:50% 140%;transform:translateX(-50%) rotate(calc(var(--i)*12deg))}
+.crest{display:flex;align-items:center;justify-content:center;gap:14px;color:var(--gold);margin-bottom:6px}
+.crest::before,.crest::after{content:"";height:1px;width:60px;background:var(--gold)}
+.crest span{font-family:var(--serif);font-size:12px;letter-spacing:.5em}
+.field{display:grid;gap:6px;margin-bottom:22px}
+.field label{font-size:13px;color:var(--sub)}
+.field input{border:0;border-bottom:1.5px solid var(--gold);padding:8px 2px;font-size:22px;outline:none;border-radius:0}
+.field input.code{letter-spacing:.4em;text-transform:uppercase;font-family:var(--num)}
+.err{color:#ff9a84;font-size:14px;margin-bottom:16px}
+
+/* ---------- テレビ ---------- */
+.tv,.sheet{height:100vh;display:grid;grid-template-columns:1fr 29vw;font-size:1.2vw;overflow:hidden}
+.sheet.full{grid-template-columns:1fr}
+.tv-main{display:grid;grid-template-rows:auto 1fr auto auto;padding:2.6vw 3.2vw 2.2vw;min-width:0;min-height:0}
+.tv-side{padding:0 0 2vw;display:flex;flex-direction:column;min-height:0}
+.tv-side .side-in{padding:0 2.4vw;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.tv-head{display:flex;align-items:center;gap:1.6em}
+.tv-head .round{font-family:var(--serif);font-size:2em;font-weight:700;letter-spacing:.12em;color:var(--gold2)}
+.table{position:relative;margin:1.4vw 0 1vw;border:3px double var(--tableline);border-radius:1.2vw;background:var(--table);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;padding:1.4vw;transition:background-color .7s}
+.table::before{content:"";position:absolute;inset:.6vw;border:1px solid var(--tableline);opacity:.35;border-radius:.8vw;pointer-events:none}
+.table .who{font-size:1.1em;color:var(--sub);margin-top:.4em}
+.tv-say{font-size:1.45em;font-weight:700;min-height:2em;text-align:center;letter-spacing:.06em}
+.tv-players{display:grid;grid-template-columns:repeat(var(--n),1fr);border-top:1px solid var(--rule);margin-top:1vw}
+.tv-p{padding:1vw .8vw 0;border-top:3px solid transparent;margin-top:-2px;min-width:0;transition:border-color .3s}
+.tv-p.turn{border-top-color:var(--gold)}
+.tv-p.turn .nm{color:var(--gold2)}
+.tv-p .nm{font-weight:700;font-size:1.15em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv-p .tt{color:var(--sub);font-size:.92em;min-height:1.7em}
+.tv-p .hold{display:flex;align-items:flex-end;gap:.6em;height:3.4vw;margin:.4vw 0 .2vw;--bw:1.7vw;--bs:.42vw;white-space:nowrap}
+.tv-p .ct{font-family:var(--num);font-size:1.9em;font-weight:700;line-height:1;letter-spacing:0}
+.tv-p .ct small{font-family:var(--sans);font-size:.42em;font-weight:400;color:var(--sub);margin-left:.2em}
+.tv-p .st{font-size:.95em;color:var(--gold2);min-height:1.7em;font-weight:700}
+.tv-p.out .nm,.tv-p.out .ct{color:var(--sub)}
+
+/* 法律(条文):生成りの紙に刷った文書 */
+.tv-side.doc{border-left:6px solid var(--gold)}
+.laws-h{display:flex;justify-content:space-between;align-items:baseline;background:var(--bg2);color:var(--gold2);font-family:var(--serif);font-size:1.4em;font-weight:700;letter-spacing:.3em;padding:2.2vw 2.4vw 1.2vw;margin-bottom:.4em;border-bottom:3px double var(--gold)}
+.laws-h span{font-family:var(--num);font-size:.7em;letter-spacing:0;color:var(--gold);font-weight:400}
+.law{display:grid;grid-template-columns:3.4vw 1fr;gap:1.1vw;padding:1.1em 0;border-bottom:1px solid var(--docrule);font-family:var(--serif)}
+.law-art .ill{width:3.4vw;height:3.4vw;--sw:1.8px}
+.law .no{font-size:.88em;color:var(--docsub);letter-spacing:.2em}
+.law .nm{font-size:1.22em;font-weight:700;letter-spacing:.06em;line-height:1.45;margin:.1em 0 .3em}
+.law .tx{font-size:.96em;line-height:1.85}
+.law.new{animation:lawin .8s cubic-bezier(.2,.85,.25,1)}
+@keyframes lawin{from{transform:translateX(30%);opacity:0}}
+.laws-none{font-family:var(--serif);color:var(--docsub);padding:2em 0;line-height:2}
+.laws-none .ill{width:5vw;height:5vw;margin-bottom:.8em;color:var(--docink);--sw:1.8px}
+.howto{list-style:none;counter-reset:h;font-family:var(--serif)}
+.howto li{counter-increment:h;display:grid;grid-template-columns:2em 1fr;padding:1em 0;border-bottom:1px solid var(--docrule);line-height:1.9}
+.howto li::before{content:counter(h,cjk-ideographic);color:var(--shu);font-weight:700}
+.tv-side .foot{margin-top:auto;padding:1.2em 2.4vw 0;display:flex;justify-content:space-between;align-items:center;font-size:.92em;color:var(--docsub)}
+.tv-side .foot .logo{color:var(--docink)} .tv-side .foot .logo .seal rect{stroke:var(--shu)} .tv-side .foot .logo .seal text{fill:var(--shu)}
+.tv-side .foot b{font-family:var(--num);color:var(--docink);letter-spacing:.16em}
+
+/* テレビの全面表示 */
+.sheet-main{padding:3.4vw 4.2vw 2.6vw;display:flex;flex-direction:column;min-width:0;min-height:0}
+.eyebrow{font-size:1em;color:var(--gold);letter-spacing:.24em;font-family:var(--serif)}
+.big{font-family:var(--serif);font-size:3em;font-weight:700;letter-spacing:.08em;line-height:1.35;margin:.15em 0 .5em;color:var(--fg)}
+.lobby-top{display:grid;grid-template-columns:1fr 24vw;align-items:end;gap:2vw}
+.lobby-top .logo{font-size:2.2em}
+.lobby .hero-fan{--cw:6.6vw;height:13vw;margin:0}
+.codebox{font-family:var(--num);font-size:7em;font-weight:700;letter-spacing:.16em;line-height:1.05;color:var(--gold2)}
+.url{font-family:var(--num);font-size:1.1em;margin-top:.8em;color:var(--sub);word-break:break-all;letter-spacing:.02em}
+.plist{display:grid;grid-template-columns:repeat(3,1fr);gap:0 2.4em;margin-top:2em}
+.plist div{padding:.7em 0;border-bottom:1px solid var(--rule);font-size:1.25em;font-weight:700}
+.plist .cpu{color:var(--sub);font-weight:400}
+.actions{display:flex;gap:1em;margin-top:auto;padding-top:1.8em;align-items:center;font-size:.85em}
+.actions .btn{min-height:3.5em;padding:0 2em}
+.actions .push{margin-left:auto}
+.rtable{width:100%;border-collapse:collapse;margin-top:.6em;font-size:1.3em}
+.rtable td{padding:.7em .2em;border-bottom:1px solid var(--rule)}
+.rtable tr:first-child td{color:var(--gold2)}
+.rtable .pos{font-family:var(--num);width:2.6em;color:var(--sub)}
+.rtable .ttl{font-weight:700;width:8em}
+.rtable .chg{color:var(--sub);text-align:right;font-size:.82em}
+.rtable tr{animation:rowin .5s both}
+@keyframes rowin{from{opacity:0;transform:translateY(.6em)}}
+
+/* 法律案:紙の文書を議場に並べる */
+.bills{display:grid;grid-template-columns:repeat(var(--n,2),1fr);gap:2.4vw;margin-top:1em}
+.bill{position:relative;border-radius:.5vw;padding:1.6vw 1.6vw 1.8vw;font-family:var(--serif);border-top:6px solid var(--gold);animation:billin .55s both cubic-bezier(.2,.85,.25,1)}
+.bill:nth-child(2){animation-delay:.12s}.bill:nth-child(3){animation-delay:.24s}
+@keyframes billin{from{opacity:0;transform:translateY(18px) rotate(-1.5deg)}}
+.bill-art .ill{width:4.6vw;height:4.6vw;--sw:2px;margin-bottom:.8vw}
+.bill .no{color:var(--docsub);letter-spacing:.2em;font-size:.9em}
+.bill .nm{font-size:1.8em;font-weight:700;letter-spacing:.05em;line-height:1.4;margin:.15em 0 .45em}
+.bill .tx{font-size:1.1em;line-height:1.95}
+.bill.out{opacity:.55;filter:grayscale(.6)}
+.bill .cnt{font-family:var(--num);font-size:2.6em;font-weight:700;margin-top:.5em;line-height:1.1}
+.bill .cnt small{font-family:var(--sans);font-size:.4em;margin-left:.2em}
+.vote-head{display:flex;justify-content:space-between;align-items:flex-end;gap:2em}
+.timer{font-family:var(--num);font-size:5.4em;font-weight:700;letter-spacing:.02em;line-height:1;color:var(--gold2)}
+.timer.hurry{color:#ff9a84;animation:beat 1s infinite}
+@keyframes beat{50%{transform:scale(1.06)}}
+.voted{margin-top:1.2em;color:var(--sub)}
+.stamp{position:absolute;right:1.4vw;top:1.4vw;border:2.5px solid var(--shu);color:var(--shu);font-family:var(--serif);font-weight:700;background:rgba(244,236,218,.6);
+  font-size:1.6em;letter-spacing:.3em;padding:.12em .2em .12em .5em;transform:rotate(-9deg);border-radius:4px;animation:stamp .4s cubic-bezier(.3,1.6,.5,1) both}
+.stamp.ink{border-color:var(--docink);color:var(--docink);transform:rotate(6deg)}
+.stamp.late{animation-delay:.7s}
+@keyframes stamp{from{transform:rotate(-9deg) scale(2.2);opacity:0}}
+
+/* 本性診断 */
+.diag-one{display:grid;grid-template-columns:1fr 26vw;gap:3vw;align-items:center;flex:1;min-height:0}
+.diag-who{font-family:var(--serif);font-size:1.9em;margin-top:.6em}
+.diag-type{font-family:var(--serif);font-size:4.8em;font-weight:700;letter-spacing:.1em;line-height:1.25;color:var(--gold2)}
+.diag-sub{font-size:1.45em;margin:.3em 0 1.2em;font-weight:700}
+.diag-desc{font-family:var(--serif);font-size:1.4em;line-height:2;max-width:30em}
+.diag-moment{margin-top:1.6em;padding-top:1em;border-top:1px solid var(--rule);font-size:1.25em}
+.diag-moment .k{color:var(--gold);font-size:.78em;display:block}
+.nums{display:grid;grid-template-columns:repeat(4,auto);justify-content:start;gap:0 2.6em;margin-top:1.4em}
+.nums .k{font-size:.88em;color:var(--sub)} .nums .v{font-family:var(--num);font-size:1.6em;font-weight:700}
+.diag-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2.2em 2.6em;margin-top:1.2em}
+.dg{display:grid;grid-template-columns:6vw 1fr;gap:1.2vw;align-items:center;animation:rowin .5s both}
+.dg .ill{width:6vw;height:6vw;--sw:2px;color:var(--gold2)}
+.dg .nm{color:var(--sub)} .dg .ty{font-family:var(--serif);font-size:1.9em;font-weight:700;letter-spacing:.06em;line-height:1.3}
+.type-card{position:relative;width:21vw;aspect-ratio:5/7;justify-self:center;background:var(--cardface);color:#1f1e1c;border:1.5px solid #2b2a27;border-radius:1.3vw;--acc:var(--shu);--pp:var(--cardface);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.2vw;transform:rotate(3deg);animation:flip .9s cubic-bezier(.2,.85,.25,1) both}
+.type-card::before{content:"";position:absolute;inset:.9vw;border:1px solid var(--shu);border-radius:.7vw}
+.type-card .ill{width:62%;height:auto;--sw:3px}
+.type-card .tc-nm{font-family:var(--serif);font-weight:700;font-size:1.5em;letter-spacing:.2em}
+.type-card .tc-ix{position:absolute;font-family:var(--serif);font-weight:700;font-size:1.9em;line-height:1;color:var(--shu)}
+.type-card .tc-ix.tl{left:1.5vw;top:1.4vw}.type-card .tc-ix.br{right:1.5vw;bottom:1.4vw;transform:rotate(180deg)}
+@keyframes flip{0%{transform:perspective(900px) rotateY(180deg) rotate(3deg);opacity:0}40%{opacity:1}100%{transform:perspective(900px) rotateY(0) rotate(3deg)}}
+
+/* 設定 */
+.cfg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 2.2vw;margin-top:.6em;overflow:auto;min-height:0}
+.cfg h3{font-family:var(--serif);font-size:1.25em;color:var(--gold2);letter-spacing:.2em;margin:.8em 0 .3em;padding-bottom:.4em;border-bottom:1px solid var(--gold)}
+.tg{display:grid;grid-template-columns:auto 1fr auto;gap:.9em;align-items:center;width:100%;text-align:left;padding:.65em 0;border-bottom:1px solid var(--rule)}
+.tg .ill{width:2.2em;height:2.2em;--sw:1.6px}
+.tg .nm{font-weight:700;display:block}
+.tg .tx{display:block;font-size:.82em;color:var(--sub);line-height:1.6}
+.tg.off .nm,.tg.off .ill{opacity:.45}
+.tg.na{cursor:default}
+.sw{position:relative;width:2.9em;height:1.6em;border-radius:99px;border:1.5px solid var(--gold);transition:background .2s}
+.sw::after{content:"";position:absolute;top:.14em;left:.16em;width:1.1em;height:1.1em;border-radius:50%;background:var(--gold);transition:transform .2s}
+.tg.on .sw{background:var(--gold)} .tg.on .sw::after{background:var(--bg);transform:translateX(1.26em)}
+.seg{display:inline-flex;border:1.5px solid var(--gold);border-radius:99px;overflow:hidden}
+.seg button{padding:.25em .9em;font-family:var(--num);font-weight:700}
+.seg button.on{background:var(--gold);color:#2a1a10}
+
+/* ---------- スマホ ---------- */
+.ph{max-width:520px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;font-size:15px}
+.ph-top{padding:12px 16px 10px;background:var(--bg2);border-bottom:2px solid var(--gold);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ph-top .me{font-weight:700;display:flex;align-items:center;gap:.8em}
+.ph-top .me .rank{font-weight:400;color:var(--gold2);font-size:13px}
+.ph-top .rd{font-size:13px;color:var(--sub);white-space:nowrap;display:flex;align-items:center;gap:8px}
+.ph-body{flex:1;padding:14px 14px 0;display:flex;flex-direction:column}
+.ph-table{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;background:var(--table);border:3px double var(--tableline);border-radius:12px;padding:8px 14px 8px 4px}
+.ph-table .pile{width:min(46vw,220px);height:calc(var(--cw)*1.6)}
+.ph-table .pile.empty span{display:none}
+.ph-table .info{font-size:13px;color:var(--sub);line-height:1.7}
+.ph-table .info b{color:var(--fg)}
+.ph-table .chips{display:flex;margin-top:6px;gap:4px}
+.ph-table .chip{font-size:11.5px;padding:.05em .7em}
+.ph-status{margin:14px 4px 2px;font-size:17px;font-weight:700;min-height:1.75em}
+.ph-status.mine{color:var(--gold2)}
+.ph-note{font-size:13px;color:var(--sub);min-height:1.7em;margin:0 4px}
+.ph-players{display:grid;grid-template-columns:repeat(2,1fr);gap:0 14px;margin:10px 4px 0;font-size:13px}
+.ph-players div{padding:7px 0;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:8px;min-width:0;--bw:15px;--bs:4px}
+.ph-players .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ph-players .turn .n{color:var(--gold2);font-weight:700}
+.ph-players .out{color:var(--sub)}
+.ph-players .ct{font-family:var(--num);font-weight:700;min-width:2em;text-align:right}
+.lawbar{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-size:12.5px;padding:9px 4px;border-bottom:1px solid var(--rule);color:var(--sub);margin-top:8px;overflow:hidden;white-space:nowrap}
+.lawbar .lb{display:inline-flex;align-items:center;gap:4px;color:var(--fg);font-family:var(--serif);font-weight:700}
+.lawbar .lb .ill{width:20px;height:20px;--sw:1.4px}
+.lawbar .lb.none{font-weight:400;color:var(--sub)}
+.lawbar .more{margin-left:auto;text-decoration:underline;text-underline-offset:.3em}
+.lawlist{margin-top:10px}
+.lawlist .doc{border-radius:10px;padding:2px 14px;border-top:5px solid var(--gold)}
+.lawlist .law{grid-template-columns:40px 1fr;gap:12px;padding:12px 0;font-size:14px}
+.lawlist .law:last-child{border-bottom:0}
+.lawlist .law-art .ill{width:40px;height:40px}
+.lawlist .laws-none .ill{width:48px;height:48px}
+
+/* 手札:扇形に持つ */
+.hand-area{margin-top:auto;padding:16px 0 26px}
+.fan{position:relative;height:calc(var(--cw)*1.4 + 30px)}
+.fan .card{position:absolute;bottom:4px;transform-origin:50% 130%;transform:translateY(calc(var(--y) + var(--lift,0px))) rotate(var(--r));transition:transform .18s ease;touch-action:none;user-select:none;-webkit-user-select:none}
+.fan .card.sel{transform:translateY(calc(var(--y) - 26px + var(--lift,0px))) rotate(var(--r))}
+.fan.armed .card.sel{outline-width:4px}
+.fan.deal .card{animation:dealin .5s both cubic-bezier(.2,.85,.25,1);animation-delay:calc(var(--d) * 45ms)}
+@keyframes dealin{from{transform:translate(40vw,-60vh) rotate(40deg);opacity:0}}
+.fan-hint{text-align:center;font-size:12px;color:var(--sub);margin:0 0 6px}
+.ph-bar{position:sticky;bottom:0;background:var(--bg2);display:grid;grid-template-columns:1fr 2fr;gap:10px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));border-top:2px solid var(--gold)}
+.ph-bar.one{grid-template-columns:1fr}
+.ph-bar.col{grid-template-columns:1fr;gap:8px}
+.panel{position:relative;padding:8px 4px 18px}
+.panel h2{font-family:var(--serif);font-size:22px;font-weight:700;letter-spacing:.08em;line-height:1.5;margin-bottom:8px;color:var(--gold2)}
+.panel p{color:var(--sub);line-height:1.9}
+.panel .hero-fan{--cw:62px;height:120px;margin-bottom:22px}
+.opts{display:grid;gap:10px;margin-top:18px}
+.opt{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;border-radius:10px;padding:14px;text-align:left;font-family:var(--serif);border:2px solid transparent;border-top:5px solid var(--gold)}
+.opt .nm{display:block;font-weight:700;font-size:17px;letter-spacing:.04em}
+.opt .tx{display:block;font-size:13.5px;color:var(--docsub);line-height:1.8;margin-top:2px}
+.opt.on{border-color:var(--gold);outline:3px solid var(--gold2);outline-offset:-1px}
+.opt-art .ill{width:44px;height:44px;--sw:1.6px}
+.opt-art.big .ill{width:64px;height:64px;margin-bottom:10px;color:var(--gold2)}
+.grid-opts{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:18px}
+.grid-opts.suits{grid-template-columns:repeat(4,1fr)}
+.grid-opts .opt{display:flex;justify-content:center;align-items:center;font-family:var(--num);font-size:21px;font-weight:700;padding:12px 0;border-radius:8px;border-top-width:2px}
+.grid-opts .opt .suit{width:26px;height:26px}
+.grid-opts .opt.r{color:var(--suitred)}
+.vote-row{display:flex;justify-content:space-between;align-items:baseline}
+.ph-timer{font-family:var(--num);font-size:32px;font-weight:700;color:var(--gold2)}
+.ph-timer.hurry{color:#ff9a84}
+.mini-table{width:100%;border-collapse:collapse;margin-top:12px}
+.mini-table td{padding:10px 0;border-bottom:1px solid var(--rule)}
+.mini-table td:last-child{text-align:right;color:var(--sub)}
+.mini-table .rank{justify-content:flex-end}
+.enacted{padding-top:16px}
+.enacted .stamp{right:4px;top:12px;font-size:20px}
+.ph-diag .type-card{width:150px;border-radius:12px;margin:6px 0 18px 6px;font-size:12px;gap:8px}
+.ph-diag .type-card::before{inset:7px;border-radius:7px}
+.ph-diag .type-card .ill{--sw:2px}
+.ph-diag .type-card .tc-ix{font-size:18px}.ph-diag .type-card .tc-ix.tl{left:12px;top:11px}.ph-diag .type-card .tc-ix.br{right:12px;bottom:11px}
+.ph-diag .ty{font-family:var(--serif);font-size:34px;font-weight:700;letter-spacing:.1em;line-height:1.4;margin-top:4px;color:var(--gold2)}
+.ph-diag .sb{font-weight:700;margin-bottom:14px}
+.ph-diag .ds{font-family:var(--serif);line-height:2}
+.ph-diag .mo{margin-top:18px;padding-top:12px;border-top:1px solid var(--rule)}
+.ph-diag .mo .k{display:block;font-size:12px;color:var(--gold)}
+.ph .cfg{grid-template-columns:1fr;font-size:14px}
+
+/* お知らせの帯 */
+.flash{position:fixed;left:0;right:0;pointer-events:none;opacity:0;transform:scaleY(.6);transition:opacity .22s,transform .3s cubic-bezier(.2,1.4,.4,1);z-index:50}
+.flash.on{opacity:1;transform:none}
+.flash span{display:flex;align-items:center;justify-content:center;gap:.7em;background:var(--bg2);color:var(--gold2);border-top:2px solid var(--gold);border-bottom:2px solid var(--gold)}
+.flash em{font-style:normal;font-family:var(--serif);font-weight:700;letter-spacing:.12em}
+.flash .ill{width:1.9em;height:1.9em;flex:none}
+.is-tv .flash{top:40%;font-size:2.5vw}
+.is-tv .flash span{padding:.9em 0}
+.is-ph .flash{top:0;font-size:15px}
+.is-ph .flash span{justify-content:flex-start;padding:12px 18px;border-top:0}
+
+/* ---------- 演出(全画面) ---------- */
+.fx{position:fixed;inset:0;z-index:80;pointer-events:none;display:grid;place-items:center;overflow:hidden}
+/* 開会:臙脂の幕が左右に開く */
+.fx-curtain::before,.fx-curtain::after{content:"";position:absolute;top:0;bottom:0;width:51%;background:#5a1521 var(--damask);border:0 solid var(--gold)}
+.fx-curtain::before{left:0;border-right-width:6px;animation:curtainL 1.6s 1.1s cubic-bezier(.6,0,.3,1) forwards}
+.fx-curtain::after{right:0;border-left-width:6px;animation:curtainR 1.6s 1.1s cubic-bezier(.6,0,.3,1) forwards}
+@keyframes curtainL{to{transform:translateX(-100%)}}
+@keyframes curtainR{to{transform:translateX(100%)}}
+.fx-curtain .fx-title{position:relative;z-index:2;text-align:center;color:var(--gold2);animation:fadeout .5s 1.0s forwards}
+.fx-title .ill{width:7vw;height:7vw;margin:0 auto 1vw;color:var(--gold2);--sw:2.5px}
+.fx-title b{display:block;font-family:var(--serif);font-size:6vw;letter-spacing:.3em;font-weight:700;line-height:1.3}
+.fx-title small{display:block;font-size:1.6vw;letter-spacing:.4em;color:var(--gold)}
+@keyframes fadeout{to{opacity:0}}
+/* 革命:画面が裂けるように暗転し、大きな「革命」 */
+.fx-rev{background:#111;animation:revbg 2.6s forwards}
+@keyframes revbg{0%{background:#fff}8%{background:#111}80%{opacity:1}100%{opacity:0}}
+.fx-rev .fx-big{font-family:var(--serif);font-weight:900;color:#e2542b;font-size:18vw;letter-spacing:.1em;line-height:1;animation:revtx 2.6s cubic-bezier(.2,1.2,.3,1) forwards;text-align:center}
+.is-ph .fx-rev .fx-big{font-size:28vw}
+.fx-rev .fx-big small{display:block;font-size:.1em;letter-spacing:.2em;color:#f3ead6;margin-top:.9em;font-weight:700;padding:0 4vw}
+.sheet .cfg .tx.lt{display:none}
+.sheet .cfg .tg .tx:not(.why){display:none}
+.sheet .cfg .tg .tx.why{font-size:.76em;line-height:1.5}
+.sheet .cfg .tg{padding:.32em 0;font-size:.95em}
+.sheet .cfg .sw{font-size:.85em}
+.sheet .cfg .seg{font-size:.85em}
+.sheet .cfg .tg .ill{width:1.9em;height:1.9em}
+.seg{flex:none}
+.sheet .cfg .tg>span:nth-child(2){min-width:0}
+.sheet .cfg h3{margin-top:.2em}
+.sheet .cfg .tg{padding:.55em 0}
+@keyframes revtx{0%{transform:scale(2.4) rotate(-6deg);opacity:0}14%{transform:scale(1) rotate(-2deg);opacity:1}85%{transform:scale(1.05) rotate(-2deg);opacity:1}100%{transform:scale(1.1);opacity:0}}
+.fx-rev .fx-flag{position:absolute;left:4vw;bottom:-2vw;width:18vw;color:#e2542b;--acc:#e2542b;--pp:#111;animation:flagup 2.6s forwards}
+.fx-rev .fx-flag .ill{width:100%;height:auto;--sw:4px}
+@keyframes flagup{0%{transform:translateY(100%)}20%{transform:translateY(0) rotate(-4deg)}85%{opacity:1}100%{opacity:0}}
+/* 8切り:卓を斜めに裂く金の線 */
+.fx-cut::before{content:"";position:absolute;left:-10%;right:-10%;top:50%;height:6px;background:var(--gold2);transform:rotate(-18deg) scaleX(0);transform-origin:left;animation:slash .55s cubic-bezier(.7,0,.3,1) forwards}
+@keyframes slash{60%{transform:rotate(-18deg) scaleX(1);opacity:1}100%{transform:rotate(-18deg) scaleX(1);opacity:0}}
+.fx-cut b{font-family:var(--serif);font-size:9vw;color:var(--gold2);letter-spacing:.2em;animation:pop 1.2s forwards}
+.is-ph .fx-cut b{font-size:20vw}
+@keyframes pop{0%{transform:scale(.6);opacity:0}25%{transform:scale(1);opacity:1}75%{opacity:1}100%{opacity:0;transform:scale(1.08)}}
+/* 紙吹雪(金と生成り) */
+.fx-confetti i{position:absolute;top:-4vh;width:.9vw;height:1.4vw;background:var(--gold2);animation:fall var(--t) var(--d) linear forwards;opacity:.95}
+.fx-confetti i:nth-child(3n){background:#f4ecda}.fx-confetti i:nth-child(5n){background:var(--gold)}
+.is-ph .fx-confetti i{width:7px;height:11px}
+@keyframes fall{to{transform:translate(var(--x),110vh) rotate(var(--rot))}}
+/* 冠が降りてくる(大富豪が決まったとき) */
+.fx-crown .ill{width:12vw;height:12vw;color:var(--gold2);--acc:var(--gold);--sw:3px;animation:crown 2.4s cubic-bezier(.2,1.3,.4,1) forwards}
+.fx-crown b{position:absolute;bottom:22vh;font-family:var(--serif);font-size:3.4vw;color:var(--gold2);letter-spacing:.2em;animation:pop 2.4s forwards}
+.is-ph .fx-crown .ill{width:30vw;height:30vw}.is-ph .fx-crown b{font-size:22px}
+@keyframes crown{0%{transform:translateY(-60vh) rotate(-20deg)}35%{transform:translateY(0) rotate(0)}80%{opacity:1}100%{opacity:0}}
+/* 槌の一打で画面が揺れる */
+.shake{animation:shake .35s}
+@keyframes shake{20%{transform:translate(-6px,3px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-3px,2px)}80%{transform:translate(2px,-1px)}}
+.fx-gavel .ill{width:16vw;height:16vw;color:var(--gold2);--sw:3px;transform-origin:80% 80%;animation:knock 1.5s forwards}
+@keyframes knock{0%{transform:rotate(-40deg);opacity:0}15%{opacity:1}25%{transform:rotate(0)}38%{transform:rotate(-25deg)}50%{transform:rotate(0)}62%{transform:rotate(-25deg)}74%{transform:rotate(0)}90%{opacity:1}100%{opacity:0}}
+
+/* 音の入切(右上) */
+.sound-btn{position:fixed;right:12px;top:10px;z-index:60;font-size:12px;color:var(--sub);border:1px solid var(--rule);border-radius:99px;padding:3px 10px;background:var(--bg2)}
+.is-ph .sound-btn{top:11px;right:auto;left:50%;transform:translateX(-50%)}
+
+/* 試用(1画面にテレビとスマホを並べる) */
+.demo{display:grid;grid-template-columns:1fr auto;gap:16px;padding:16px;height:100vh;background:#2a1a10}
+.demo iframe{border:1px solid #6b4a30;width:100%;height:100%}
+.demo .phones{display:grid;grid-template-columns:repeat(3,330px);gap:12px}
+
+@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* 参加用のQRコード */
+.qrbox{display:flex;flex-direction:column;align-items:center;gap:.8em;color:var(--sub);font-size:.95em;text-align:center}
+.qrbox .qr{width:15vw;height:15vw;border:6px solid var(--gold);border-radius:.6vw;background:#f4ecda}
+.qrbox.ph{margin:4px 0 18px}.qrbox.ph .qr{width:180px;height:180px;border-width:5px;border-radius:8px}
+.fx-round .fx-title{animation:pop 1.8s forwards}
+.offline{position:fixed;left:0;right:0;bottom:0;z-index:90;background:#c9451f;color:#fff;text-align:center;font-weight:700;padding:10px 14px;font-size:14px}
+
+</style>
+<script>
+/* ===== Firebaseの設定 =====
+   Firebaseのコンソールで表示される firebaseConfig の中身をここに貼ります。
+   null のままだと試用モード(同じブラウザのタブ同士だけでつながる)で動きます。 */
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCUzrL7fYIkwI9ZViLuYzEGQnTmeActHL4",
+  authDomain: "bakudan-bakuro.firebaseapp.com",
+  // ばくだん暴露と同じデータベースです。Realtime Databaseの画面上部のURLと違う場合は書き換えてください
+  databaseURL: "https://bakudan-bakuro-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "bakudan-bakuro",
+  storageBucket: "bakudan-bakuro.firebasestorage.app",
+  messagingSenderId: "859840529697",
+  appId: "1:859840529697:web:a3218b9805f55527ce2a60"
+};
+/* ===== 効果音の差し替え(任意) =====
+   録音した音源を使う場合は、名前とファイルの場所を書きます。例:{ fanfare: 'sounds/fanfare.mp3' }
+   名前:card play select shuffle deal gavel knock3 stamp tick turn whoosh out bellVote veto fanfare enacted opening revolution crown drumroll */
+window.SOUND_FILES = {};
+</script>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* 大富豪エンジン:ルール判定・進行・CPU・法律・診断(画面や通信には依存しない) */
+(function (root) {
+'use strict';
+
+const SUITS = ['S', 'H', 'D', 'C'];
+const SUIT_CH = { S: '♠\uFE0E', H: '♥\uFE0E', D: '♦\uFE0E', C: '♣\uFE0E', X: '' };
+const SUIT_NAME = { S: 'スペード', H: 'ハート', D: 'ダイヤ', C: 'クラブ' };
+const RL = { 3: '3', 4: '4', 5: '5', 6: '6', 7: '7', 8: '8', 9: '9', 10: '10', 11: 'J', 12: 'Q', 13: 'K', 14: 'A', 15: '2' };
+const JOKER_V = 100;
+const VOTE_MS = 120000;
+const MAX_LAWS = 3;
+
+const TITLES = {
+  4: ['大富豪', '富豪', '貧民', '大貧民'],
+  5: ['大富豪', '富豪', '平民', '貧民', '大貧民'],
+  6: ['大富豪', '富豪', '平民', '平民', '貧民', '大貧民'],
+};
+
+/* ---------- 法律 ---------- */
+const LAWS = {
+  strong:   { param: 'rank', w: 1,
+    name: p => `最強の数字の指定${p ? '(' + RL[p] + ')' : ''}`,
+    text: p => `${p ? RL[p] : '指定した数字'}を2より強い数字とする。革命中は最も弱い数字とする。` },
+  ban:      { param: 'rank', w: 1,
+    name: p => `${p ? RL[p] : '○'}禁止令`,
+    text: p => `${p ? RL[p] : '指定した数字'}を出してはならない。` },
+  tsure:    { w: 1, name: () => '道連れ令',
+    text: () => '上がった者の次の者は、手札を一枚捨てることができる。' },
+  fav:      { param: 'suit', w: 1,
+    name: p => `優遇マーク${p ? '(' + SUIT_CH[p] + ')' : ''}`,
+    text: p => `${p ? SUIT_NAME[p] : '指定したマーク'}の札を含む出し方は、場と同じ強さでも出すことができる。` },
+  joker:    { w: 1, name: () => 'ジョーカー封印',
+    text: () => 'ジョーカーは単独で出してはならない。ほかの札と組み合わせる場合に限り使うことができる。' },
+  fate:     { w: 1, name: () => '運命の一枚',
+    text: () => '回の初めに当たり札を一枚定める。当たり札で上がった者は、次の回で階級を二つ上げる。' },
+  mawashi:  { w: 0.4, name: () => '手札まわし令',
+    text: () => '場が五回流れるごとに、全員の手札を次の者へ移す。' },
+  gekokujo: { w: 1, name: () => '下剋上革命',
+    text: () => '革命を起こした者は、自分より上の階級の者を一人指名し、手札をすべて交換する。' },
+  agari:    { w: 1, name: () => '上がり阻止',
+    text: () => '残り一枚の者がパスしたときは、流れた札の中から二枚を引く。ただし一回につき一人一度までとする。' },
+};
+const LAW_KEYS = Object.keys(LAWS);
+const KANJI = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+
+/* ---------- 札 ---------- */
+function parse(id) {
+  if (id[0] === 'X') return { id, s: 'X', r: JOKER_V };
+  return { id, s: id[0], r: parseInt(id.slice(1), 10) };
+}
+function label(id) { const c = parse(id); return c.s === 'X' ? 'ジョーカー' : SUIT_CH[c.s] + RL[c.r]; }
+function fullDeck(jokers) {
+  const d = [];
+  for (const s of SUITS) for (let r = 3; r <= 15; r++) d.push(s + r);
+  for (let i = 1; i <= (jokers ?? 2); i++) d.push('X' + i);
+  return d;
+}
+/* 設定:基本ルールと法律の有効・無効 */
+const RULES = [
+  { key: 'rev', name: '革命', text: '同じ数字を4枚以上出すと、強さが逆になる' },
+  { key: 'eight', name: '8切り', text: '8を含む出し方で場が流れる' },
+  { key: 'seq', name: '階段', text: '同じマークの連番を3枚以上で出せる' },
+  { key: 'lock', name: '縛り', text: '同じマークが続くと、そのマークしか出せなくなる' },
+  { key: 'ochi', name: '都落ち', text: '大富豪が1番に上がれないと大貧民になる' },
+  { key: 'exchange', name: 'カード交換', text: '回の初めに大富豪と大貧民、富豪と貧民で札を交換する' },
+];
+/* ローカルルール(初めはすべてなし) */
+const LOCAL_RULES = [
+  { key: 'skip5', name: '5飛ばし', text: '5を出すと、出した枚数だけ次の人を飛ばす' },
+  { key: 'give7', name: '7渡し', text: '7を出すと、出した枚数まで好きな札を次の人に渡せる' },
+  { key: 'drop10', name: '10捨て', text: '10を出すと、出した枚数まで好きな札を捨てられる' },
+  { key: 'back11', name: '11バック', text: 'Jを出すと、場が流れるまで強さが逆になる' },
+  { key: 'rev9', name: '9リバース', text: '9を出すと、順番の回り方が逆になる' },
+  { key: 'spade3', name: 'スペ3返し', text: 'ジョーカー1枚には、スペードの3を1枚出して勝てる。場が流れる' },
+  { key: 'storm', name: '砂嵐', text: '3を3枚出すと、どの3枚出しにも勝てる。場が流れる' },
+  { key: 'seqrev', name: '階段革命', text: '4枚以上の階段でも革命が起きる' },
+  { key: 'foul', name: '反則上がり', text: '2・ジョーカー・8切り・スペ3返しで上がると、最下位になる' },
+];
+function defaultCfg() {
+  const c = { jokers: 2, lawsOn: true, voteSec: 120, maxLaws: 3, laws: {} };
+  RULES.forEach(r => { c[r.key] = true; });
+  LOCAL_RULES.forEach(r => { c[r.key] = false; });
+  LAW_KEYS.forEach(k => { c.laws[k] = true; });
+  return c;
+}
+function cleanCfg(x) {
+  const c = defaultCfg();
+  if (!x) return c;
+  RULES.concat(LOCAL_RULES).forEach(r => { if (typeof x[r.key] === 'boolean') c[r.key] = x[r.key]; });
+  if ([0, 1, 2].includes(x.jokers)) c.jokers = x.jokers;
+  if (typeof x.lawsOn === 'boolean') c.lawsOn = x.lawsOn;
+  if ([60, 90, 120, 180].includes(x.voteSec)) c.voteSec = x.voteSec;
+  if ([1, 2, 3, 4, 5].includes(x.maxLaws)) c.maxLaws = x.maxLaws;
+  if (x.laws) LAW_KEYS.forEach(k => { if (typeof x.laws[k] === 'boolean') c.laws[k] = x.laws[k]; });
+  return c;
+}
+/* 他の設定と組み合わせて意味がなくなる法律 */
+function lawUsable(cfg, k) {
+  if (!cfg.laws[k]) return false;
+  if (k === 'gekokujo' && !cfg.rev) return false;
+  if (k === 'joker' && !cfg.jokers) return false;
+  return true;
+}
+function shuffle(a, rnd) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* 文脈:革命・法律・縛り */
+function lawParam(laws, key) { const l = (laws || []).find(x => x.key === key); return l ? (l.param ?? true) : null; }
+function makeCtx(st) {
+  const laws = st.laws || [];
+  const cfg = st.cfg || {};
+  return {
+    rev: !!st.rev !== !!st.jback,
+    spade3: !!cfg.spade3, storm: !!cfg.storm,
+    strong: lawParam(laws, 'strong'),
+    ban: lawParam(laws, 'ban'),
+    fav: lawParam(laws, 'fav'),
+    jokerSeal: !!lawParam(laws, 'joker'),
+    noSeq: !!(st.cfg && st.cfg.seq === false),
+    lock: st.field ? st.field.lock : null,
+    top: st.field ? st.field.top : null,
+  };
+}
+function rankVal(r, ctx) { if (r === JOKER_V) return JOKER_V; return (ctx.strong && r === ctx.strong) ? 15.5 : r; }
+function cmpV(a, b, ctx) {
+  if (a === b) return 0;
+  if (a === JOKER_V) return 1;
+  if (b === JOKER_V) return -1;
+  return ctx.rev ? b - a : a - b;
+}
+function cardSort(ids) {
+  return ids.slice().sort((a, b) => { const x = parse(a), y = parse(b); return x.r - y.r || SUITS.indexOf(x.s) - SUITS.indexOf(y.s); });
+}
+
+/* 出し方の解釈を列挙 */
+function interpret(ids, ctx) {
+  const cs = ids.map(parse);
+  const jk = cs.filter(c => c.s === 'X').length;
+  const nj = cs.filter(c => c.s !== 'X');
+  const n = cs.length;
+  const out = [];
+  if (n === 0) return out;
+  if (ctx.jokerSeal && nj.length === 0) return out;
+  const hasFav = !!(ctx.fav && nj.some(c => c.s === ctx.fav));
+  const has8 = nj.some(c => c.r === 8);
+  // 同じ数字
+  if (nj.every(c => c.r === (nj[0] && nj[0].r))) {
+    const r = nj.length ? nj[0].r : JOKER_V;
+    if (!(ctx.ban && r === ctx.ban)) {
+      out.push({ type: 'set', n, r, v: rankVal(r, ctx), suits: nj.map(c => c.s).sort(), jk, hasFav, has8, s3: n === 1 && ids[0] === 'S3' });
+    }
+  }
+  // 階段(同じマーク3枚以上)
+  if (!ctx.noSeq && n >= 3 && nj.length >= 1 && nj.every(c => c.s === nj[0].s)) {
+    const rs = nj.map(c => c.r).sort((a, b) => a - b);
+    const distinct = rs.every((r, i) => i === 0 || r !== rs[i - 1]);
+    if (distinct) {
+      const mn = rs[0], mx = rs[rs.length - 1];
+      for (let L = Math.max(3, mx - n + 1); L <= Math.min(mn, 15 - n + 1); L++) {
+        const H = L + n - 1;
+        if (ctx.ban && ctx.ban >= L && ctx.ban <= H) continue;
+        const h8 = L <= 8 && 8 <= H;
+        out.push({ type: 'seq', n, low: L, v: L, suits: [nj[0].s], jk, hasFav, has8: h8 });
+      }
+    }
+  }
+  return out;
+}
+function fitsLock(p, lock) {
+  if (!lock) return true;
+  if (p.type === 'seq') return lock.length === 1 && p.suits[0] === lock[0];
+  const pool = lock.slice();
+  for (const s of p.suits) { const i = pool.indexOf(s); if (i < 0) return false; pool.splice(i, 1); }
+  return true;
+}
+function beats(p, top, ctx) {
+  if (!top) return true;
+  if (p.type !== top.type || p.n !== top.n) return false;
+  if (ctx.spade3 && p.s3 && top.n === 1 && top.r === JOKER_V) return true;
+  if (ctx.storm && p.type === 'set' && p.n === 3 && p.r === 3 && !(top.r === 3)) return true;
+  if (!fitsLock(p, ctx.lock)) return false;
+  const c = cmpV(p.v, top.v, ctx);
+  if (c > 0) return true;
+  if (c === 0 && p.hasFav && p.v !== JOKER_V) return true;
+  return false;
+}
+/* 出せるならいちばん有利な解釈を返す(同じ数字を優先) */
+function bestPlay(ids, ctx) {
+  const ok = interpret(ids, ctx).filter(p => beats(p, ctx.top, ctx));
+  if (!ok.length) return null;
+  ok.sort((a, b) => (a.type === b.type ? cmpV(b.v, a.v, ctx) : (a.type === 'set' ? -1 : 1)));
+  return ok[0];
+}
+function describe(p) {
+  if (!p) return '';
+  if (p.type === 'seq') return `${SUIT_CH[p.suits[0]]}${RL[p.low]}から${p.n}枚の階段`;
+  const nm = p.r === JOKER_V ? 'ジョーカー' : RL[p.r];
+  return p.n === 1 ? nm : `${nm}の${p.n}枚`;
+}
+
+/* 手札から出せる組み合わせを列挙(CPU・パス判定用) */
+function candidates(hand, ctx) {
+  const cs = hand.map(parse);
+  const jokers = cs.filter(c => c.s === 'X').map(c => c.id);
+  const byRank = {};
+  cs.filter(c => c.s !== 'X').forEach(c => { (byRank[c.r] = byRank[c.r] || []).push(c.id); });
+  const res = [];
+  const sizes = ctx.top ? [ctx.top.n] : [1, 2, 3, 4, 5, 6];
+  const wantSeq = !ctx.noSeq && (!ctx.top || ctx.top.type === 'seq');
+  const wantSet = !ctx.top || ctx.top.type === 'set';
+  if (wantSet) {
+    for (const r in byRank) {
+      const ids = byRank[r];
+      for (const n of sizes) {
+        for (let j = 0; j <= Math.min(jokers.length, n); j++) {
+          const k = n - j;
+          if (k < 1 || k > ids.length) continue;
+          const combos = ctx.lock ? suitCombos(ids, k) : [ids.slice(0, k)];
+          for (const cb of combos) res.push(cb.concat(jokers.slice(0, j)));
+        }
+      }
+    }
+    if (jokers.length && !ctx.jokerSeal) for (const n of sizes) if (n <= jokers.length) res.push(jokers.slice(0, n));
+  }
+  if (wantSeq) {
+    for (const s of SUITS) {
+      const have = {};
+      cs.filter(c => c.s === s).forEach(c => { have[c.r] = c.id; });
+      const lens = ctx.top ? [ctx.top.n] : [3, 4, 5];
+      for (const n of lens) for (let L = 3; L + n - 1 <= 15; L++) {
+        const ids = []; let need = 0;
+        for (let r = L; r < L + n; r++) { if (have[r]) ids.push(have[r]); else need++; }
+        if (need <= jokers.length && ids.length >= 1 && need < n) res.push(ids.concat(jokers.slice(0, need)));
+      }
+    }
+  }
+  const out = [], seen = new Set();
+  for (const ids of res) {
+    const key = cardSort(ids).join(',');
+    if (seen.has(key)) continue; seen.add(key);
+    const p = bestPlay(ids, ctx);
+    if (p) out.push({ ids, p });
+  }
+  return out;
+}
+function suitCombos(ids, k) {
+  const out = [];
+  const rec = (start, acc) => { if (acc.length === k) { out.push(acc.slice()); return; } for (let i = start; i < ids.length; i++) { acc.push(ids[i]); rec(i + 1, acc); acc.pop(); } };
+  rec(0, []);
+  return out;
+}
+function strength(id, ctx) { const c = parse(id); return c.r === JOKER_V ? 1000 : (ctx.rev ? -rankVal(c.r, ctx) : rankVal(c.r, ctx)); }
+
+/* ---------- 進行 ---------- */
+function rng(seed) { let s = seed >>> 0 || 1; return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+
+function newGame(code, mode, seed) {
+  return {
+    code, mode, phase: 'lobby', players: [], round: 0, order: null, laws: [], lawSeq: 0,
+    log: [], flash: null, stats: {}, moments: {}, rev: false, field: emptyField(),
+    hands: {}, finished: [], passed: [], pile: [], clears: 0, pending: null, vote: null,
+    cfg: defaultCfg(), results: null, diag: null, seed: seed || (Date.now() & 0xffffffff), rndState: null, ver: 0, cpuAt: 0, history: [],
+  };
+}
+function R(G) { if (!G._rnd) G._rnd = rng(G.seed + G.round * 7919 + G.ver); return G._rnd(); }
+function emptyField() { return { top: null, topIds: [], topPid: null, prev: null, prevIds: [], lock: null, plays: 0, stack: [] }; }
+function pName(G, pid) { const p = G.players.find(x => x.id === pid); return p ? p.name : '?'; }
+function idx(G, pid) { return G.players.findIndex(p => p.id === pid); }
+function active(G) { return G.players.map(p => p.id).filter(id => !G.finished.includes(id) && id !== G.ochi && !(G.fouls || []).includes(id)); }
+function isActive(G, pid) { return active(G).includes(pid); }
+function nextActive(G, pid, pool) {
+  const n = G.players.length; let i = idx(G, pid);
+  const d = G.dir === -1 ? -1 : 1;
+  for (let k = 0; k < n; k++) { i = (i + d + n) % n; const id = G.players[i].id; if ((pool || active(G)).includes(id)) return id; }
+  return null;
+}
+function titleOf(G, pid) {
+  if (!G.order) return '';
+  const i = G.order.indexOf(pid); return i < 0 ? '' : TITLES[G.players.length][i];
+}
+function st(G, pid) {
+  return G.stats[pid] || (G.stats[pid] = { plays: 0, passes: 0, passOpt: 0, strongEarly: 0, strongLate: 0, revs: 0, kiri: 0, tops: 0, bottoms: 0, vetoes: 0, votes: 0, withTop: 0, againstTop: 0, gekokujo: 0, blocked: 0, ochi: 0, climb: 0, fate: 0, voteFor: {}, rounds: 0, rankSum: 0 });
+}
+function moment(G, pid, score, text) { (G.moments[pid] = G.moments[pid] || []).push({ score, text, round: G.round }); }
+function say(G, text, kind) {
+  G.log.push(text); if (G.log.length > 8) G.log.shift();
+  if (kind) G.flash = { text, kind, t: Date.now(), n: (G.flash ? G.flash.n : 0) + 1 };
+}
+
+function addPlayer(G, p) {
+  if (G.phase !== 'lobby') {
+    const ex = G.players.find(x => x.id === p.id);
+    if (ex) { ex.name = p.name || ex.name; return true; }
+    return false;
+  }
+  const ex = G.players.find(x => x.id === p.id);
+  if (ex) { ex.name = p.name || ex.name; return true; }
+  if (G.players.length >= 6) return false;
+  G.players.push({ id: p.id, name: (p.name || '').slice(0, 8) || '名無し', cpu: !!p.cpu });
+  return true;
+}
+const CPU_NAMES = ['ハル', 'ナギ', 'ソラ', 'トキ', 'ミオ', 'ユウ'];
+function addCpu(G) {
+  const used = new Set(G.players.map(p => p.name));
+  const nm = CPU_NAMES.find(n => !used.has(n + '(CPU)')) || 'CPU';
+  return addPlayer(G, { id: 'cpu' + Math.floor(Math.random() * 1e9).toString(36), name: nm + '(CPU)', cpu: true });
+}
+function removeCpu(G) {
+  if (G.phase !== 'lobby') return;
+  for (let i = G.players.length - 1; i >= 0; i--) if (G.players[i].cpu) { G.players.splice(i, 1); return; }
+}
+
+function startRound(G, now) {
+  G.round++; G._rnd = null;
+  G.rev = false; G.field = emptyField(); G.passed = []; G.finished = []; G.ochi = null;
+  G.pile = []; G.clears = 0; G.blockedOnce = {}; G.dir = 1; G.jback = false; G.fouls = []; G.after = null; G.fate = null; G.fateWin = null; G.pending = null; G.results = null; G.vote = null;
+  G.hands = {};
+  const ids = G.players.map(p => p.id);
+  const d = shuffle(fullDeck(G.cfg.jokers), () => R(G));
+  ids.forEach(id => { G.hands[id] = []; });
+  d.forEach((c, i) => G.hands[ids[i % ids.length]].push(c));
+  ids.forEach(id => { G.hands[id] = cardSort(G.hands[id]); });
+  say(G, `第${G.round}回を始めます。`);
+  if (G.order && G.cfg.exchange) {
+    const o = G.order, n = o.length, ctx = makeCtx(G);
+    const need = {};
+    const give = (from, to, k) => {
+      const h = G.hands[from].slice().sort((a, b) => strength(b, ctx) - strength(a, ctx)).slice(0, k);
+      h.forEach(c => { G.hands[from].splice(G.hands[from].indexOf(c), 1); G.hands[to].push(c); });
+      G.hands[to] = cardSort(G.hands[to]);
+      return h;
+    };
+    const got0 = give(o[n - 1], o[0], 2);
+    need[o[0]] = { to: o[n - 1], n: 2, got: got0 };
+    const got1 = give(o[n - 2], o[1], 1);
+    need[o[1]] = { to: o[n - 2], n: 1, got: got1 };
+    G.phase = 'exchange';
+    G.pending = { type: 'exchange', need, done: {} };
+    G.cpuAt = now + 900;
+  } else afterExchange(G, now);
+}
+function afterExchange(G, now) {
+  const l = G.laws.find(x => LAWS[x.key].param && x.param == null);
+  if (l) { G.phase = 'param'; G.pending = { type: 'param', pid: G.order[0], key: l.key, lawId: l.id }; G.cpuAt = now + 1200; return; }
+  beginPlay(G, now);
+}
+function beginPlay(G, now) {
+  G.pending = null;
+  if (lawParam(G.laws, 'fate')) {
+    const all = [];
+    G.players.forEach(p => G.hands[p.id].forEach(c => { if (c[0] !== 'X') all.push(c); }));
+    G.fate = all[Math.floor(R(G) * all.length)];
+    say(G, `今回の当たり札は${label(G.fate)}です。`, 'law');
+  }
+  let lead;
+  if (G.order) lead = G.order[G.order.length - 1];
+  else lead = G.players.find(p => G.hands[p.id].includes('D3')).id;
+  G.phase = 'play'; G.turn = lead; G.cpuAt = now + 1200;
+  G.players.forEach(p => { st(G, p.id).rounds++; });
+}
+
+function clearField(G, leader) {
+  G.pile.push(...G.field.topIds, ...(G.field._all || []));
+  G.field = emptyField(); G.passed = []; G.clears++;
+  if (G.jback) { G.jback = false; say(G, '11バックが終わりました。'); }
+  if (lawParam(G.laws, 'mawashi') && G.clears % 5 === 0) {
+    const act = active(G);
+    if (act.length >= 2) {
+      const old = {}; act.forEach(id => { old[id] = G.hands[id]; });
+      act.forEach(id => { G.hands[nextActive(G, id, act)] = old[id]; });
+      act.forEach(id => { G.hands[id] = cardSort(G.hands[id]); });
+      say(G, '手札まわし令。全員の手札が次の人へ移りました。', 'law');
+    }
+  }
+  G.turn = isActive(G, leader) ? leader : nextActive(G, leader);
+}
+
+function abolish(G) {
+  if (G.laws.length) { say(G, '革命により、法律はすべて廃止されました。', 'rev'); G.laws = []; }
+}
+
+/* 行動:{t:'play',ids} {t:'pass'} {t:'exchange',ids} {t:'param',v} {t:'tsure',id|null} {t:'gekokujo',target} {t:'veto',key} {t:'vote',key} */
+function act(G, pid, a, now) {
+  now = now ?? Date.now();
+  const ok = actInner(G, pid, a, now);
+  if (ok) G.ver++;
+  return ok;
+}
+function actInner(G, pid, a, now) {
+  switch (a.t) {
+    case 'cpu+': if (G.phase === 'lobby') return addCpu(G); return false;
+    case 'cpu-': removeCpu(G); return true;
+    case 'start':
+      if (G.phase !== 'lobby' || G.players.length < 4) return false;
+      startRound(G, now); return true;
+    case 'cfg':
+      if (G.phase !== 'lobby') return false;
+      G.cfg = cleanCfg(a.cfg); return true;
+    case 'next':
+      if (G.phase === 'roundEnd') { if (G.cfg.lawsOn) startLawSelection(G, now); else startRound(G, now); return true; }
+      if (G.phase === 'enacted') { startRound(G, now); return true; }
+      return false;
+    case 'finish':
+      if (G.phase === 'roundEnd' || G.phase === 'enacted') { G.diag = diagnose(G); G.phase = 'diag'; return true; }
+      return false;
+    case 'again':
+      if (G.phase !== 'diag') return false;
+      Object.assign(G, { phase: 'lobby', round: 0, order: null, laws: [], stats: {}, moments: {}, diag: null, results: null, history: [] });
+      return true;
+    case 'exchange': {
+      if (G.phase !== 'exchange') return false;
+      const nd = G.pending.need[pid]; if (!nd || G.pending.done[pid]) return false;
+      const ids = (a.ids || []).filter(c => G.hands[pid].includes(c));
+      if (ids.length !== nd.n) return false;
+      ids.forEach(c => { G.hands[pid].splice(G.hands[pid].indexOf(c), 1); G.hands[nd.to].push(c); });
+      G.hands[nd.to] = cardSort(G.hands[nd.to]);
+      G.pending.done[pid] = ids;
+      if (Object.keys(G.pending.need).every(k => G.pending.done[k])) { say(G, 'カードの交換が終わりました。'); afterExchange(G, now); }
+      return true;
+    }
+    case 'param': {
+      if (G.phase !== 'param' || G.pending.pid !== pid) return false;
+      const law = G.laws.find(l => l.id === G.pending.lawId);
+      const opts = paramOptions(G, law.key);
+      if (!opts.includes(a.v)) return false;
+      law.param = a.v;
+      say(G, `第${lawNo(G, law)}条を「${LAWS[law.key].name(a.v)}」と定めました。`, 'law');
+      afterExchange(G, now); return true;
+    }
+    case 'play': return doPlay(G, pid, a.ids || [], now);
+    case 'pass': return doPass(G, pid, now);
+    case 'tsure': {
+      if (G.phase !== 'tsure' || G.pending.pid !== pid) return false;
+      if (a.id) {
+        if (!G.hands[pid].includes(a.id) || G.hands[pid].length < 2) return false;
+        G.hands[pid].splice(G.hands[pid].indexOf(a.id), 1); G.pile.push(a.id);
+        say(G, `道連れ令。${pName(G, pid)}さんが札を一枚捨てました。`, 'law');
+      } else say(G, `${pName(G, pid)}さんは札を捨てませんでした。`);
+      G.phase = 'play'; const ret = G.pending.ret; G.pending = null;
+      afterMove(G, ret, now); return true;
+    }
+    case 'gekokujo': {
+      if (G.phase !== 'gekokujo' || G.pending.pid !== pid) return false;
+      if (!G.pending.targets.includes(a.target)) return false;
+      const t = a.target, h = G.hands[pid]; G.hands[pid] = G.hands[t]; G.hands[t] = h;
+      say(G, `下剋上革命。${pName(G, pid)}さんと${pName(G, t)}さんの手札が入れ替わりました。`, 'rev');
+      st(G, pid).gekokujo++;
+      moment(G, pid, 9, `第${G.round}回、下剋上革命で${pName(G, t)}さんと手札を入れ替えた`);
+      abolish(G);
+      G.phase = 'play'; G.pending = null;
+      proceed(G, now); return true;
+    }
+    case 'give7': case 'drop10': {
+      if (G.phase !== a.t || G.pending.pid !== pid) return false;
+      const ids = (a.ids || []).filter(c => G.hands[pid].includes(c));
+      if (ids.length > G.pending.n || new Set(ids).size !== ids.length) return false;
+      ids.forEach(c => G.hands[pid].splice(G.hands[pid].indexOf(c), 1));
+      if (a.t === 'give7') {
+        const to = G.pending.to; G.hands[to] = cardSort(G.hands[to].concat(ids));
+        if (ids.length) say(G, `7渡し。${pName(G, pid)}さんが${pName(G, to)}さんに${ids.length}枚渡しました。`, 'rule');
+      } else {
+        G.pile.push(...ids);
+        if (ids.length) say(G, `10捨て。${pName(G, pid)}さんが${ids.length}枚捨てました。`, 'rule');
+      }
+      if (G.hands[pid].length === 0) G.lastFoulish = false;
+      G.phase = 'play'; G.pending = null;
+      proceed(G, now); return true;
+    }
+    case 'veto': {
+      if (G.phase !== 'veto' || G.pending.pid !== pid || !G.pending.cands.includes(a.key)) return false;
+      st(G, pid).vetoes++;
+      moment(G, pid, 2, `「${LAWS[a.key].name()}」を廃案にした`);
+      say(G, `${pName(G, pid)}さんが「${LAWS[a.key].name()}」を廃案にしました。`);
+      startVote(G, G.pending.cands.filter(k => k !== a.key), a.key, now);
+      return true;
+    }
+    case 'vote': {
+      if (G.phase !== 'vote' || !G.vote.options.includes(a.key)) return false;
+      if (!G.players.some(p => p.id === pid)) return false;
+      G.vote.votes[pid] = a.key;
+      if (G.players.every(p => G.vote.votes[p.id])) tally(G, now);
+      return true;
+    }
+  }
+  return false;
+}
+
+function doPlay(G, pid, ids, now) {
+  if (G.phase !== 'play' || G.turn !== pid) return false;
+  const hand = G.hands[pid];
+  if (!ids.length || ids.some(c => !hand.includes(c)) || new Set(ids).size !== ids.length) return false;
+  const ctx = makeCtx(G);
+  const p = bestPlay(ids, ctx);
+  if (!p) return false;
+  const prevTop = G.field.top;
+  ids.forEach(c => hand.splice(hand.indexOf(c), 1));
+  // 縛り
+  if (G.cfg.lock && prevTop && !G.field.lock && p.jk === 0 && prevTop.jk === 0 && p.suits.join() === prevTop.suits.join()) {
+    G.field.lock = p.suits.slice();
+    say(G, `${p.suits.map(s => SUIT_CH[s]).join('')}で縛りになりました。`);
+  }
+  G.field._all = (G.field._all || []).concat(G.field.topIds);
+  G.field.prev = prevTop; G.field.prevIds = G.field.topIds;
+  G.field.top = p; G.field.topIds = cardSort(ids); G.field.topPid = pid; G.field.plays++;
+  G.field.stack = (G.field.stack || []).concat([{ ids: G.field.topIds, pid, k: G.ver }]).slice(-4);
+  G.lastPid = pid; G.leadPass = 0;
+  const s = st(G, pid); s.plays++;
+  const strongN = ids.filter(c => { const r = parse(c).r; return r === 15 || r === JOKER_V; }).length;
+  if (strongN) { if (hand.length >= 6) s.strongEarly += strongN; if (hand.length <= 2) s.strongLate += strongN; }
+  G.history.push({ r: G.round, pid, ids: G.field.topIds, d: describe(p) }); if (G.history.length > 60) G.history.shift();
+  say(G, `${pName(G, pid)}さんが${describe(p)}を出しました。`);
+  // 運命の一枚
+  if (G.fate && ids.includes(G.fate) && hand.length === 0) {
+    G.fateWin = pid; st(G, pid).fate++;
+    say(G, `${pName(G, pid)}さんが当たり札で上がりました。次の回で階級が二つ上がります。`, 'law');
+    moment(G, pid, 8, `第${G.round}回、当たり札の${label(G.fate)}で上がった`);
+  }
+  let ret = { kind: 'next', pid };
+  const nOf = r => (p.type === 'set' && p.r === r) ? p.n : ids.filter(c => parse(c).r === r).length + (p.type === 'seq' && p.low <= r && r < p.low + p.n && !ids.some(c => parse(c).r === r) ? 1 : 0);
+  const special = G.cfg.spade3 && p.s3 && prevTop && prevTop.r === JOKER_V ? 'spade3' : (G.cfg.storm && p.type === 'set' && p.n === 3 && p.r === 3) ? 'storm' : null;
+  const cut = (p.has8 && G.cfg.eight) || !!special;
+  if (cut) ret.kind = 'cut';
+  if (special === 'spade3') say(G, 'スペ3返し。ジョーカーを破り、場が流れます。', 'cut');
+  if (special === 'storm') say(G, '砂嵐。3の3枚で場が流れます。', 'cut');
+  // 反則上がりの判定に使う
+  G.lastFoulish = hand.length === 0 && G.cfg.foul && (ids.some(c => { const r = parse(c).r; return r === 15 || r === JOKER_V; }) || (p.has8 && G.cfg.eight) || special === 'spade3');
+  const queue = [];
+  if (!cut) {
+    if (G.cfg.skip5 && nOf(5)) { ret.skip = nOf(5); say(G, `5飛ばし。${ret.skip}人飛ばします。`, 'rule'); }
+    if (G.cfg.rev9 && nOf(9)) { G.dir = -(G.dir || 1); say(G, `9リバース。順番が${G.dir === 1 ? '元の向き' : '逆回り'}になりました。`, 'rule'); }
+    if (G.cfg.back11 && nOf(11)) { G.jback = !G.jback; say(G, G.jback ? '11バック。場が流れるまで強さが逆になります。' : '11バックが打ち消されました。', 'rule'); }
+  }
+  if (G.cfg.give7 && nOf(7)) queue.push({ type: 'give7', pid, n: nOf(7) });
+  if (G.cfg.drop10 && nOf(10)) queue.push({ type: 'drop10', pid, n: nOf(10) });
+  G.after = { pid, ret, queue };
+  // 革命
+  if (G.cfg.rev && ((p.type === 'set' && p.n >= 4) || (G.cfg.seqrev && p.type === 'seq' && p.n >= 4))) {
+    G.rev = !G.rev; s.revs++;
+    const hadLaws = G.laws.length > 0;
+    say(G, `${pName(G, pid)}さんが革命を起こしました。`, 'rev');
+    moment(G, pid, hadLaws ? 6 : 5, hadLaws ? `第${G.round}回、革命を起こして法律をすべて廃止した` : `第${G.round}回、革命を起こした`);
+    if (lawParam(G.laws, 'gekokujo') && G.order) {
+      const mine = G.order.indexOf(pid);
+      const targets = G.order.slice(0, Math.max(0, mine)).filter(id => isActive(G, id));
+      if (targets.length && hand.length > 0) {
+        G.phase = 'gekokujo'; G.pending = { type: 'gekokujo', pid, targets, ret }; G.cpuAt = now + 1500;
+        return true;
+      }
+    }
+    abolish(G);
+  }
+  if (cut && !special) { s.kiri++; say(G, '8切りで場が流れます。', 'cut'); }
+  proceed(G, now);
+  return true;
+}
+/* 7渡し・10捨ての選択を順に聞いてから、上がりの判定に進む */
+function proceed(G, now) {
+  const A = G.after;
+  if (!A) return;
+  while (A.queue.length) {
+    const q = A.queue.shift();
+    const h = G.hands[q.pid];
+    if (!h.length) continue;
+    if (q.type === 'give7' && !nextActive(G, q.pid)) continue;
+    q.n = Math.min(q.n, h.length);
+    G.phase = q.type; G.pending = { type: q.type, pid: q.pid, n: q.n, to: q.type === 'give7' ? nextActive(G, q.pid) : null };
+    G.cpuAt = now + 1200;
+    return;
+  }
+  G.after = null; G.phase = 'play'; G.pending = null;
+  finishCheck(G, A.pid, now, A.ret);
+}
+function finishCheck(G, pid, now, ret) {
+  if (G.hands[pid].length === 0 && G.lastFoulish) {
+    G.lastFoulish = false;
+    G.fouls.push(pid);
+    say(G, `反則上がり。${pName(G, pid)}さんは最下位になります。`, 'out');
+    moment(G, pid, 6, `第${G.round}回、反則上がりで最下位になった`);
+  } else if (G.hands[pid].length === 0) {
+    G.finished.push(pid);
+    const place = G.finished.length;
+    say(G, `${pName(G, pid)}さんが${place}番目に上がりました。`, 'out');
+    // 都落ち
+    if (place === 1 && G.cfg.ochi && G.order && G.order[0] !== pid && isActive(G, G.order[0])) {
+      G.ochi = G.order[0]; st(G, G.ochi).ochi++;
+      say(G, `都落ち。${pName(G, G.ochi)}さんは大貧民になります。`, 'out');
+      moment(G, G.ochi, 6, `第${G.round}回、都落ちで大富豪から大貧民になった`);
+    }
+    if (lawParam(G.laws, 'tsure') && active(G).length >= 2) {
+      const t = nextActive(G, pid);
+      if (t && G.hands[t].length >= 2) {
+        G.phase = 'tsure'; G.pending = { type: 'tsure', pid: t, ret }; G.cpuAt = now + 1200; return;
+      }
+    }
+  }
+  afterMove(G, ret, now);
+}
+function afterMove(G, ret, now) {
+  if (active(G).length <= 1) { endRound(G, now); return; }
+  const pid = ret.pid;
+  if (ret.kind === 'cut') { clearField(G, pid); G.cpuAt = now + 1300; return; }
+  G.skipNext = ret.skip || 0;
+  advance(G, pid, now);
+}
+function advance(G, from, now) {
+  const act = active(G);
+  const cont = act.filter(id => !G.passed.includes(id) && id !== G.lastPid);
+  if (!G.field.top) { G.turn = isActive(G, from) ? nextActive(G, from) : nextActive(G, from); G.cpuAt = now + 900; return; }
+  if (cont.length === 0) {
+    say(G, '場が流れました。');
+    clearField(G, G.lastPid);
+  } else {
+    let t = nextActive(G, from, cont);
+    const k = (G.skipNext || 0) % cont.length;
+    for (let i = 0; i < k; i++) t = nextActive(G, t, cont);
+    G.turn = t;
+  }
+  G.skipNext = 0;
+  G.cpuAt = now + 900;
+}
+function doPass(G, pid, now) {
+  if (G.phase !== 'play' || G.turn !== pid) return false;
+  if (!G.field.top) {
+    // 出せる札がない(禁止令などで手札が全部出せない)ときだけ、親でもパスできる
+    if (candidates(G.hands[pid], makeCtx(G)).length) return false;
+    G.leadPass = (G.leadPass || 0) + 1;
+    say(G, `${pName(G, pid)}さんは出せる札がないためパス。`);
+    if (G.leadPass >= active(G).length) { say(G, '全員が出せる札をなくしたため、この回を終えます。'); endRound(G, now); return true; }
+    G.turn = nextActive(G, pid); G.cpuAt = now + 900; return true;
+  }
+  const s = st(G, pid); s.passes++;
+  const ctx = makeCtx(G);
+  if (candidates(G.hands[pid], ctx).length) s.passOpt++;
+  G.passed.push(pid);
+  say(G, `${pName(G, pid)}さんはパス。`);
+  G.blockedOnce = G.blockedOnce || {};
+  if (lawParam(G.laws, 'agari') && G.hands[pid].length === 1 && !G.blockedOnce[pid]) {
+    G.blockedOnce[pid] = true;
+    G.field._all = G.field._all || [];
+    const pool = G.pile.concat(G.field._all);
+    const take = [];
+    for (let k = 0; k < 2 && pool.length; k++) { const i = Math.floor(R(G) * pool.length); take.push(pool.splice(i, 1)[0]); }
+    take.forEach(c => { let i = G.pile.indexOf(c); if (i >= 0) G.pile.splice(i, 1); else { i = G.field._all.indexOf(c); G.field._all.splice(i, 1); } });
+    G.hands[pid] = cardSort(G.hands[pid].concat(take));
+    s.blocked++;
+    if (take.length) {
+      say(G, `上がり阻止。${pName(G, pid)}さんは${take.length}枚引きました。`, 'law');
+      moment(G, pid, 4, `第${G.round}回、残り一枚で上がり阻止にかかり、札を引いた`);
+    }
+  }
+  advance(G, pid, now);
+  return true;
+}
+
+function endRound(G, now) {
+  const rest = active(G).sort((a, b) => G.hands[a].length - G.hands[b].length);
+  const order = G.finished.concat(rest).concat((G.fouls || []).slice().reverse());
+  if (G.ochi) order.push(G.ochi);
+  if (G.fateWin) { const i = order.indexOf(G.fateWin); const j = Math.max(0, i - 2); order.splice(i, 1); order.splice(j, 0, G.fateWin); }
+  const n = order.length, prev = G.order;
+  order.forEach((id, i) => {
+    const s = st(G, id); s.rankSum += i;
+    if (i === 0) s.tops++;
+    if (i === n - 1) s.bottoms++;
+    moment(G, id, 1, `第${G.round}回、${TITLES[n][i]}になった`);
+    if (prev) {
+      const pi = prev.indexOf(id);
+      if (pi - i >= 2) s.climb += pi - i;
+      if (i === 0 && pi === n - 1) moment(G, id, 7, `第${G.round}回、大貧民から大富豪になった`);
+    }
+  });
+  G.results = order.map((id, i) => ({ id, title: TITLES[n][i], prev: prev ? TITLES[n][prev.indexOf(id)] : null }));
+  G.order = order;
+  G.phase = 'roundEnd'; G.pending = null; G.turn = null;
+  say(G, `第${G.round}回が終わりました。大富豪は${pName(G, order[0])}さんです。`);
+}
+
+/* ---------- 法律の選定 ---------- */
+function lawNo(G, law) { return G.laws.indexOf(law) + 1; }
+function paramOptions(G, key) {
+  if (key === 'fav') return SUITS.slice();
+  const out = [];
+  const other = key === 'strong' ? lawParam(G.laws, 'ban') : key === 'ban' ? lawParam(G.laws, 'strong') : null;
+  for (let r = 3; r <= 15; r++) if (r !== other && !(key === 'strong' && r === 15)) out.push(r);
+  return out;
+}
+function startLawSelection(G, now) {
+  const pool = LAW_KEYS.filter(k => lawUsable(G.cfg, k) && !G.laws.some(l => l.key === k));
+  const cands = [];
+  const p = pool.slice();
+  while (cands.length < 3 && p.length) {
+    const tot = p.reduce((a, k) => a + LAWS[k].w, 0);
+    let x = R(G) * tot, i = 0;
+    for (; i < p.length; i++) { x -= LAWS[p[i]].w; if (x <= 0) break; }
+    cands.push(p.splice(Math.min(i, p.length - 1), 1)[0]);
+  }
+  if (cands.length >= 3) { G.phase = 'veto'; G.pending = { type: 'veto', pid: G.order[0], cands }; G.cpuAt = now + 2500; }
+  else if (cands.length === 2) startVote(G, cands, null, now);
+  else if (cands.length === 1) { G.vote = { options: cands, votes: {}, counts: { [cands[0]]: 0 }, result: null }; enact(G, cands[0]); }
+  else { G.phase = 'enacted'; G.vote = { options: [], result: null }; }
+}
+function startVote(G, options, vetoed, now) {
+  G.phase = 'vote'; G.pending = null;
+  G.vote = { options, vetoed, votes: {}, deadline: now + G.cfg.voteSec * 1000, result: null };
+  G.cpuAt = now + 4000;
+}
+function tally(G, now) {
+  const v = G.vote, top = G.order[0];
+  const cnt = {}; v.options.forEach(k => { cnt[k] = 0; });
+  for (const id in v.votes) cnt[v.votes[id]] += id === top ? 2 : 1;
+  let best = v.options.slice().sort((a, b) => cnt[b] - cnt[a]);
+  let win = best[0];
+  if (cnt[best[0]] === cnt[best[1]]) win = v.votes[top] || best[Math.floor(R(G) * best.length)];
+  const topVote = v.votes[top];
+  for (const id in v.votes) {
+    const s = st(G, id); s.votes++; s.voteFor[v.votes[id]] = (s.voteFor[v.votes[id]] || 0) + 1;
+    if (id !== top && topVote) { if (v.votes[id] === topVote) s.withTop++; else s.againstTop++; }
+  }
+  v.counts = cnt; v.tie = cnt[best[0]] === cnt[best[1]];
+  enact(G, win);
+}
+function enact(G, win) {
+  const v = G.vote; v.result = win;
+  const law = { key: win, param: null, id: ++G.lawSeq };
+  let expired = null;
+  G.laws.push(law);
+  if (G.laws.length > G.cfg.maxLaws) expired = G.laws.shift();
+  v.expired = expired ? LAWS[expired.key].name(expired.param) : null;
+  say(G, `「${LAWS[win].name()}」が可決されました。`);
+  G.phase = 'enacted';
+}
+
+/* ---------- CPU・時間切れ ---------- */
+function waitingFor(G) {
+  switch (G.phase) {
+    case 'play': return [G.turn];
+    case 'exchange': return Object.keys(G.pending.need).filter(k => !G.pending.done[k]);
+    case 'param': case 'tsure': case 'gekokujo': case 'veto': case 'give7': case 'drop10': return [G.pending.pid];
+    case 'vote': return G.players.map(p => p.id).filter(id => !G.vote.votes[id]);
+  }
+  return [];
+}
+function isCpu(G, pid) { const p = G.players.find(x => x.id === pid); return !!(p && p.cpu); }
+function tick(G, now, auto) {
+  now = now ?? Date.now();
+  if (G.phase === 'vote' && now >= G.vote.deadline) { tally(G, now); G.ver++; return true; }
+  if (now < G.cpuAt) return false;
+  const w = waitingFor(G).filter(id => isCpu(G, id) || (auto && auto(id)));
+  if (!w.length) return false;
+  const pid = w[0];
+  const a = cpuDecide(G, pid);
+  if (!a) return false;
+  const ok = act(G, pid, a, now);
+  if (G.phase === 'vote' && w.length > 1) G.cpuAt = now + 400;
+  return ok;
+}
+const HARM_TOP = ['gekokujo', 'agari', 'mawashi', 'fate', 'tsure'];
+function cpuDecide(G, pid) {
+  const ctx = makeCtx(G), hand = G.hands[pid];
+  switch (G.phase) {
+    case 'exchange': {
+      const nd = G.pending.need[pid];
+      return { t: 'exchange', ids: hand.slice().sort((a, b) => strength(a, ctx) - strength(b, ctx)).slice(0, nd.n) };
+    }
+    case 'param': {
+      const opts = paramOptions(G, G.pending.key);
+      if (G.pending.key === 'fav') { const c = {}; hand.forEach(x => { c[x[0]] = (c[x[0]] || 0) + 1; }); return { t: 'param', v: opts.sort((a, b) => (c[b] || 0) - (c[a] || 0))[0] }; }
+      const cnt = {}; hand.forEach(x => { const r = parse(x).r; cnt[r] = (cnt[r] || 0) + 1; });
+      if (G.pending.key === 'strong') return { t: 'param', v: opts.sort((a, b) => (cnt[b] || 0) - (cnt[a] || 0) || b - a)[0] };
+      return { t: 'param', v: opts.sort((a, b) => (cnt[a] || 0) - (cnt[b] || 0) || b - a)[0] };
+    }
+    case 'tsure': {
+      const w = hand.slice().sort((a, b) => strength(a, ctx) - strength(b, ctx))[0];
+      return { t: 'tsure', id: w };
+    }
+    case 'gekokujo': return { t: 'gekokujo', target: G.pending.targets[0] };
+    case 'give7': case 'drop10': {
+      // 弱い札から手放す。ただし最後の1枚を反則になる札で残さないよう、強い札は手元に残す
+      const w = hand.slice().sort((a, b) => strength(a, ctx) - strength(b, ctx));
+      const n = Math.min(G.pending.n, Math.max(0, hand.length - 1));
+      return { t: G.phase, ids: w.slice(0, n) };
+    }
+    case 'veto': {
+      const c = G.pending.cands.slice().sort((a, b) => harm(b) - harm(a));
+      return { t: 'veto', key: c[0] };
+    }
+    case 'vote': {
+      const o = G.vote.options, top = G.order[0];
+      const pick = pid === top ? o.slice().sort((a, b) => harm(a) - harm(b))[0]
+        : (R(G) < 0.7 ? o.slice().sort((a, b) => harm(b) - harm(a))[0] : o[Math.floor(R(G) * o.length)]);
+      return { t: 'vote', key: pick };
+    }
+    case 'play': {
+      const cands = candidates(hand, ctx);
+      if (!cands.length) return { t: 'pass' };
+      const sc = c => {
+        const strong = c.ids.reduce((a, id) => a + Math.max(0, strength(id, ctx)), 0) / c.ids.length;
+        return strong - c.ids.length * (ctx.top ? 0 : 3);
+      };
+      cands.sort((a, b) => sc(a) - sc(b));
+      const pick = cands[0];
+      const isStrong = pick.ids.some(id => { const r = parse(id).r; return r === JOKER_V || r === 15 || r === ctx.strong; });
+      if (ctx.top && isStrong && hand.length > 5 && R(G) < 0.6) return { t: 'pass' };
+      return { t: 'play', ids: pick.ids };
+    }
+  }
+  return null;
+}
+function harm(k) { const i = HARM_TOP.indexOf(k); return i < 0 ? 0 : HARM_TOP.length - i; }
+
+/* ---------- 本性診断 ---------- */
+const TYPES = {
+  dictator: { name: '独裁型', sub: '法律を握って離さない人', desc: '大富豪の座に座ると、廃案の札を迷わず切ります。勝つための手段を選ばない、筋の通った権力者です。' },
+  rebel:    { name: '革命家', sub: 'ひっくり返すことに燃える人', desc: '強い者がいると、つい倒したくなります。場の空気を一度で塗り替えるのはたいていこの人です。' },
+  watcher:  { name: '様子見の名人', sub: '出せるのに出さない人', desc: '手札に余裕があっても、まず周りを見ます。最後に笑うための我慢ができる人です。' },
+  charger:  { name: '切り込み隊長', sub: '強い札から行く人', desc: '2もジョーカーも、使いどきは今だと考えます。場を動かすのはいつもこの人の一手です。' },
+  hoarder:  { name: '温存の鬼', sub: '最後の一枚まで隠す人', desc: '強い札は最後の最後まで手放しません。終盤の一撃のために序盤の負けを受け入れられます。' },
+  follower: { name: '長いものに巻かれる型', sub: '権力者の隣にいる人', desc: '投票ではたいてい大富豪と同じ側に立ちます。逆らわないことで生き残る、現実的な人です。' },
+  contrarian: { name: '天邪鬼', sub: '大富豪の反対に入れる人', desc: '大富豪が右と言えば左に入れます。交渉の時間がいちばん楽しいのはこの人です。' },
+  phoenix:  { name: '不死鳥', sub: '落ちても戻ってくる人', desc: '大きく沈んでも、次の回には上に戻ってきます。順位の上がり下がりがこの夜の見どころでした。' },
+};
+function diagnose(G) {
+  const res = {};
+  const rounds = Math.max(1, G.round);
+  G.players.forEach(p => {
+    const s = st(G, p.id);
+    const turns = s.plays + s.passes || 1;
+    const sc = {
+      dictator: s.tops / rounds * 3 + s.vetoes * 0.6,
+      rebel: s.revs * 1.6 + s.gekokujo * 2.5,
+      watcher: (s.passOpt / turns) * 6,
+      charger: (s.strongEarly * 1.2 + s.kiri * 0.6) / rounds,
+      hoarder: s.strongLate * 1.6 / rounds,
+      follower: (s.withTop + s.againstTop) >= 2 ? (s.withTop / (s.withTop + s.againstTop)) * 3 : 0,
+      contrarian: (s.withTop + s.againstTop) >= 2 ? (s.againstTop / (s.withTop + s.againstTop)) * 3.2 : 0,
+      phoenix: (s.climb * 1.0 + s.ochi * 0.5 + s.fate) / rounds * 1.5,
+    };
+    const ty = Object.keys(sc).sort((a, b) => sc[b] - sc[a])[0];
+    const ms = (G.moments[p.id] || []).slice().sort((a, b) => b.score - a.score || b.round - a.round);
+    const favLaw = Object.keys(s.voteFor).sort((a, b) => s.voteFor[b] - s.voteFor[a])[0];
+    res[p.id] = {
+      type: ty, ...TYPES[ty],
+      moment: ms[0] ? ms[0].text : null,
+      nums: [
+        { k: 'パスした回数', v: `${s.passes}回` },
+        { k: '革命', v: `${s.revs}回` },
+        { k: '大富豪になった回数', v: `${s.tops}回` },
+        { k: '大富豪と同じ側への投票', v: (s.withTop + s.againstTop) ? `${s.withTop}/${s.withTop + s.againstTop}票` : 'なし' },
+      ],
+      favLaw: favLaw ? LAWS[favLaw].name() : null,
+      avg: s.rounds ? s.rankSum / s.rounds : null,
+    };
+  });
+  return res;
+}
+
+/* ---------- 画面向けの見せ方 ---------- */
+function pubView(G, now) {
+  const ctx = makeCtx(G);
+  const n = G.players.length;
+  return {
+    code: G.code, mode: G.mode, phase: G.phase, round: G.round, ver: G.ver, now: now || Date.now(),
+    players: G.players.map(p => ({
+      id: p.id, name: p.name, cpu: p.cpu, title: titleOf(G, p.id),
+      count: G.hands[p.id] ? G.hands[p.id].length : 0,
+      out: G.finished.includes(p.id) ? G.finished.indexOf(p.id) + 1 : (G.ochi === p.id ? -1 : (G.fouls || []).includes(p.id) ? -2 : 0),
+      passed: G.passed.includes(p.id),
+    })),
+    turn: G.phase === 'play' ? G.turn : null,
+    field: { top: G.field.top, topIds: G.field.topIds, topPid: G.field.topPid, prevIds: G.field.prevIds, lock: G.field.lock, stack: G.field.stack || [] },
+    cfg: G.cfg, rev: G.rev, jback: !!G.jback, dir: G.dir || 1, laws: G.laws.map((l, i) => ({ key: l.key, param: l.param, no: i + 1, name: LAWS[l.key].name(l.param), text: LAWS[l.key].text(l.param) })),
+    log: G.log.slice(-5), flash: G.flash, fate: G.fate,
+    waiting: waitingFor(G),
+    pending: G.pending ? { type: G.pending.type, pid: G.pending.pid || null, cands: G.pending.cands || null, key: G.pending.key || null } : null,
+    vote: G.vote ? {
+      options: G.vote.options, vetoed: G.vote.vetoed || null, deadline: G.vote.deadline, voted: Object.keys(G.vote.votes || {}),
+      result: G.vote.result, counts: G.vote.result ? G.vote.counts : null, tie: G.vote.tie, expired: G.vote.expired,
+      votes: G.vote.result ? G.vote.votes : null,
+    } : null,
+    results: G.results, order: G.order, titles: TITLES[n] || [],
+    diag: G.diag, clears: G.clears, leader: (G.players.find(p => !p.cpu) || {}).id || null,
+    lawInfo: Object.fromEntries(LAW_KEYS.map(k => [k, { name: LAWS[k].name(), text: LAWS[k].text() }])),
+  };
+}
+function privView(G, pid) {
+  const v = { hand: G.hands[pid] || [], prompt: null };
+  if (G.phase === 'exchange' && G.pending.need[pid] && !G.pending.done[pid]) {
+    const nd = G.pending.need[pid];
+    v.prompt = { type: 'exchange', n: nd.n, to: pName(G, nd.to), got: nd.got };
+  } else if (G.phase === 'exchange') {
+    for (const k in G.pending.need) if (G.pending.need[k].to === pid) v.prompt = { type: 'gave', n: G.pending.need[k].n, to: pName(G, k), gave: G.pending.need[k].got };
+  }
+  if (G.pending && G.pending.pid === pid) {
+    if (G.phase === 'give7') v.prompt = { type: 'give7', n: G.pending.n, to: pName(G, G.pending.to) };
+    if (G.phase === 'drop10') v.prompt = { type: 'drop10', n: G.pending.n };
+    if (G.phase === 'param') v.prompt = { type: 'param', key: G.pending.key, options: paramOptions(G, G.pending.key) };
+    if (G.phase === 'tsure') v.prompt = { type: 'tsure' };
+    if (G.phase === 'gekokujo') v.prompt = { type: 'gekokujo', targets: G.pending.targets.map(id => ({ id, name: pName(G, id), title: titleOf(G, id) })) };
+    if (G.phase === 'veto') v.prompt = { type: 'veto', cands: G.pending.cands };
+  }
+  if (G.phase === 'vote') v.myVote = G.vote.votes[pid] || null;
+  return v;
+}
+
+const api = { LOCAL_RULES, RULES, defaultCfg, cleanCfg, lawUsable, SUITS, SUIT_CH, SUIT_NAME, RL, LAWS, LAW_KEYS, KANJI, TITLES, VOTE_MS, parse, label, cardSort, makeCtx, interpret, bestPlay, describe, candidates, strength,
+  newGame, addPlayer, addCpu, act, tick, pubView, privView, waitingFor, diagnose, paramOptions, cpuDecide };
+if (typeof module !== 'undefined') module.exports = api; else root.Engine = api;
+})(this);
+
+</script>
+<script>
+/* イラスト:墨の線と朱の二色刷り。線は2.2、角は丸く */
+(function (root) {
+'use strict';
+const sv = (vb, body, cls) => `<svg class="ill ${cls || ''}" viewBox="${vb}" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+
+/* マーク(24×24) */
+const SUIT_PATH = {
+  H: 'M12 21.2C12 21.2 2.6 14.8 2.6 8.6C2.6 5.5 5 3.3 7.8 3.3C9.7 3.3 11.2 4.4 12 6C12.8 4.4 14.3 3.3 16.2 3.3C19 3.3 21.4 5.5 21.4 8.6C21.4 14.8 12 21.2 12 21.2Z',
+  D: 'M12 1.8L20.2 12L12 22.2L3.8 12Z',
+  S: 'M12 1.8C12 1.8 2.8 8.6 2.8 13.8C2.8 16.8 5 18.8 7.7 18.8C9.4 18.8 10.7 18 11.4 16.8L10.2 22.2H13.8L12.6 16.8C13.3 18 14.6 18.8 16.3 18.8C19 18.8 21.2 16.8 21.2 13.8C21.2 8.6 12 1.8 12 1.8Z',
+  C: 'M12 2.2A4.6 4.6 0 0 1 16.3 8.4A4.6 4.6 0 1 1 13.1 16.4L14.2 22.2H9.8L10.9 16.4A4.6 4.6 0 1 1 7.7 8.4A4.6 4.6 0 0 1 12 2.2Z',
+};
+function suit(s, cls) { return `<svg class="suit ${cls || ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="${SUIT_PATH[s]}" fill="currentColor"/></svg>`; }
+
+/* 絵札の肖像(60×80)。cは差し色(マークの色) */
+function portrait(r, s) {
+  const mark = `<g transform="translate(24 58) scale(.5)"><path d="${SUIT_PATH[s]}" fill="currentColor" stroke="none"/></g>`;
+  if (r === 13) return sv('0 0 60 80', `
+    <path class="a" d="M15 24L18 9L25 17L30 6L35 17L42 9L45 24Z"/>
+    <path d="M17 26h26v10a13 13 0 0 1-26 0z"/>
+    <circle class="k" cx="24.5" cy="33" r="1.4"/><circle class="k" cx="35.5" cy="33" r="1.4"/>
+    <path d="M20 40c3 9 17 9 20 0"/><path d="M24 44c2 3 10 3 12 0"/>
+    <path d="M8 79c1-15 9-21 22-21s21 6 22 21"/>${mark}`, 'face');
+  if (r === 12) return sv('0 0 60 80', `
+    <path class="a" d="M20 16l4-6 6 5 6-5 4 6z"/>
+    <path d="M14 46c-2-14 2-30 16-30s18 16 16 30"/>
+    <path d="M19 26h22v9a11 11 0 0 1-22 0z"/>
+    <circle class="k" cx="25" cy="32" r="1.3"/><circle class="k" cx="35" cy="32" r="1.3"/>
+    <path d="M27 40c2 1.4 4 1.4 6 0"/>
+    <path d="M10 79c1-14 8-20 20-20s19 6 20 20"/>${mark}`, 'face');
+  return sv('0 0 60 80', `
+    <path d="M15 24c2-10 8-14 15-14s13 4 15 14z"/><path class="a" d="M42 14c6-6 12-6 14-3c-5 0-9 3-12 7z"/>
+    <path d="M18 24h24v10a12 12 0 0 1-24 0z"/>
+    <path d="M18 27c4 3 8 3 12 0c4 3 8 3 12 0"/>
+    <circle class="k" cx="25" cy="33" r="1.3"/><circle class="k" cx="35" cy="33" r="1.3"/>
+    <path d="M26 40h8"/>
+    <path d="M9 79c1-15 9-21 21-21s20 6 21 21"/>${mark}`, 'face');
+}
+function jester() {
+  return sv('0 0 60 80', `
+    <path class="a" d="M14 34c-2-10-8-16-12-16c6 8 6 14 8 18z"/><path class="a" d="M46 34c2-10 8-16 12-16c-6 8-6 14-8 18z"/>
+    <path d="M14 34c2-14 8-24 16-26c8 2 14 12 16 26z"/>
+    <circle class="a" cx="30" cy="7" r="3"/><circle cx="2.5" cy="18" r="2.2"/><circle cx="57.5" cy="18" r="2.2"/>
+    <path d="M17 36h26v6a13 13 0 0 1-26 0z"/>
+    <path d="M23 42q2-2 4 0M33 42q2-2 4 0"/><path d="M23 49c4 5 10 5 14 0"/>
+    <path d="M12 79l6-16l12 6l12-6l6 16"/>`, 'face');
+}
+
+/* 札の裏の柄(七宝)。一度だけ文書に置き、裏面から参照する */
+const DEFS = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <pattern id="shippo" width="10" height="10" patternUnits="userSpaceOnUse">
+    <circle cx="0" cy="0" r="5" fill="none" stroke="#c9451f" stroke-width=".9"/><circle cx="10" cy="0" r="5" fill="none" stroke="#c9451f" stroke-width=".9"/>
+    <circle cx="0" cy="10" r="5" fill="none" stroke="#c9451f" stroke-width=".9"/><circle cx="10" cy="10" r="5" fill="none" stroke="#c9451f" stroke-width=".9"/>
+    <circle cx="5" cy="5" r="5" fill="none" stroke="#c9451f" stroke-width=".9"/></pattern></defs></svg>`;
+function back() {
+  return `<svg class="back" viewBox="0 0 50 70" aria-hidden="true"><rect x=".6" y=".6" width="48.8" height="68.8" rx="5" fill="#fdfcf8" stroke="#2b2a27" stroke-width="1.2"/>
+    <rect x="5" y="5" width="40" height="60" rx="2" fill="url(#shippo)" stroke="#c9451f" stroke-width="1"/>
+    <circle cx="25" cy="35" r="7.5" fill="#fdfcf8" stroke="#c9451f" stroke-width="1"/><circle cx="25" cy="35" r="3" fill="#c9451f"/></svg>`;
+}
+
+/* 法律(64×64) */
+const LAW = {
+  strong: `<path class="a" d="M22 15l3-8 4 5 3-7 3 7 4-5 3 8z"/><rect x="18" y="19" width="28" height="38" rx="3"/><path d="M26 30h12M26 38h12M26 46h7"/>`,
+  ban: `<rect x="10" y="8" width="44" height="30" rx="2"/><path d="M32 38v20M24 58h16"/><circle class="as" cx="32" cy="23" r="9"/><path class="as" d="M25.6 16.6l12.8 12.8"/>`,
+  tsure: `<rect x="6" y="16" width="20" height="30" rx="2.5" transform="rotate(-10 16 31)"/><rect x="38" y="16" width="20" height="30" rx="2.5" transform="rotate(10 48 31)"/><path class="as" d="M24 34c3-4 5-4 8 0s5 4 8 0"/><path d="M14 54h36"/>`,
+  fav: `<path class="a" d="M22 38l-6 20 8-4 4 7 4-14z"/><path class="a" d="M42 38l6 20-8-4-4 7-4-14z"/><circle cx="32" cy="26" r="16"/><path class="k" d="M32 35s-8-5-8-10c0-2.6 2-4.2 4-4.2 1.7 0 3.2 1 4 2.4.8-1.4 2.3-2.4 4-2.4 2 0 4 1.6 4 4.2 0 5-8 10-8 10z"/>`,
+  joker: `<path d="M8 20h48v34H8z"/><path d="M8 20l24 18 24-18"/><circle class="a" cx="32" cy="40" r="7"/><path d="M26 10l6 6 6-6M20 14l4 4M44 14l-4 4"/>`,
+  fate: `<rect x="20" y="16" width="24" height="36" rx="3"/><path class="a" d="M32 26l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/><path d="M12 10l4 4M52 10l-4 4M32 4v6M8 30h5M51 30h5"/>`,
+  mawashi: `<path d="M50 24a20 20 0 0 0-34-6"/><path d="M16 10v8h8"/><path d="M14 40a20 20 0 0 0 34 6"/><path d="M48 54v-8h-8"/><rect class="pp" x="25" y="22" width="14" height="20" rx="2"/>`,
+  gekokujo: `<path class="a" d="M38 10v40"/><path class="a" d="M38 10h18l-5 7 5 7H38z"/><path d="M10 52l4-14 6 6 5-9 5 9 6-6 3 14z" transform="rotate(14 22 46)"/><path d="M6 58h52"/>`,
+  agari: `<rect x="8" y="26" width="8" height="30" rx="1"/><path d="M4 56h16"/><rect x="14" y="22" width="44" height="8" rx="2"/><path class="as" d="M22 22l-5 8M32 22l-5 8M42 22l-5 8M52 22l-5 8"/><rect class="pp" x="40" y="36" width="12" height="17" rx="2"/>`,
+};
+function law(key, cls) { return sv('0 0 64 64', LAW[key] || '', 'law-ic ' + (cls || '')); }
+
+/* 階級(64×64) */
+const RANK = {
+  '大富豪': `<path class="a" d="M8 48l4-30 12 14 8-20 8 20 12-14 4 30z"/><path d="M8 54h48"/>`,
+  '富豪': `<path d="M18 46V14h28v32"/><path class="a" d="M18 38h28v8H18z"/><path d="M8 50c8-4 40-4 48 0"/>`,
+  '平民': `<path d="M14 40c0-14 8-22 18-22s18 8 18 22"/><path d="M6 42c10 4 42 4 52 0"/><path class="a" d="M24 22c4-2 12-2 16 0"/>`,
+  '貧民': `<path d="M14 40c0-14 8-22 18-22s18 8 18 22"/><path d="M6 42c10 4 42 4 52 0"/><rect class="a" x="34" y="26" width="9" height="8" transform="rotate(12 38 30)"/><path d="M22 24l3 5"/>`,
+  '大貧民': `<path d="M12 28h40l-4 26H16z"/><path d="M12 28c0-8 8-14 20-14s20 6 20 14"/><circle class="a" cx="23" cy="14" r="3.5"/><circle class="a" cx="41" cy="14" r="3.5"/><path d="M48 8c4 0 6 2 6 5M52 4c-2 4-6 4-8 2"/>`,
+};
+function rank(t) { return RANK[t] ? sv('0 0 64 64', RANK[t], 'rank-ic') : ''; }
+
+/* 本性診断(120×120) */
+const TYPE = {
+  dictator: `<path class="a" d="M38 42l4-22 11 11 7-17 7 17 11-11 4 22z"/><path d="M36 48h48"/><rect x="30" y="66" width="36" height="16" rx="3" transform="rotate(-30 48 74)"/><path d="M58 84l26 22"/><path d="M14 108h92"/>`,
+  rebel: `<path d="M34 108V14"/><path class="a" d="M34 16c14-6 24 6 38 0s20-2 26 2v34c-6-4-12-6-26 0s-24-6-38 0z"/><path d="M20 108h30"/><path d="M62 70l14 14M86 64l8 18M98 80l-10 6"/>`,
+  watcher: `<path d="M8 82h104"/><path d="M14 82V58h92v24"/><circle cx="44" cy="44" r="12"/><circle cx="76" cy="44" r="12"/><path d="M56 42h8"/><circle class="a" cx="44" cy="44" r="4"/><circle class="a" cx="76" cy="44" r="4"/><path d="M34 96h52"/>`,
+  charger: `<path d="M22 98L92 28"/><path class="a" d="M92 28l14-8-8 14z"/><path d="M28 80l12 12M18 100l6-6"/><path class="as" d="M20 40c20-6 42 0 58 16M30 22c26-2 48 8 62 28" />`,
+  hoarder: `<rect x="18" y="50" width="84" height="50" rx="4"/><path d="M18 50c0-16 14-26 42-26s42 10 42 26"/><path d="M18 64h84"/><rect class="a" x="52" y="58" width="16" height="18" rx="2"/><path d="M60 64v6"/><path d="M100 22l6-6M106 34h8M92 14v-8"/>`,
+  follower: `<circle class="a" cx="60" cy="26" r="11"/><path d="M40 106V62c0-10 8-18 20-18s20 8 20 18v44"/><path d="M28 60c22 9 42 9 64 0M28 78c22 9 42 9 64 0M28 96c22 9 42 9 64 0"/><path d="M92 60c9 1 10 8 4 11M28 96c-9 1-10 8-4 11"/>`,
+  contrarian: `<path d="M12 34h60M60 24l12 10-12 10"/><path d="M12 60h60M60 50l12 10-12 10"/><path class="as" d="M108 86H48M60 76l-12 10 12 10"/><circle class="a" cx="100" cy="86" r="4"/>`,
+  phoenix: `<path d="M60 96c-14-10-18-26-8-40 2 10 8 14 8 14s-2-16 10-30c0 14 8 20 8 30 0 12-6 20-18 26z"/><path class="a" d="M60 96c-6-6-6-16 0-24 4 8 8 10 8 16s-4 8-8 8z"/><path d="M38 56C22 50 14 36 16 22c10 12 22 14 30 22M82 56c16-6 24-20 22-34-10 12-22 14-30 22"/><path d="M50 108h20"/>`,
+};
+function type(k) { return TYPE[k] ? sv('0 0 120 120', TYPE[k], 'type-ic') : ''; }
+
+/* ロゴの判(朱の角印) */
+function seal(ch) { return `<svg class="seal" viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="4" fill="none" stroke="#c9451f" stroke-width="2.6"/><text x="20" y="28" text-anchor="middle" font-size="22" fill="#c9451f" font-family="Hiragino Mincho ProN,Yu Mincho,Noto Serif JP,Noto Serif CJK JP,serif" font-weight="700">${ch}</text></svg>`; }
+/* 木槌 */
+function gavel() { return sv('0 0 64 64', `<rect x="14" y="10" width="26" height="14" rx="3" transform="rotate(-35 27 17)"/><path d="M32 26l22 22"/><path d="M6 56h30"/><rect class="pp" x="10" y="50" width="22" height="6" rx="1.5"/>`, 'gavel'); }
+
+root.Illus = { suit, portrait, jester, back, law, rank, type, seal, gavel, DEFS, SUIT_PATH };
+})(this);
+
+</script>
+<script>
+/* 効果音:Web Audioで合成し、議場の響き(残響)を付ける。
+   録音した音源を使う場合は window.SOUND_FILES = { fanfare: 'sounds/fanfare.mp3', ... } を設定すると差し替わる */
+(function (root) {
+'use strict';
+let ctx = null, bus = null, revIn = null, noiseBuf = null;
+let muted = false;
+try { muted = localStorage.getItem('dfg-mute') === '1'; } catch (e) { /* 保存できない環境 */ }
+const FILES = root.SOUND_FILES || {};
+const fileCache = {};
+
+function init(c) {
+  if (ctx) return ctx;
+  const AC = root.AudioContext || root.webkitAudioContext;
+  if (!c && !AC) return null;
+  ctx = c || new AC();
+  const comp = ctx.createDynamicsCompressor();
+  comp.threshold.value = -16; comp.knee.value = 12; comp.ratio.value = 3; comp.attack.value = 0.004; comp.release.value = 0.2;
+  comp.connect(ctx.destination);
+  const master = ctx.createGain(); master.gain.value = 0.85; master.connect(comp);
+  // 議場の残響:減衰する雑音で作る(左右で少し違えて広がりを出す)
+  const conv = ctx.createConvolver(); conv.buffer = impulse(2.8, 2.6);
+  const wet = ctx.createGain(); wet.gain.value = 0.34;
+  conv.connect(wet); wet.connect(master);
+  revIn = ctx.createGain(); revIn.connect(conv);
+  bus = ctx.createGain(); bus.connect(master);
+  noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return ctx;
+}
+function impulse(sec, decay) {
+  const n = Math.floor(ctx.sampleRate * sec), b = ctx.createBuffer(2, n, ctx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = b.getChannelData(ch);
+    for (let i = 0; i < n; i++) {
+      const t = i / n;
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, decay) * (i < ctx.sampleRate * 0.012 ? 0 : 1);
+    }
+    // 初期反射
+    [0.017, 0.029, 0.041].forEach((s, k) => { const j = Math.floor(s * ctx.sampleRate) + ch * 37; if (j < n) d[j] += 0.5 / (k + 1); });
+  }
+  return b;
+}
+function out(rev, gain) {
+  const g = ctx.createGain(); g.gain.value = gain ?? 1;
+  g.connect(bus);
+  const s = ctx.createGain(); s.gain.value = rev ?? 0.5; g.connect(s); s.connect(revIn);
+  return g;
+}
+function env(param, t, a, peak, d, sus, r, end) {
+  param.cancelScheduledValues(t);
+  param.setValueAtTime(0.0001, t);
+  param.exponentialRampToValueAtTime(Math.max(peak, 0.0002), t + a);
+  param.exponentialRampToValueAtTime(Math.max(peak * sus, 0.0002), t + a + d);
+  if (end != null) { param.setValueAtTime(Math.max(peak * sus, 0.0002), end); param.exponentialRampToValueAtTime(0.0001, end + r); }
+}
+function noise(t, dur, o) {
+  const src = ctx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+  const f = ctx.createBiquadFilter(); f.type = o.type || 'bandpass'; f.frequency.value = o.f || 2000; f.Q.value = o.q ?? 0.8;
+  if (o.f2) f.frequency.exponentialRampToValueAtTime(o.f2, t + dur);
+  const g = ctx.createGain();
+  env(g.gain, t, o.a ?? 0.002, o.v ?? 0.5, dur, 0.001, 0.05, null);
+  src.connect(f); f.connect(g); g.connect(out(o.rev, 1));
+  src.start(t, Math.random() * 1.5); src.stop(t + dur + 0.1);
+}
+function tone(t, freq, dur, o) {
+  o = o || {};
+  const osc = ctx.createOscillator(); osc.type = o.type || 'sine'; osc.frequency.setValueAtTime(freq, t);
+  if (o.to) osc.frequency.exponentialRampToValueAtTime(o.to, t + (o.glide || dur));
+  const g = ctx.createGain();
+  env(g.gain, t, o.a ?? 0.003, o.v ?? 0.4, dur, 0.001, 0.05, null);
+  osc.connect(g); g.connect(out(o.rev, 1));
+  osc.start(t); osc.stop(t + dur + 0.1);
+}
+/* 金管:のこぎり波3本を少しずらし、開いていく低域通過で息の立ち上がりを作る */
+function brass(t, freq, dur, v) {
+  const g = ctx.createGain(); const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 1.2;
+  f.frequency.setValueAtTime(350, t); f.frequency.exponentialRampToValueAtTime(2800 + freq, t + 0.07); f.frequency.exponentialRampToValueAtTime(1300 + freq * 0.8, t + 0.3);
+  env(g.gain, t, 0.035, v ?? 0.16, 0.12, 0.72, 0.28, t + dur);
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 5.4; const lg = ctx.createGain(); lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(freq * 0.004, t + 0.35);
+  lfo.connect(lg);
+  [-7, 0, 6].forEach(c => {
+    const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq; o.detune.value = c;
+    lg.connect(o.frequency); o.connect(f); o.start(t); o.stop(t + dur + 0.4);
+  });
+  lfo.start(t); lfo.stop(t + dur + 0.4);
+  f.connect(g); g.connect(out(0.9, 1));
+}
+function timp(t, freq, v) {
+  tone(t, freq * 1.5, 1.4, { to: freq, glide: 0.08, v: (v ?? 0.6), rev: 0.8 });
+  tone(t, freq * 2.7, 0.5, { v: (v ?? 0.6) * 0.25, rev: 0.6 });
+  noise(t, 0.12, { type: 'lowpass', f: 380, v: (v ?? 0.6) * 0.6, rev: 0.5 });
+}
+function cymbal(t, v) {
+  noise(t, 2.2, { type: 'highpass', f: 5200, q: 0.5, v: v ?? 0.22, rev: 0.7 });
+  noise(t, 1.2, { type: 'bandpass', f: 8200, q: 1.5, v: (v ?? 0.22) * 0.6, rev: 0.5 });
+}
+function bell(t, freq, v, ratio) {
+  const car = ctx.createOscillator(), mod = ctx.createOscillator(), mg = ctx.createGain(), g = ctx.createGain();
+  car.frequency.value = freq; mod.frequency.value = freq * (ratio || 1.41);
+  mg.gain.setValueAtTime(freq * 2.2, t); mg.gain.exponentialRampToValueAtTime(1, t + 1.6);
+  mod.connect(mg); mg.connect(car.frequency);
+  env(g.gain, t, 0.002, v ?? 0.25, 2.2, 0.001, 0.1, null);
+  car.connect(g); g.connect(out(0.7, 1));
+  car.start(t); mod.start(t); car.stop(t + 2.4); mod.stop(t + 2.4);
+}
+function marimba(t, freq, v) {
+  tone(t, freq, 0.9, { v: v ?? 0.3, rev: 0.45 });
+  tone(t, freq * 4, 0.12, { v: (v ?? 0.3) * 0.35, rev: 0.3 });
+  tone(t, freq * 10, 0.03, { v: (v ?? 0.3) * 0.15, rev: 0.2 });
+}
+function card(t, v) {
+  noise(t, 0.07, { f: 2600 + Math.random() * 1600, q: 0.7, v: v ?? 0.42, rev: 0.25 });
+  tone(t, 160, 0.05, { to: 90, v: (v ?? 0.42) * 0.5, rev: 0.1 });
+}
+function gavel(t, v) {
+  tone(t, 230, 0.22, { type: 'triangle', to: 120, glide: 0.06, v: v ?? 0.7, rev: 1 });
+  tone(t, 92, 0.3, { v: (v ?? 0.7) * 0.7, rev: 1 });
+  noise(t, 0.02, { type: 'highpass', f: 2400, v: (v ?? 0.7) * 0.5, rev: 0.8 });
+}
+const N = { C3: 130.81, G2: 98, D3: 146.83, A2: 110, Bb2: 116.54, F3: 174.61, G3: 196, A3: 220, Bb3: 233.08, C4: 261.63, Cs4: 277.18, D4: 293.66, E4: 329.63, F4: 349.23, G4: 392, A4: 440, Bb4: 466.16, C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880, C6: 1046.5, E6: 1318.5, G6: 1568 };
+
+const S = {
+  card(t) { card(t); },
+  play(t) { card(t, 0.5); },
+  select(t) { tone(t, 1900, 0.025, { v: 0.14, rev: 0.05 }); },
+  shuffle(t) { let x = t; for (let i = 0; i < 14; i++) { card(x, 0.22 + Math.random() * 0.15); x += 0.028 + Math.random() * 0.03; } },
+  deal(t) { for (let i = 0; i < 8; i++) card(t + i * 0.075, 0.3); },
+  gavel(t) { gavel(t); },
+  knock3(t) { gavel(t, 0.65); gavel(t + 0.36, 0.65); gavel(t + 0.72, 0.85); },
+  stamp(t) { tone(t, 130, 0.22, { to: 45, glide: 0.18, v: 0.8, rev: 0.4 }); noise(t, 0.12, { type: 'lowpass', f: 900, v: 0.5, rev: 0.4 }); },
+  tick(t) { tone(t, 1750, 0.02, { v: 0.12, rev: 0.05 }); },
+  turn(t) { bell(t, N.G5, 0.16, 1.41); bell(t + 0.16, N.E5, 0.14, 1.41); },
+  whoosh(t) { noise(t, 0.4, { f: 300, f2: 6000, q: 1.2, v: 0.5, rev: 0.4, a: 0.12 }); bell(t + 0.28, 2600, 0.08, 3.1); },
+  out(t) { [N.C6, N.E6, N.G6].forEach((f, i) => marimba(t + i * 0.09, f, 0.22)); },
+  bellVote(t) { bell(t, N.G4, 0.22, 1.41); bell(t + 0.55, N.D5, 0.2, 1.41); },
+  veto(t) { gavel(t); S.stamp(t + 0.35); },
+  fanfare(t) {
+    [[N.G4, 0], [N.G4, 0.13], [N.G4, 0.26]].forEach(([f, d]) => brass(t + d, f, 0.1, 0.13));
+    brass(t + 0.4, N.C5, 0.3, 0.15);
+    [N.C4, N.E4, N.G4, N.C5].forEach(f => brass(t + 0.75, f, 1.2, 0.09));
+    timp(t + 0.75, N.C3 / 2 * 2, 0.7); cymbal(t + 0.75, 0.16);
+  },
+  enacted(t) { gavel(t, 0.8); S.stamp(t + 0.12); S.fanfare(t + 0.35); },
+  opening(t) {
+    S.knock3(t);
+    const s = t + 1.2;
+    brass(s, N.C4, 0.45, 0.12); brass(s + 0.45, N.E4, 0.45, 0.12); brass(s + 0.9, N.G4, 0.45, 0.13);
+    [N.C4, N.E4, N.G4, N.C5].forEach(f => brass(s + 1.35, f, 1.6, 0.085));
+    timp(s + 1.35, 65.4 * 2, 0.75); cymbal(s + 1.35, 0.18);
+  },
+  revolution(t) {
+    for (let i = 0; i < 14; i++) timp(t + i * 0.055, N.A2 / 2 * 2, 0.15 + i * 0.03);
+    const s = t + 0.8;
+    timp(s, N.D3 / 2 * 2, 0.9); cymbal(s, 0.24);
+    [N.D4, N.F4, N.A4, N.D5].forEach(f => brass(s, f, 0.32, 0.085));
+    [N.Bb3, N.D4, N.F4, N.Bb4].forEach(f => brass(s + 0.42, f, 0.32, 0.1));
+    [N.A3, N.Cs4, N.E4, N.A4].forEach(f => brass(s + 0.84, f, 1.3, 0.1));
+    timp(s + 0.84, N.A2, 0.8);
+  },
+  crown(t) { [N.C5, N.E5, N.G5].forEach((f, i) => brass(t + i * 0.12, f, 0.12, 0.12)); [N.C5, N.E5, N.G5, N.C6].forEach(f => brass(t + 0.38, f, 1, 0.08)); cymbal(t + 0.38, 0.14); },
+  drumroll(t) { for (let i = 0; i < 34; i++) noise(t + i * 0.04, 0.05, { f: 1900, q: 0.9, v: 0.06 + i * 0.008, rev: 0.4 }); cymbal(t + 1.38, 0.2); [N.C4, N.G4, N.C5, N.E5].forEach(f => brass(t + 1.38, f, 0.9, 0.08)); },
+};
+
+function play(name) {
+  if (muted) return;
+  if (!init()) return;
+  if (ctx.state === 'suspended') ctx.resume();
+  const t = ctx.currentTime + 0.02;
+  if (FILES[name]) { playFile(name, t); return; }
+  try { if (S[name]) S[name](t); } catch (e) { /* 音が出せなくても遊びは続ける */ }
+}
+async function playFile(name, t) {
+  try {
+    if (!fileCache[name]) fileCache[name] = fetch(FILES[name]).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b));
+    const buf = await fileCache[name];
+    const s = ctx.createBufferSource(); s.buffer = buf; s.connect(out(0.15, 1)); s.start(t);
+  } catch (e) { if (S[name]) S[name](t); }
+}
+function unlock() { if (!muted && init() && ctx.state === 'suspended') ctx.resume(); }
+function setMuted(m) { muted = m; try { localStorage.setItem('dfg-mute', m ? '1' : '0'); } catch (e) { /* 保存できない環境 */ } if (!m) unlock(); }
+/* 試験用:録音せずに合成だけを動かして音量を測る */
+async function render(name, sec) {
+  const oc = new OfflineAudioContext(2, 44100 * (sec || 4), 44100);
+  ctx = null; init(oc); S[name](0.02);
+  const buf = await oc.startRendering(); ctx = null;
+  const d = buf.getChannelData(0); let peak = 0, sum = 0; for (let i = 0; i < d.length; i++) { peak = Math.max(peak, Math.abs(d[i])); sum += d[i] * d[i]; }
+  return { peak, rms: Math.sqrt(sum / d.length), buf };
+}
+root.SFX = { play, unlock, setMuted, isMuted: () => muted, render, names: Object.keys(S) };
+})(this);
+
+</script>
+<script>
+/* QRコード(誤り訂正レベルM、バージョン1〜6、バイトモード)。外部ライブラリなしで参加用URLを描く */
+(function (root) {
+'use strict';
+// [全体の符号語数, ブロックあたりの誤り訂正語数, ブロック数]
+const SPEC = [null, [26, 10, 1], [44, 16, 1], [70, 26, 1], [100, 18, 2], [134, 24, 2], [172, 16, 4]];
+const ALIGN = [null, [], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34]];
+
+const EXP = new Array(512), LOG = new Array(256);
+(function () { let x = 1; for (let i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; } for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255]; })();
+const mul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
+function rsGen(n) { let g = [1]; for (let i = 0; i < n; i++) { const ng = new Array(g.length + 1).fill(0); for (let j = 0; j < g.length; j++) { ng[j] ^= g[j]; ng[j + 1] ^= mul(g[j], EXP[i]); } g = ng; } return g; }
+function rsRem(data, n) {
+  const g = rsGen(n), r = new Array(n).fill(0);
+  for (const b of data) { const f = b ^ r[0]; r.shift(); r.push(0); for (let i = 0; i < n; i++) r[i] ^= mul(g[i + 1], f); }
+  return r;
+}
+function utf8(s) { return Array.from(new TextEncoder().encode(s)); }
+
+function encode(text) {
+  const bytes = utf8(text);
+  let ver = 1;
+  for (; ver <= 6; ver++) { const [tot, ec, nb] = SPEC[ver]; if (bytes.length + 2 <= tot - ec * nb) break; }
+  if (ver > 6) throw new Error('長すぎます');
+  const [tot, ec, nb] = SPEC[ver];
+  const dataLen = tot - ec * nb;
+  // ビット列
+  const bits = [];
+  const put = (v, n) => { for (let i = n - 1; i >= 0; i--) bits.push((v >>> i) & 1); };
+  put(4, 4); put(bytes.length, 8); bytes.forEach(b => put(b, 8));
+  put(0, Math.min(4, dataLen * 8 - bits.length));
+  while (bits.length % 8) bits.push(0);
+  const data = [];
+  for (let i = 0; i < bits.length; i += 8) data.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+  for (let p = 0; data.length < dataLen; p++) data.push(p % 2 ? 0x11 : 0xec);
+  // ブロックに分けて誤り訂正語を付け、交互に並べる
+  const bl = dataLen / nb, blocks = [], ecs = [];
+  for (let i = 0; i < nb; i++) { const d = data.slice(i * bl, (i + 1) * bl); blocks.push(d); ecs.push(rsRem(d, ec)); }
+  const all = [];
+  for (let i = 0; i < bl; i++) blocks.forEach(b => all.push(b[i]));
+  for (let i = 0; i < ec; i++) ecs.forEach(e => all.push(e[i]));
+  // 模様
+  const size = 17 + 4 * ver;
+  const M = Array.from({ length: size }, () => new Array(size).fill(false));
+  const F = Array.from({ length: size }, () => new Array(size).fill(false));
+  const set = (x, y, v) => { M[y][x] = v; F[y][x] = true; };
+  const finder = (cx, cy) => { for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) { const x = cx + dx, y = cy + dy; if (x < 0 || y < 0 || x >= size || y >= size) continue; const d = Math.max(Math.abs(dx), Math.abs(dy)); set(x, y, d !== 2 && d !== 4); } };
+  finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+  for (let i = 0; i < size; i++) { if (!F[6][i]) set(i, 6, i % 2 === 0); if (!F[i][6]) set(6, i, i % 2 === 0); }
+  const al = ALIGN[ver];
+  for (const ay of al) for (const ax of al) {
+    if ((ax === 6 && ay === 6) || (ax === 6 && ay === al[al.length - 1]) || (ax === al[al.length - 1] && ay === 6)) continue;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+  }
+  const fmt = (mask) => {
+    const d = (0 << 3) | mask; let r = d;
+    for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+    const b = ((d << 10) | r) ^ 0x5412;
+    const bit = i => ((b >>> i) & 1) === 1;
+    for (let i = 0; i <= 5; i++) set(8, i, bit(i));
+    set(8, 7, bit(6)); set(8, 8, bit(7)); set(7, 8, bit(8));
+    for (let i = 9; i < 15; i++) set(14 - i, 8, bit(i));
+    for (let i = 0; i < 8; i++) set(size - 1 - i, 8, bit(i));
+    for (let i = 8; i < 15; i++) set(8, size - 15 + i, bit(i));
+    set(8, size - 8, true);
+  };
+  fmt(0);
+  // データを置く
+  let k = 0;
+  for (let right = size - 1; right >= 1; right -= 2) {
+    if (right === 6) right = 5;
+    for (let v = 0; v < size; v++) for (let j = 0; j < 2; j++) {
+      const x = right - j, up = ((right + 1) & 2) === 0, y = up ? size - 1 - v : v;
+      if (!F[y][x] && k < all.length * 8) { M[y][x] = ((all[k >>> 3] >>> (7 - (k & 7))) & 1) === 1; k++; }
+    }
+  }
+  const MASKS = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, (x) => x % 3 === 0, (x, y) => (x + y) % 3 === 0,
+    (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0, (x, y) => x * y % 2 + x * y % 3 === 0,
+    (x, y) => (x * y % 2 + x * y % 3) % 2 === 0, (x, y) => ((x + y) % 2 + x * y % 3) % 2 === 0];
+  const apply = m => { for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (!F[y][x] && MASKS[m](x, y)) M[y][x] = !M[y][x]; };
+  const penalty = () => {
+    let p = 0;
+    for (let i = 0; i < size; i++) {
+      let rh = 1, rv = 1;
+      for (let j = 1; j < size; j++) {
+        if (M[i][j] === M[i][j - 1]) rh++; else { if (rh >= 5) p += rh - 2; rh = 1; }
+        if (M[j][i] === M[j - 1][i]) rv++; else { if (rv >= 5) p += rv - 2; rv = 1; }
+      }
+      if (rh >= 5) p += rh - 2; if (rv >= 5) p += rv - 2;
+    }
+    for (let y = 0; y < size - 1; y++) for (let x = 0; x < size - 1; x++) { const c = M[y][x]; if (c === M[y][x + 1] && c === M[y + 1][x] && c === M[y + 1][x + 1]) p += 3; }
+    let dark = 0; M.forEach(r => r.forEach(c => { if (c) dark++; }));
+    p += Math.floor(Math.abs(dark * 20 - size * size * 10) / (size * size)) * 10;
+    return p;
+  };
+  let best = 0, bestP = Infinity;
+  for (let m = 0; m < 8; m++) { apply(m); fmt(m); const p = penalty(); if (p < bestP) { bestP = p; best = m; } apply(m); }
+  apply(best); fmt(best);
+  return M;
+}
+function svg(text, dark, light) {
+  const M = encode(text), n = M.length, q = 4;
+  let d = '';
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (M[y][x]) d += `M${x + q} ${y + q}h1v1h-1z`;
+  return `<svg class="qr" viewBox="0 0 ${n + q * 2} ${n + q * 2}" shape-rendering="crispEdges" aria-label="参加用のQRコード"><rect width="100%" height="100%" fill="${light || '#fff'}"/><path d="${d}" fill="${dark || '#000'}"/></svg>`;
+}
+const api = { encode, svg };
+if (typeof module !== 'undefined') module.exports = api; else root.QR = api;
+})(this);
+
+</script>
+<script>
+/* 画面と通信 */
+(function () {
+'use strict';
+const E = window.Engine;
+const qs = new URLSearchParams(location.search);
+const CFG = window.FIREBASE_CONFIG;
+const LOCAL = qs.has('local') || !CFG;
+const $app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* 保存できない環境では毎回入力 */ } },
+};
+const rid = () => Math.random().toString(36).slice(2, 10);
+const CODE_CH = 'ACDEFGHJKLMNPQRTUVWXY';
+const newCode = () => Array.from({ length: 4 }, () => CODE_CH[Math.floor(Math.random() * CODE_CH.length)]).join('');
+const baseUrl = () => location.href.split('?')[0].split('#')[0];
+const ROOT = 'daifugo/rooms/';
+
+/* ---------- 通信 ---------- */
+let fbReady = null;
+function loadScript(src) { return new Promise((ok, ng) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ng; document.head.appendChild(s); }); }
+function firebaseDb() {
+  if (!fbReady) fbReady = (async () => {
+    const v = '10.12.2';
+    await loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-app-compat.js`);
+    await loadScript(`https://www.gstatic.com/firebasejs/${v}/firebase-database-compat.js`);
+    window.firebase.initializeApp(CFG);
+    return window.firebase.database();
+  })();
+  return fbReady;
+}
+async function roomExists(code) {
+  if (LOCAL) return true;
+  const db = await firebaseDb();
+  const s = await db.ref(ROOT + code + '/pub').get();
+  return s.exists();
+}
+async function hostNet(code, onAct) {
+  if (LOCAL) {
+    const bc = new BroadcastChannel('dfg-' + code);
+    let last = null;
+    bc.onmessage = e => { const m = e.data; if (m.t === 'act') onAct(m.pid, m.a); if (m.t === 'hello' && last) send(last.pub, last.privs); };
+    const send = (pub, privs) => { last = { pub, privs }; bc.postMessage({ t: 'pub', d: pub }); for (const id in privs) bc.postMessage({ t: 'priv', pid: id, d: privs[id] }); };
+    return { send };
+  }
+  const db = await firebaseDb();
+  const ref = db.ref(ROOT + code);
+  watchOnline(db);
+  await ref.child('act').remove();
+  ref.child('act').on('child_added', s => { const v = s.val(); s.ref.remove(); try { onAct(v.pid, JSON.parse(v.a)); } catch (e) { /* 壊れた送信は捨てる */ } });
+  const cache = {};
+  const send = (pub, privs) => {
+    ref.child('pub').set(JSON.stringify(pub));
+    for (const id in privs) { const j = JSON.stringify(privs[id]); if (cache[id] !== j) { cache[id] = j; ref.child('priv/' + id).set(j); } }
+  };
+  ref.child('meta').set({ at: Date.now() });
+  return { send };
+}
+async function clientNet(code, pid, onPub, onPriv) {
+  if (LOCAL) {
+    const bc = new BroadcastChannel('dfg-' + code);
+    let got = false;
+    bc.onmessage = e => { const m = e.data; if (m.t === 'pub') { got = true; onPub(m.d); } if (m.t === 'priv' && m.pid === pid) onPriv(m.d); };
+    const hello = () => { if (!got) { bc.postMessage({ t: 'hello' }); setTimeout(hello, 800); } };
+    hello();
+    return { send: a => bc.postMessage({ t: 'act', pid, a }), reping: () => bc.postMessage({ t: 'hello' }) };
+  }
+  const db = await firebaseDb();
+  const ref = db.ref(ROOT + code);
+  watchOnline(db);
+  ref.child('pub').on('value', s => { if (s.exists()) onPub(JSON.parse(s.val())); });
+  ref.child('priv/' + pid).on('value', s => { if (s.exists()) onPriv(JSON.parse(s.val())); });
+  return { send: a => ref.child('act').push({ pid, a: JSON.stringify(a) }) };
+}
+
+/* 通信が切れたら知らせる(つながった後に切れたときだけ) */
+function watchOnline(db) {
+  let was = false;
+  db.ref('.info/connected').on('value', s => {
+    const on = !!s.val();
+    if (on) was = true;
+    S.offline = was && !on; render();
+  });
+}
+
+/* ---------- 親機(テレビ、またはスマホだけのときの親) ---------- */
+let G = null, HOST = null;
+const autoIds = new Set();
+async function startHost(code, mode, me) {
+  G = E.newGame(code, mode);
+  // 親の画面を読み込み直しても、同じ部屋の続きから再開する
+  try {
+    const sv = JSON.parse(store.get('dfg-host-' + code) || 'null');
+    if (sv && sv.G && sv.G.code === code && Date.now() - sv.at < 12 * 3600e3) { G = sv.G; G._rnd = null; G.cpuAt = 0; G.ver++; (G.autoIds || []).forEach(id => autoIds.add(id)); S.restored = G.phase !== 'lobby'; }
+  } catch (e) { /* 読めなければ新しく始める */ }
+  let saveTimer = null;
+  const save = () => {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => { try { const { _rnd, ...g } = G; store.set('dfg-host-' + code, JSON.stringify({ at: Date.now(), G: g })); } catch (e) { /* 保存できなくても遊べる */ } }, 250);
+  };
+  const out = () => {
+    const pub = E.pubView(G);
+    if (pub.vote && pub.vote.deadline) pub.vote.remain = Math.max(0, pub.vote.deadline - Date.now());
+    const privs = {};
+    G.players.forEach(p => { if (!p.cpu) privs[p.id] = E.privView(G, p.id); });
+    HOST.send(pub, privs);
+    save();
+    if (me) { S.pub = pub; S.pubAt = Date.now(); S.priv = privs[me] || S.priv; render(); }
+    else { S.pub = pub; S.pubAt = Date.now(); render(); }
+  };
+  const onAct = (pid, a) => {
+    if (a.t === 'join') {
+      if (E.addPlayer(G, { id: pid, name: a.name })) { if (a.auto) { autoIds.add(pid); G.autoIds = [...autoIds]; } G.ver++; }
+    } else {
+      E.act(G, pid, a, Date.now());
+      if (a.t === 'cfg') store.set('dfg-cfg', JSON.stringify(G.cfg));
+    }
+    out();
+  };
+  HOST = await hostNet(code, onAct);
+  HOST.local = (pid, a) => onAct(pid, a);
+  if (qs.has('debug')) window.__dbg = { G: () => G, out };
+  if (G.phase === 'lobby') try { const saved = JSON.parse(store.get('dfg-cfg') || 'null'); if (saved) E.act(G, null, { t: 'cfg', cfg: saved }); } catch (e) { /* 前回の設定が読めなければ初期値 */ }
+  const warp = qs.has('fast') ? 6000 : 0;
+  setInterval(() => { if (E.tick(G, Date.now() + warp, id => autoIds.has(id))) out(); }, qs.has('fast') ? 60 : 250);
+  out();
+  return HOST;
+}
+
+/* ---------- 状態 ---------- */
+const S = { view: 'entry', code: '', pid: '', name: '', pub: null, priv: null, pubAt: 0, sel: new Set(), err: '', net: null, isHost: false, showLaws: false, diagStep: 0, choice: null };
+function send(a) {
+  if (S.isHost && HOST) HOST.local(S.pid || 'tv', a);
+  else if (S.net) S.net.send(a);
+}
+
+/* ---------- 共通の部品 ---------- */
+const I = window.Illus;
+const APP_NAME = '大富豪国会';
+const APP_SEAL = '国';
+const hash = s => { let h = 7; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) | 0; return Math.abs(h); };
+
+/* 札の表 */
+function cardHtml(id, opt) {
+  opt = opt || {};
+  const c = E.parse(id);
+  const red = c.s === 'H' || c.s === 'D';
+  const cls = ['card', red ? 'red' : '', c.s === 'X' ? 'joker' : '', opt.sel ? 'sel' : '', opt.fate ? 'fate' : '', opt.dim ? 'dim' : '', opt.cls || ''].join(' ');
+  let ix, ctr;
+  if (c.s === 'X') {
+    ix = '<span class="jx">JOKER</span>';
+    ctr = `<span class="ctr pic">${I.jester()}</span>`;
+  } else {
+    ix = `<b>${E.RL[c.r]}</b>${I.suit(c.s)}`;
+    if (c.r >= 11 && c.r <= 13) ctr = `<span class="ctr pic">${I.portrait(c.r, c.s)}</span>`;
+    else ctr = `<span class="ctr ${c.r === 14 ? 'ace' : ''}">${I.suit(c.s)}</span>`;
+  }
+  const tag = opt.tap ? 'button' : 'div';
+  return `<${tag} class="${cls}" ${opt.tap ? `data-card="${id}"` : ''} ${opt.style ? `style="${opt.style}"` : ''} aria-label="${esc(E.label(id))}"><span class="ix tl">${ix}</span>${ctr}<span class="ix br">${ix}</span></${tag}>`;
+}
+/* 裏向きの札を少しずつずらして重ねる(枚数を手で持っている感じに) */
+function backsHtml(n, max) {
+  const k = Math.min(n, max || 14);
+  let h = '';
+  for (let i = 0; i < k; i++) h += `<span style="--i:${i};--k:${k}">${I.back()}</span>`;
+  return `<span class="backs" style="--k:${k}">${h}</span>`;
+}
+/* 場:出された札が少しずつ傾いて積もる */
+let animKey = '';
+function pileHtml(pub, cw) {
+  const st = pub.field.stack || [];
+  if (!st.length) return `<div class="pile empty" style="--cw:${cw}"><span>場に札はありません</span></div>`;
+  const topKey = st[st.length - 1].ids.join(',') + st.length;
+  const fresh = topKey !== animKey; animKey = topKey;
+  return `<div class="pile" style="--cw:${cw}">${st.map((p, i) => {
+    const h = hash(p.ids.join() + i);
+    const rot = (h % 15) - 7, dx = (h % 9) - 4, dy = ((h >> 3) % 9) - 4;
+    const last = i === st.length - 1;
+    return `<div class="play ${last ? 'top' : 'under'} ${last && fresh ? 'toss' : ''}" style="--r:${rot}deg;--x:${dx * 0.12}em;--y:${dy * 0.12 - (st.length - 1 - i) * 0.25}em;z-index:${i + 1}">${p.ids.map(id => cardHtml(id, { cls: last && fresh && E.parse(id).r >= 15 ? 'strong' : '' })).join('')}</div>`;
+  }).join('')}</div>`;
+}
+const pname = (pub, id) => { const p = pub.players.find(x => x.id === id); return p ? p.name : ''; };
+function rankTag(t) { return t ? `<span class="rank">${I.rank(t)}${esc(t)}</span>` : ''; }
+function lawsHtml(pub) {
+  if (!pub.laws.length) return `<div class="laws-none">${I.gavel()}<p>法律はまだありません。<br>回が終わるたびに、一つずつ決めます。</p></div>`;
+  return pub.laws.map(l => `<div class="law ${S.newLawKey === l.key ? 'new' : ''}"><span class="law-art">${I.law(l.key)}</span><div><div class="no">第${E.KANJI[l.no - 1]}条</div><div class="nm">${esc(l.name)}</div><div class="tx">${esc(l.text)}</div></div></div>`).join('');
+}
+function remainMs(pub) { if (!pub.vote || pub.vote.remain == null) return 0; return Math.max(0, pub.vote.remain - (Date.now() - S.pubAt)); }
+function mmss(ms) { const s = Math.ceil(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }
+function statusLine(pub) {
+  const w = pub.waiting || [];
+  const nm = id => pname(pub, id) + 'さん';
+  switch (pub.phase) {
+    case 'exchange': return `カードを交換しています(${w.map(nm).join('、')})`;
+    case 'param': return `大富豪の${nm(pub.pending.pid)}が、新しい法律の中身を決めています`;
+    case 'tsure': return `道連れ令。${nm(pub.pending.pid)}が捨てる札を選んでいます`;
+    case 'gekokujo': return `下剋上革命。${nm(pub.pending.pid)}が手札を入れ替える相手を選んでいます`;
+    case 'give7': return `7渡し。${nm(pub.pending.pid)}が渡す札を選んでいます`;
+    case 'drop10': return `10捨て。${nm(pub.pending.pid)}が捨てる札を選んでいます`;
+    case 'play': return pub.turn ? `${nm(pub.turn)}の番です` : '';
+  }
+  return '';
+}
+function fieldInfo(pub) {
+  const f = pub.field;
+  const parts = [];
+  if (pub.rev) parts.push('<span class="chip on">革命中</span>');
+  if (pub.jback) parts.push('<span class="chip on">11バック中</span>');
+  if (pub.dir === -1) parts.push('<span class="chip">逆回り</span>');
+  if (f.lock) parts.push(`<span class="chip">${f.lock.map(s => I.suit(s, (s === 'H' || s === 'D') ? 'red' : '')).join('')}縛り</span>`);
+  if (pub.laws.some(l => l.key === 'mawashi')) parts.push(`<span class="chip">手札まわしまで ${5 - (pub.clears % 5)}回</span>`);
+  if (pub.fate) parts.push(`<span class="chip">当たり札 ${esc(E.label(pub.fate))}</span>`);
+  return parts.join('');
+}
+function logo(size) { return `<span class="logo ${size || ''}"><span class="logo-t">${APP_NAME}</span>${I.seal(APP_SEAL)}</span>`; }
+function heroFan() {
+  const ids = ['S14', 'H13', 'D12', 'C11', 'X1'];
+  return `<div class="hero-fan">${ids.map((id, i) => cardHtml(id, { style: `--i:${i - 2}` })).join('')}</div>`;
+}
+
+/* お知らせ(革命・8切り・法律の発動・上がり) */
+let lastFlash = 0, flashTimer = null;
+function flashCheck(pub) {
+  const f = pub.flash;
+  if (!f || f.n === lastFlash) return;
+  const first = lastFlash === 0; lastFlash = f.n;
+  if (first || !['play', 'exchange', 'param', 'tsure', 'gekokujo', 'give7', 'drop10'].includes(pub.phase)) return;
+  if (f.kind === 'rev' || f.kind === 'cut') return;
+  let el = document.querySelector('.flash');
+  if (!el) { el = document.createElement('div'); el.className = 'flash'; document.body.appendChild(el); }
+  const art = f.kind === 'rev' ? I.type('rebel') : f.kind === 'law' ? I.gavel() : '';
+  el.className = 'flash k-' + f.kind;
+  el.innerHTML = `<span>${art}<em>${esc(f.text)}</em></span>`;
+  requestAnimationFrame(() => el.classList.add('on'));
+  clearTimeout(flashTimer); flashTimer = setTimeout(() => el.classList.remove('on'), 2400);
+  if (S.view !== 'tv' && navigator.vibrate && f.kind === 'rev') try { navigator.vibrate([60, 40, 60]); } catch (e) { /* 振動できない端末 */ }
+}
+
+/* ---------- 入口 ---------- */
+function vEntry() {
+  return `<div class="entry">
+    ${heroFan()}
+    <h1>${logo('lg')}</h1>
+    <p class="lead">回が終わるたびに、みんなの投票で法律が一つ増えます。<br>革命が起きると、法律はすべて廃止です。</p>
+    <div class="stack">
+      <button class="btn main" data-act="go-tv">テレビで部屋を作る</button>
+      <button class="btn" data-act="go-host">スマホだけで部屋を作る</button>
+      <button class="btn" data-act="go-join">部屋に入る</button>
+    </div>
+    <p class="note">テレビで部屋を作ると、場と法律はテレビに、手札は各自のスマホに出ます。スマホだけで遊ぶときは、部屋を作った人のスマホが親になります。親のスマホは最後まで画面を開いたままにしてください。${LOCAL ? '<br><br>いまは試用モードです(同じブラウザのタブ同士でだけつながります)。' : ''}</p>
+  </div>`;
+}
+function vJoin(host) {
+  return `<div class="entry">
+    <div class="entry-head">${logo()}</div>
+    <h2 class="entry-h">${host ? '部屋を作る' : '部屋に入る'}</h2>
+    <p class="lead">${host ? 'あなたのスマホが親になります。' : 'テレビか親のスマホに出ている4文字を入力してください。'}</p>
+    ${S.err ? `<p class="err">${esc(S.err)}</p>` : ''}
+    ${host ? '' : `<div class="field"><label for="code">部屋の番号</label><input id="code" class="code" maxlength="4" autocomplete="off" value="${esc(S.code)}"></div>`}
+    <div class="field"><label for="name">名前(8文字まで)</label><input id="name" maxlength="8" autocomplete="off" value="${esc(S.name)}"></div>
+    <div class="stack"><button class="btn main" data-act="${host ? 'do-host' : 'do-join'}">${host ? '部屋を作る' : '入る'}</button>
+    <button class="link" data-act="home">戻る</button></div>
+  </div>`;
+}
+
+/* ---------- テレビ ---------- */
+function controls(pub, compact) {
+  const n = pub.players.length;
+  const b = (act, label, main, dis) => `<button class="btn ${main ? 'main' : ''}" data-act="${act}" ${dis ? 'disabled' : ''}>${label}</button>`;
+  switch (pub.phase) {
+    case 'lobby': return b('start', n < 4 ? `あと${4 - n}人で始められます` : '始める', true, n < 4) + b('cpu+', 'CPUを足す', false, n >= 6) + b('cpu-', 'CPUを減らす', false, !pub.players.some(p => p.cpu));
+    case 'roundEnd': return b('next', pub.cfg.lawsOn ? '法律を決める' : '次の回を始める', true) + b('finish', '今夜はここまで(診断へ)');
+    case 'enacted': return b('next', '次の回を始める', true) + b('finish', '今夜はここまで(診断へ)');
+    case 'diag': return compact ? b('again', '同じ顔ぶれでもう一度') : b('diag-next', S.diagStep < n ? '次の人' : '最初から', true) + b('again', '同じ顔ぶれでもう一度');
+  }
+  return '';
+}
+function tvSide(pub) {
+  const c = pub.cfg;
+  if (pub.phase === 'lobby') {
+    const steps = c.lawsOn
+      ? ['ふつうの大富豪を一回遊びます。', '回が終わると、法律案が三つ出ます。大富豪が一つを廃案にします。', `残った二つを、${voteLabel(c.voteSec)}の作戦時間のあと全員で投票します。大富豪は2票です。`, `法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`, '最後に、遊び方から今夜の本性を診断します。']
+      : ['ふつうの大富豪を遊びます。', '今夜は法律を作りません(設定で切り替えられます)。', '最後に、遊び方から今夜の本性を診断します。'];
+    return `<aside class="tv-side doc"><div class="laws-h">遊び方</div><div class="side-in"><ol class="howto">${steps.map(t => `<li>${t}</li>`).join('')}</ol></div></aside>`;
+  }
+  return `<aside class="tv-side doc"><div class="laws-h">現行法<span>${pub.laws.length}/${c.maxLaws}</span></div><div class="side-in">${c.lawsOn ? lawsHtml(pub) : '<p class="laws-none">今夜は法律を作らない設定です。</p>'}</div>
+    <div class="foot">${logo('sm')}<span>部屋 <b>${esc(pub.code)}</b></span></div></aside>`;
+}
+const voteLabel = s => s % 60 ? `${s}秒` : `${s / 60}分`;
+/* 設定:基本ルールと法律の有効・無効 */
+function cfgHtml(pub) {
+  const c = pub.cfg;
+  const tg = (key, on, nm, tx, art, cls) => `<button class="tg ${on ? 'on' : 'off'}" data-cfg="${key}"><span>${art || ''}</span><span><span class="nm">${nm}</span>${tx ? `<span class="tx ${cls || ''}">${tx}</span>` : ''}</span><span class="sw"></span></button>`;
+  const seg = (key, vals, cur, fmt) => `<span class="seg">${vals.map(v => `<button class="${v === cur ? 'on' : ''}" data-cfg="${key}:${v}">${fmt ? fmt(v) : v}</button>`).join('')}</span>`;
+  const why = k => !c.laws[k] ? '' : (k === 'gekokujo' && !c.rev) ? '革命が無効のため、候補に出ません' : (k === 'joker' && !c.jokers) ? 'ジョーカーがないため、候補に出ません' : '';
+  const rules = E.RULES.map(r => tg('rule:' + r.key, c[r.key], r.name, r.text)).join('')
+    + `<div class="tg na"><span></span><span><span class="nm">ジョーカー</span><span class="tx">山札に入れる枚数</span></span>${seg('jokers', [0, 1, 2], c.jokers, v => v + '枚')}</div>`;
+  const laws = tg('lawsOn', c.lawsOn, '法律を作る', '回が終わるたびに投票で法律を一つ決める') + (c.lawsOn ? E.LAW_KEYS.map(k => {
+    const w = why(k);
+    return tg('law:' + k, c.laws[k] && !w, pub.lawInfo[k].name, w || pub.lawInfo[k].text, I.law(k), w ? 'why' : 'lt');
+  }).join('') : '');
+  const vote = c.lawsOn ? `<h3>投票</h3><div class="tg na"><span></span><span><span class="nm">作戦時間</span></span>${seg('voteSec', [60, 90, 120, 180], c.voteSec, voteLabel)}</div>`
+    + `<div class="tg na"><span></span><span><span class="nm">法律の上限</span></span>${seg('maxLaws', [1, 2, 3, 4, 5], c.maxLaws, v => v + 'つ')}</div>` : '';
+  const locals = E.LOCAL_RULES.map(r => tg('rule:' + r.key, c[r.key], r.name, r.text)).join('');
+  return `<div class="cfg"><div><h3>基本ルール</h3>${rules}${vote}</div><div><h3>ローカルルール</h3>${locals}</div><div><h3>法律</h3>${laws}</div></div>`;
+}
+function cfgSummary(c) {
+  const off = E.RULES.filter(r => !c[r.key]).map(r => r.name);
+  const loc = E.LOCAL_RULES.filter(r => c[r.key]).map(r => r.name);
+  const lawN = E.LAW_KEYS.filter(k => E.lawUsable(c, k)).length;
+  return `${off.length ? `基本ルールのうち${off.join('・')}はなし。` : '基本ルールはすべてあり。'}${loc.length ? `ローカルルールは${loc.join('・')}。` : ''}${c.lawsOn ? `法律の候補は${lawN}つ、作戦時間は${voteLabel(c.voteSec)}。` : '法律は作りません。'}`;
+}
+function vTv(pub) {
+  if (pub.phase === 'lobby') return vTvLobby(pub);
+  if (pub.phase === 'roundEnd') return sheet(pub, `<div class="eyebrow">第${pub.round}回の結果</div><div class="big">大富豪は${esc(pname(pub, pub.order[0]))}さん</div>${resultsTable(pub)}`);
+  if (pub.phase === 'veto') return sheet(pub, vTvVeto(pub));
+  if (pub.phase === 'vote') return sheet(pub, vTvVote(pub));
+  if (pub.phase === 'enacted') return sheet(pub, vTvEnacted(pub));
+  if (pub.phase === 'diag') return sheet(pub, vTvDiag(pub), true);
+  const f = pub.field;
+  const who = f.topIds.length ? `<div class="who">${esc(pname(pub, f.topPid))}さん　${esc(E.describe(f.top))}</div>` : '<div class="who">&nbsp;</div>';
+  const players = pub.players.map(p => {
+    const st = p.out > 0 ? `${p.out}番目に上がり` : p.out === -1 ? '都落ち' : p.out === -2 ? '反則上がり' : p.passed ? 'パス' : '';
+    return `<div class="tv-p ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''}">
+      <div class="nm">${esc(p.name)}</div><div class="tt">${rankTag(p.title) || '&nbsp;'}</div>
+      <div class="hold">${p.out ? '' : backsHtml(p.count, 11)}<span class="ct">${p.count}<small>枚</small></span></div><div class="st">${st}</div></div>`;
+  }).join('');
+  return `<div class="tv"><main class="tv-main">
+    <div class="tv-head"><span class="round">第${pub.round}回</span><span class="chips">${fieldInfo(pub)}</span></div>
+    <div class="table">${pileHtml(pub, '7.6vw')}${who}</div>
+    <div class="tv-say">${esc(statusLine(pub))}</div>
+    <div class="tv-players" style="--n:${pub.players.length}">${players}</div>
+  </main>${tvSide(pub)}</div>`;
+}
+function sheet(pub, inner, noSide) {
+  return `<div class="sheet ${noSide ? 'full' : ''}"><main class="sheet-main">${inner}<div class="actions">${controls(pub)}</div></main>${noSide ? '' : tvSide(pub)}</div>`;
+}
+function vTvLobby(pub) {
+  if (S.showCfg) return `<div class="sheet full"><main class="sheet-main"><div class="eyebrow">開会前の取り決め</div><div class="big" style="font-size:2em;margin-bottom:.2em">ルールと法律の設定</div>${cfgHtml(pub)}
+    <div class="actions"><button class="btn main" data-act="cfg-close">決めた</button><button class="btn" data-act="cfg-reset">初めの設定に戻す</button><span class="sub" style="font-size:1.1em">ルールの説明は、スマホの設定画面で読めます。</span></div></main></div>`;
+  const url = baseUrl() + '?room=' + pub.code + (LOCAL ? '&local=1' : '');
+  const list = pub.players.map(p => `<div class="${p.cpu ? 'cpu' : ''}">${esc(p.name)}</div>`).join('') || '<div class="sub">まだ誰もいません</div>';
+  return `<div class="sheet"><main class="sheet-main lobby">
+    <div class="lobby-top"><div>${logo()}<div class="eyebrow" style="margin-top:2.2em">部屋の番号</div><div class="codebox">${esc(pub.code)}</div>
+    <div class="url">${esc(url)}</div></div><div class="qrbox">${QR.svg(url, '#1f1a15', '#f4ecda')}<span>スマホのカメラで読み取ると参加できます</span></div></div>
+    <div class="plist">${list}</div>
+    <p class="sub" style="margin-top:1.4em">4〜6人で遊べます。足りない分はCPUで埋められます。<br>${esc(cfgSummary(pub.cfg))}</p>
+    <div class="actions">${controls(pub)}<button class="btn push" data-act="cfg-open">ルールと法律の設定</button></div>
+  </main>${tvSide(pub)}</div>`;
+}
+function resultsTable(pub) {
+  return `<table class="rtable">${pub.results.map((r, i) => `<tr><td class="pos">${i + 1}</td><td class="ttl">${rankTag(r.title)}</td><td>${esc(pname(pub, r.id))}</td><td class="chg">${r.prev ? `前回は${r.prev}` : ''}</td></tr>`).join('')}</table>`;
+}
+function billHtml(pub, key, i, extra) {
+  const L = pub.lawInfo[key];
+  extra = extra || {};
+  return `<div class="bill doc ${extra.out ? 'out' : ''}"><span class="bill-art">${I.law(key)}</span><div class="no">法律案 ${E.KANJI[i]}</div><div class="nm">${esc(L.name)}</div><div class="tx">${esc(L.text)}</div>${extra.after || ''}${extra.stamp || ''}</div>`;
+}
+const stamp = (t, ink) => `<div class="stamp ${ink ? 'ink' : ''}">${t}</div>`;
+function vTvVeto(pub) {
+  const c = pub.pending.cands;
+  return `<div class="eyebrow">法律案の審議</div><div class="big">大富豪の${esc(pname(pub, pub.pending.pid))}さんが、一つを廃案にします</div>
+    <div class="bills" style="--n:3">${c.map((k, i) => billHtml(pub, k, i)).join('')}</div>`;
+}
+function vTvVote(pub) {
+  const v = pub.vote;
+  const top = pub.order[0];
+  const voted = pub.players.filter(p => v.voted.includes(p.id)).map(p => esc(p.name));
+  return `<div class="vote-head">
+      <div><div class="eyebrow">作戦時間 ― 投票は各自のスマホで</div><div class="big" style="margin-bottom:.2em">どちらを通しますか</div>
+      <p class="sub">${v.vetoed ? `「${esc(pub.lawInfo[v.vetoed].name)}」は廃案になりました。` : ''}大富豪の${esc(pname(pub, top))}さんは2票。同数のときは大富豪の票で決まります。</p></div>
+      <div class="timer" data-timer>${mmss(remainMs(pub))}</div></div>
+    <div class="bills" style="--n:${v.vetoed ? 3 : 2}">${v.options.map((k, i) => billHtml(pub, k, i)).join('')}${v.vetoed ? billHtml(pub, v.vetoed, v.options.length, { out: true, stamp: stamp('廃案', true) }) : ''}</div>
+    <p class="voted">投票済み ${voted.length}/${pub.players.length}　${voted.join('、')}</p>`;
+}
+function vTvEnacted(pub) {
+  const v = pub.vote;
+  if (!v || !v.result) return `<div class="big">新しい法律案はありません</div>`;
+  const cards = v.options.map((k, i) => billHtml(pub, k, i, {
+    out: k !== v.result,
+    after: `<div class="cnt">${v.counts[k]}<small>票</small></div><p class="sub">${pub.players.filter(p => v.votes && v.votes[p.id] === k).map(p => esc(p.name)).join('、') || '投票なし'}</p>`,
+    stamp: k === v.result ? stamp('可決') : stamp('否決', true),
+  })).join('');
+  const law = pub.laws.find(l => l.key === v.result);
+  return `<div class="eyebrow">投票の結果 ― 第${law ? E.KANJI[law.no - 1] : ''}条として定めます</div><div class="big">${esc(pub.lawInfo[v.result].name)}</div>
+    <div class="bills" style="--n:2">${cards}</div>
+    <p class="sub" style="margin-top:1.4em">${v.tie ? '同数のため、大富豪の票で決まりました。' : ''}${v.expired ? `法律は三つまでのため、「${esc(v.expired)}」は失効しました。` : ''}${['strong', 'ban', 'fav'].includes(v.result) ? '数字やマークは、次の回のカード交換のあとに大富豪が決めます。' : ''}</p>`;
+}
+function vTvDiag(pub) {
+  const n = pub.players.length;
+  if (S.diagStep >= n) {
+    return `<div class="eyebrow">今夜の本性診断</div><div class="big">全員の結果</div><div class="diag-grid">${pub.players.map(p => {
+      const d = pub.diag[p.id]; return `<div class="dg">${I.type(d.type)}<div><div class="nm">${esc(p.name)}さん</div><div class="ty">${esc(d.name)}</div><div class="sub">${esc(d.sub)}</div></div></div>`;
+    }).join('')}</div>`;
+  }
+  const p = pub.players[S.diagStep], d = pub.diag[p.id];
+  return `<div class="diag-one"><div>
+    <div class="eyebrow">今夜の本性診断 ${S.diagStep + 1}/${n}</div>
+    <div class="diag-who">${esc(p.name)}さんは</div>
+    <div class="diag-type">${esc(d.name)}</div><div class="diag-sub">${esc(d.sub)}</div>
+    <p class="diag-desc">${esc(d.desc)}</p>
+    ${d.moment ? `<div class="diag-moment"><span class="k">決め手になった場面</span>${esc(d.moment)}</div>` : ''}
+    <div class="nums">${d.nums.map(x => `<div><div class="k">${esc(x.k)}</div><div class="v">${esc(x.v)}</div></div>`).join('')}</div>
+    </div>${typeCard(d)}</div>`;
+}
+
+/* 診断の結果を一枚の札に見立てる */
+function typeCard(d) {
+  const ch = d.name[0];
+  return `<div class="type-card"><span class="tc-ix tl">${esc(ch)}</span>${I.type(d.type)}<span class="tc-nm">${esc(d.name)}</span><span class="tc-ix br">${esc(ch)}</span></div>`;
+}
+
+/* ---------- スマホ ---------- */
+function me(pub) { return pub.players.find(p => p.id === S.pid); }
+function vPhone(pub, priv) {
+  const m = me(pub);
+  if (!m) return `<div class="entry"><div class="entry-head">${logo()}</div><h2 class="entry-h">部屋 ${esc(pub.code)}</h2><p class="lead">${pub.phase === 'lobby' ? '参加の受付を待っています…' : 'この部屋はもう始まっています。'}</p></div>`;
+  const top = `<div class="ph-top"><span class="me">${esc(m.name)}${m.title ? rankTag(m.title) : ''}</span><span class="rd">${pub.round ? `第${pub.round}回` : `部屋 ${esc(pub.code)}`}</span></div>`;
+  let body = '', bar = '';
+  const isLeader = pub.leader === S.pid;
+  const ctl = isLeader ? controls(pub, true) : '';
+  const prompt = priv && priv.prompt;
+  switch (pub.phase) {
+    case 'lobby': {
+      const joinUrl = baseUrl() + '?room=' + pub.code + (LOCAL ? '&local=1' : '');
+      body = `<div class="panel">${S.isHost ? `<div class="qrbox ph">${QR.svg(joinUrl, '#1f1a15', '#f4ecda')}</div>` : heroFan()}<h2>部屋 ${esc(pub.code)}</h2><p>${S.isHost ? 'ほかの人はこのQRコードを読み取るか、「部屋に入る」からこの4文字を入力します。' : 'みんながそろうまで待ちます。'}</p>
+        <table class="mini-table">${pub.players.map(p => `<tr><td>${esc(p.name)}</td><td>${p.cpu ? 'CPU' : p.id === S.pid ? 'あなた' : ''}</td></tr>`).join('')}</table></div>`;
+      if (isLeader && S.showCfg) { body = `<div class="panel"><h2>ルールと法律の設定</h2>${cfgHtml(pub)}</div>`; bar = '<div class="ph-bar one"><button class="btn main" data-act="cfg-close">決めた</button></div>'; break; }
+      body += `<p class="ph-note" style="margin-top:12px">${esc(cfgSummary(pub.cfg))}</p>`;
+      if (isLeader) bar = `<div class="ph-bar col">${ctl}<button class="btn" data-act="cfg-open">ルールと法律の設定</button></div>`;
+      break;
+    }
+    case 'roundEnd': case 'enacted': {
+      body = pub.phase === 'roundEnd'
+        ? `<div class="panel"><h2>第${pub.round}回の結果</h2><table class="mini-table">${pub.results.map((r, i) => `<tr><td>${i + 1}. ${esc(pname(pub, r.id))}</td><td>${rankTag(r.title)}</td></tr>`).join('')}</table></div>`
+        : phEnacted(pub);
+      if (pub.cfg.lawsOn) body += `<div class="lawlist"><div class="doc">${lawsHtml(pub)}</div></div>`;
+      if (isLeader) bar = `<div class="ph-bar col">${ctl}</div>`;
+      break;
+    }
+    case 'veto': {
+      if (prompt && prompt.type === 'veto') {
+        body = `<div class="panel"><h2>廃案にする法律を一つ選んでください</h2><p>残った二つから、全員の投票で一つが決まります。</p>
+          <div class="opts">${prompt.cands.map(k => optHtml(pub, k, S.choice === k)).join('')}</div></div>`;
+        bar = `<div class="ph-bar one"><button class="btn main" data-act="veto" ${S.choice && prompt.cands.includes(S.choice) ? '' : 'disabled'}>廃案にする</button></div>`;
+      } else body = `<div class="panel"><h2>法律案の審議</h2><p>大富豪の${esc(pname(pub, pub.pending.pid))}さんが、三つの案から一つを廃案にしています。</p>
+          <div class="opts">${pub.pending.cands.map(k => optHtml(pub, k, false, true)).join('')}</div></div>`;
+      break;
+    }
+    case 'vote': {
+      const mine = priv && priv.myVote;
+      const top0 = pub.order[0] === S.pid;
+      body = `<div class="panel"><div class="vote-row"><h2>投票</h2><span class="ph-timer" data-timer>${mmss(remainMs(pub))}</span></div>
+        <p>${top0 ? 'あなたは大富豪なので2票です。' : '1票です。'}締め切りまでなら入れ直せます。全員が入れると締め切ります。</p>
+        <div class="opts">${pub.vote.options.map(k => optHtml(pub, k, (S.choice || mine) === k)).join('')}</div>
+        <p class="ph-note" style="margin-top:12px">${mine ? `「${esc(pub.lawInfo[mine].name)}」に投票しました。` : ''}</p></div>`;
+      bar = `<div class="ph-bar one"><button class="btn main" data-act="vote" ${S.choice ? '' : 'disabled'}>この法律に入れる</button></div>`;
+      break;
+    }
+    case 'diag': {
+      const d = pub.diag[S.pid];
+      body = `<div class="panel ph-diag">${typeCard(d)}<p class="small">今夜のあなたは</p><div class="ty">${esc(d.name)}</div><div class="sb">${esc(d.sub)}</div><p class="ds">${esc(d.desc)}</p>
+        ${d.moment ? `<div class="mo"><span class="k">決め手になった場面</span>${esc(d.moment)}</div>` : ''}
+        <table class="mini-table">${d.nums.map(x => `<tr><td>${esc(x.k)}</td><td>${esc(x.v)}</td></tr>`).join('')}</table></div>`;
+      if (isLeader) bar = `<div class="ph-bar one">${ctl}</div>`;
+      break;
+    }
+    default: { const r = phPlay(pub, priv, m); body = r.body; bar = r.bar; }
+  }
+  return `<div class="ph ph-${pub.phase}">${top}<div class="ph-body">${body}</div>${bar}</div>`;
+}
+function optHtml(pub, k, on, ro) {
+  const L = pub.lawInfo[k];
+  const t = ro ? 'div' : 'button';
+  return `<${t} class="opt doc ${on ? 'on' : ''}" ${ro ? '' : `data-choice="${k}"`}><span class="opt-art">${I.law(k)}</span><span><span class="nm">${esc(L.name)}</span><span class="tx">${esc(L.text)}</span></span></${t}>`;
+}
+function phEnacted(pub) {
+  const v = pub.vote;
+  if (!v || !v.result) return '<div class="panel"><h2>新しい法律案はありません</h2></div>';
+  return `<div class="panel enacted"><span class="opt-art">${I.law(v.result)}</span>${stamp('可決')}<h2>${esc(pub.lawInfo[v.result].name)}</h2>
+    <p>${v.options.map(k => `${esc(pub.lawInfo[k].name)} ${v.counts[k]}票`).join('、')}${v.expired ? `。「${esc(v.expired)}」は失効しました` : ''}。</p></div>`;
+}
+function lawBar(pub) {
+  const n = pub.laws.length;
+  if (!S.showLaws) return `<button class="lawbar" data-act="laws"><span>現行法</span>${n ? pub.laws.map(l => `<span class="lb">${I.law(l.key)}${esc(l.name)}</span>`).join('') : '<span class="lb none">なし</span>'}<span class="more">${n ? '開く' : ''}</span></button>`;
+  return `<div class="lawlist"><button class="lawbar" data-act="laws"><span>現行法</span><span class="more">閉じる</span></button><div class="doc">${lawsHtml(pub)}</div></div>`;
+}
+/* 手札を扇形に並べる位置 */
+function fanLayout(n) {
+  const W = Math.min(window.innerWidth, 520) - 28;
+  const cw = Math.max(56, Math.min(74, W / 5));
+  const mid = (n - 1) / 2;
+  const ang = Math.min(2.6, 22 / Math.max(n, 1));
+  // 端の札が傾いてもはみ出さないよう、傾きの分だけ幅を詰める
+  const spread = W - cw - 2 * Math.sin(ang * mid * Math.PI / 180) * cw * 1.4 * 1.3 - 8;
+  const step = n > 1 ? Math.min(cw * 0.62, spread / (n - 1)) : 0;
+  const x0 = (W - (cw + step * (n - 1))) / 2;
+  return { cw, pos: i => ({ x: x0 + i * step, r: (i - mid) * ang, y: Math.pow(i - mid, 2) * ang * 0.22 }) };
+}
+function fanHtml(hand, pub, tap, hint) {
+  const L = fanLayout(hand.length);
+  const cards = hand.map((id, i) => {
+    const p = L.pos(i);
+    const sel = S.sel.has(id);
+    return cardHtml(id, { tap, sel, fate: pub.fate === id, style: `--cw:${L.cw}px;left:${p.x}px;--r:${p.r}deg;--y:${p.y}px;z-index:${i + 1};--d:${i}` });
+  }).join('');
+  return `<div class="fan-hint">${hint || '&nbsp;'}</div><div class="fan ${tap ? 'live' : ''} ${S.dealAnim ? 'deal' : ''}" style="--cw:${L.cw}px">${cards}</div>`;
+}
+function phPlay(pub, priv, m) {
+  const hand = priv ? priv.hand : [];
+  const prompt = priv && priv.prompt;
+  const f = pub.field;
+  S.sel.forEach(id => { if (!hand.includes(id)) S.sel.delete(id); });
+  const sel = [...S.sel];
+  const ctx = E.makeCtx(pub);
+  let note = '', bar = '', canPlay = false, title = '', tapMode = true, hint = '';
+  const myTurn = pub.phase === 'play' && pub.turn === S.pid;
+  if (prompt && prompt.type === 'exchange') {
+    title = `${esc(prompt.to)}さんに渡す札を${prompt.n}枚選んでください`;
+    note = `${esc(prompt.to)}さんから${prompt.got.map(id => esc(E.label(id))).join('、')}を受け取りました。`;
+    bar = `<div class="ph-bar one"><button class="btn main" data-act="exchange" ${sel.length === prompt.n ? '' : 'disabled'}>${sel.length}/${prompt.n}枚 渡す</button></div>`;
+  } else if (prompt && prompt.type === 'gave') {
+    title = 'カードを交換しています';
+    note = `${esc(prompt.to)}さんに${prompt.gave.map(id => esc(E.label(id))).join('、')}を渡しました。お返しを待っています。`;
+    tapMode = false;
+  } else if (prompt && prompt.type === 'param') {
+    return { body: phParam(pub, prompt), bar: `<div class="ph-bar one"><button class="btn main" data-act="param" ${S.choice != null && prompt.options.map(String).includes(String(S.choice)) ? '' : 'disabled'}>これに決める</button></div>` };
+  } else if (prompt && (prompt.type === 'give7' || prompt.type === 'drop10')) {
+    const g = prompt.type === 'give7';
+    title = g ? `7渡し。${esc(prompt.to)}さんに渡す札を${prompt.n}枚まで選べます` : `10捨て。捨てる札を${prompt.n}枚まで選べます`;
+    const ok = sel.length >= 1 && sel.length <= prompt.n;
+    note = sel.length > prompt.n ? `${prompt.n}枚までです` : '';
+    bar = `<div class="ph-bar"><button class="btn" data-act="${prompt.type}-skip">${g ? '渡さない' : '捨てない'}</button><button class="btn main" data-act="${prompt.type}" ${ok ? '' : 'disabled'}>${sel.length}枚 ${g ? '渡す' : '捨てる'}</button></div>`;
+  } else if (prompt && prompt.type === 'tsure') {
+    title = '道連れ令。捨てる札を一枚選べます';
+    bar = `<div class="ph-bar"><button class="btn" data-act="tsure-skip">捨てない</button><button class="btn main" data-act="tsure" ${sel.length === 1 ? '' : 'disabled'}>捨てる</button></div>`;
+  } else if (prompt && prompt.type === 'gekokujo') {
+    return { body: `<div class="panel"><span class="opt-art big">${I.law('gekokujo')}</span><h2>下剋上革命。手札を入れ替える相手を選んでください</h2><p>入れ替えたあと、法律はすべて廃止されます。</p>
+      <div class="opts">${prompt.targets.map(t => `<button class="opt doc ${S.choice === t.id ? 'on' : ''}" data-choice="${t.id}"><span class="opt-art">${I.rank(t.title)}</span><span><span class="nm">${esc(t.name)}さん</span><span class="tx">${esc(t.title)}・手札${pub.players.find(p => p.id === t.id).count}枚</span></span></button>`).join('')}</div></div>`,
+      bar: `<div class="ph-bar one"><button class="btn main" data-act="gekokujo" ${S.choice && prompt.targets.some(t => t.id === S.choice) ? '' : 'disabled'}>この人と入れ替える</button></div>` };
+  } else if (myTurn) {
+    title = 'あなたの番です';
+    const cands = E.candidates(hand, ctx);
+    if (sel.length) {
+      const p = E.bestPlay(sel, ctx);
+      canPlay = !!p;
+      note = p ? `${esc(E.describe(p))}として出せます` : explain(sel, ctx);
+      if (p) hint = '上に払っても出せます';
+    } else note = cands.length ? (f.top ? '出す札を選ぶか、パスしてください' : '親です。好きな札から出せます') : '出せる札がありません';
+    const canPass = !!f.top || !cands.length;
+    bar = `<div class="ph-bar"><button class="btn" data-act="pass" ${canPass ? '' : 'disabled'}>パス</button><button class="btn main" data-act="play" ${canPlay ? '' : 'disabled'}>出す</button></div>`;
+  } else {
+    title = esc(statusLine(pub));
+    if (m.out > 0) note = `${m.out}番目に上がりました`;
+    else if (m.out === -1) note = '都落ちのため、この回はここまでです';
+    else if (m.out === -2) note = '反則上がりのため、この回は最下位です';
+  }
+  S.canPlay = canPlay && myTurn;
+  const finfo = `<div class="info">${f.topIds.length ? `<b>${esc(pname(pub, f.topPid))}さん</b><br>${esc(E.describe(f.top))}` : '場に札はありません'}<div class="chips">${fieldInfo(pub)}</div></div>`;
+  const others = pub.players.filter(p => p.id !== S.pid);
+  const plist = `<div class="ph-players">${others.map(p => `<div class="${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''}"><span class="n">${esc(p.name)}</span>${p.out ? '' : backsHtml(Math.min(p.count, 3), 3)}<span class="ct">${p.out > 0 ? p.out + '位' : p.out === -1 ? '落' : p.out === -2 ? '反則' : p.passed ? 'パス' : p.count + '枚'}</span></div>`).join('')}</div>`;
+  const body = `<div class="ph-table">${pileHtml(pub, 'min(11vw,52px)')}${finfo}</div>${pub.mode === 'phone' ? plist : ''}${pub.cfg.lawsOn ? lawBar(pub) : ''}
+    <div class="ph-status ${myTurn || (prompt && prompt.type !== 'gave') ? 'mine' : ''}">${title}</div><div class="ph-note">${note}</div>
+    <div class="hand-area">${fanHtml(hand, pub, tapMode, hint)}</div>`;
+  return { body, bar };
+}
+function explain(sel, ctx) {
+  const ip = E.interpret(sel, ctx);
+  if (!ip.length) {
+    if (ctx.jokerSeal && sel.every(id => id[0] === 'X')) return 'ジョーカー封印のため、ジョーカーだけでは出せません';
+    if (ctx.ban && sel.some(id => E.parse(id).r === ctx.ban)) return `${E.RL[ctx.ban]}禁止令のため、${E.RL[ctx.ban]}は出せません`;
+    return '同じ数字か、同じマークの3枚以上の階段にしてください';
+  }
+  const t = ctx.top;
+  if (t && ip.every(p => p.type !== t.type || p.n !== t.n)) return `場と同じ形(${E.describe(t)})で出してください`;
+  if (ctx.lock && ip.every(p => !(p.suits || []).every(s => ctx.lock.includes(s)))) return `${ctx.lock.map(s => E.SUIT_CH[s]).join('')}縛りです`;
+  return '場の札より強くありません';
+}
+function phParam(pub, pr) {
+  const L = pub.lawInfo[pr.key];
+  const isSuit = pr.key === 'fav';
+  const head = pr.key === 'strong' ? '最強にする数字を選んでください' : pr.key === 'ban' ? '禁止する数字を選んでください' : '優遇するマークを選んでください';
+  const opts = pr.options.map(v => {
+    const on = String(S.choice) === String(v);
+    const lab = isSuit ? I.suit(v) : E.RL[v];
+    const red = isSuit && (v === 'H' || v === 'D');
+    return `<button class="opt doc ${on ? 'on' : ''} ${red ? 'r' : ''}" data-choice="${v}">${lab}</button>`;
+  }).join('');
+  const hand = (S.priv && S.priv.hand) || [];
+  return `<div class="panel"><span class="opt-art big">${I.law(pr.key)}</span><h2>${head}</h2><p>${esc(L.name)}:${esc(L.text)}</p><div class="grid-opts ${isSuit ? 'suits' : ''}">${opts}</div>
+    <p class="ph-note" style="margin-top:18px">いまの手札</p><div class="hand-area">${fanHtml(hand, pub, false)}</div></div>`;
+}
+
+/* ---------- 描画と操作 ---------- */
+let lastHtml = '';
+function render() {
+  if (S.dragging) { S.pendingRender = true; return; }
+  if (!document.getElementById('illus-defs')) { const d = document.createElement('div'); d.id = 'illus-defs'; d.innerHTML = I.DEFS; document.body.appendChild(d); }
+  let html = '';
+  const pub = S.pub;
+  document.body.className = (S.view === 'tv' ? 'is-tv' : 'is-ph') + (pub && pub.rev ? ' rev' : '');
+  if (S.view === 'entry') html = vEntry();
+  else if (S.view === 'join') html = vJoin(false);
+  else if (S.view === 'hostform') html = vJoin(true);
+  else if (!pub) html = `<div class="entry"><h1>接続しています</h1><p class="lead">${S.err ? esc(S.err) : 'しばらくお待ちください。'}</p></div>`;
+  else if (S.view === 'tv') html = vTv(pub);
+  else html = vPhone(pub, S.priv);
+  if (html !== lastHtml) {
+    const keep = document.activeElement && document.activeElement.id;
+    const vals = {}; document.querySelectorAll('input').forEach(i => { vals[i.id] = i.value; });
+    $app.innerHTML = html; lastHtml = html;
+    document.querySelectorAll('input').forEach(i => { if (vals[i.id] != null) i.value = vals[i.id]; });
+    if (keep) { const el = document.getElementById(keep); if (el) el.focus(); }
+  }
+  if (pub) flashCheck(pub);
+  if (pub && pub !== S.seen) { const prev = S.seen; S.seen = pub; fxCheck(prev, pub); }
+  soundButton();
+  let ob = document.querySelector('.offline');
+  if (S.offline && !ob) { ob = document.createElement('div'); ob.className = 'offline'; ob.textContent = '通信が切れています。つながると自動で続きから再開します。'; document.body.appendChild(ob); }
+  if (!S.offline && ob) ob.remove();
+  if (S.restored && pub) { S.restored = false; fx('round', `<div class="fx-title"><small>${APP_NAME}</small><b style="font-size:3.4vw">続きから再開</b></div>`, 1800); }
+}
+let lastTickSec = -1;
+setInterval(() => {
+  const t = document.querySelector('[data-timer]');
+  if (t && S.pub) {
+    const ms = remainMs(S.pub), sec = Math.ceil(ms / 1000);
+    t.textContent = mmss(ms);
+    t.classList.toggle('hurry', sec <= 10 && sec > 0);
+    if (sec <= 10 && sec > 0 && sec !== lastTickSec && bigSound(S.pub)) SFX.play('tick');
+    lastTickSec = sec;
+  }
+}, 200);
+
+/* ---------- 演出と効果音 ---------- */
+const bigSound = pub => S.view === 'tv' || pub.mode === 'phone';
+function fx(kind, html, ms) {
+  const el = document.createElement('div'); el.className = 'fx fx-' + kind; el.innerHTML = html || '';
+  document.body.appendChild(el); setTimeout(() => el.remove(), ms || 2600);
+}
+function confetti(n) {
+  let h = '';
+  for (let i = 0; i < n; i++) h += `<i style="left:${Math.random() * 100}%;--t:${2.2 + Math.random() * 1.8}s;--d:${Math.random() * 0.8}s;--x:${(Math.random() - 0.5) * 30}vw;--rot:${(Math.random() - 0.5) * 1080}deg"></i>`;
+  fx('confetti', h, 5000);
+}
+function shake() { $app.classList.remove('shake'); void $app.offsetWidth; $app.classList.add('shake'); }
+function fxCheck(prev, pub) {
+  if (!prev || S.view === 'entry') return;
+  const big = bigSound(pub), tv = S.view === 'tv';
+  const ph = (p, q) => prev.phase === p && pub.phase !== p;
+  // 開会
+  if (prev.phase === 'lobby' && pub.phase !== 'lobby') {
+    if (big) { fx('curtain', `<div class="fx-title">${I.gavel()}<small>${APP_NAME}</small><b>開会</b></div>`, 3000); SFX.play('opening'); }
+    else SFX.play('deal');
+    S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
+  } else if (pub.round > prev.round) {
+    if (big) SFX.play('shuffle'); else SFX.play('deal');
+    S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
+  }
+  if (pub.phase !== prev.phase) {
+    if (pub.phase === 'roundEnd' && pub.order) {
+      const fl = document.querySelector('.flash'); if (fl) fl.classList.remove('on');
+      if (big) { fx('crown', `${I.rank('大富豪')}<b>大富豪 ${esc(pname(pub, pub.order[0]))}さん</b>`, 2600); confetti(tv ? 70 : 30); SFX.play('crown'); }
+    }
+    if (pub.phase === 'veto' && big) { fx('gavel', I.gavel(), 1600); SFX.play('knock3'); setTimeout(shake, 250); setTimeout(shake, 610); setTimeout(shake, 970); }
+    if (pub.phase === 'vote' && big) SFX.play('bellVote');
+    if (pub.phase === 'enacted' && pub.vote && pub.vote.result) {
+      S.newLawKey = pub.vote.result; setTimeout(() => { S.newLawKey = null; }, 1500);
+      if (big) { SFX.play('enacted'); setTimeout(shake, 420); setTimeout(() => confetti(tv ? 50 : 24), 500); }
+    }
+    if (pub.phase === 'diag' && big) SFX.play('drumroll');
+  }
+  // 札が出た
+  const st = pub.field.stack || [], pst = prev.field.stack || [];
+  const key = s => s.length ? s[s.length - 1].ids.join() + s.length : '';
+  if (key(st) && key(st) !== key(pst)) SFX.play('play');
+  // 革命・8切り・法律・上がり
+  const f = pub.flash, pf = prev.flash;
+  if (f && (!pf || f.n !== pf.n)) {
+    if (f.kind === 'rev') { fx('rev', `<div class="fx-big">革命<small>${esc(f.text)}</small></div><div class="fx-flag">${I.type('rebel')}</div>`, 2700); SFX.play(big ? 'revolution' : 'whoosh'); if (navigator.vibrate) try { navigator.vibrate([80, 50, 80, 50, 160]); } catch (e) { /* 振動できない端末 */ } }
+    else if (f.kind === 'cut') { fx('cut', '<b>八切り</b>', 1300); SFX.play('whoosh'); }
+    else if (f.kind === 'law' && big) SFX.play('gavel');
+    else if (f.kind === 'rule' && big) SFX.play('whoosh');
+    else if (f.kind === 'out' && big) SFX.play('out');
+  }
+  // 自分の番
+  if (S.view !== 'tv' && pub.turn === S.pid && prev.turn !== S.pid) { SFX.play('turn'); if (navigator.vibrate) try { navigator.vibrate(30); } catch (e) { /* 振動できない端末 */ } }
+}
+function soundButton() {
+  if (S.view === 'entry' || S.view === 'join' || S.view === 'hostform') { const b = document.querySelector('.sound-btn'); if (b) b.remove(); return; }
+  let b = document.querySelector('.sound-btn');
+  if (!b) { b = document.createElement('button'); b.className = 'sound-btn'; b.dataset.act = 'sound'; document.body.appendChild(b); }
+  b.textContent = SFX.isMuted() ? '音 切' : '音 入';
+}
+document.addEventListener('pointerdown', () => { SFX.unlock(); keepAwake(); }, { once: true });
+/* 遊んでいる間は画面を消さない(対応しているブラウザだけ) */
+async function keepAwake() {
+  if (!('wakeLock' in navigator) || !['tv', 'phone'].includes(S.view)) return;
+  try { S.wake = await navigator.wakeLock.request('screen'); } catch (e) { /* 断られても遊べる */ }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') keepAwake(); });
+
+document.addEventListener('click', async ev => {
+  const c = ev.target.closest('[data-card]');
+  if (c && c.closest('.fan.live')) return;
+  if (c) { const id = c.dataset.card; if (S.sel.has(id)) S.sel.delete(id); else S.sel.add(id); render(); return; }
+  const ch = ev.target.closest('[data-choice]');
+  if (ch) { S.choice = ch.dataset.choice; render(); return; }
+  const cf = ev.target.closest('[data-cfg]');
+  if (cf && S.pub) {
+    const c = JSON.parse(JSON.stringify(S.pub.cfg));
+    const [k, v] = cf.dataset.cfg.split(':');
+    if (k === 'rule') c[v] = !c[v];
+    else if (k === 'law') c.laws[v] = !c.laws[v];
+    else if (k === 'lawsOn') c.lawsOn = !c.lawsOn;
+    else if (v != null) c[k] = parseInt(v, 10);
+    else return;
+    SFX.play('select'); send({ t: 'cfg', cfg: c }); return;
+  }
+  const b = ev.target.closest('[data-act]');
+  if (!b || b.disabled) return;
+  const a = b.dataset.act;
+  const pr = S.priv && S.priv.prompt;
+  switch (a) {
+    case 'home': S.view = 'entry'; S.err = ''; render(); break;
+    case 'go-tv': location.href = baseUrl() + '?tv' + (LOCAL ? '&local=1' : ''); break;
+    case 'go-host': S.view = 'hostform'; render(); break;
+    case 'go-join': S.view = 'join'; render(); break;
+    case 'do-host': {
+      const name = (document.getElementById('name').value || '').trim();
+      if (!name) { S.err = '名前を入力してください。'; render(); return; }
+      S.name = name; store.set('dfg-name', name); await beginPhoneHost(name); break;
+    }
+    case 'do-join': {
+      const code = (document.getElementById('code').value || '').trim().toUpperCase();
+      const name = (document.getElementById('name').value || '').trim();
+      if (code.length !== 4) { S.err = '部屋の番号は4文字です。'; render(); return; }
+      if (!name) { S.err = '名前を入力してください。'; render(); return; }
+      S.name = name; store.set('dfg-name', name);
+      try { if (!(await roomExists(code))) { S.err = 'その番号の部屋が見つかりません。'; render(); return; } }
+      catch (e) { S.err = '通信できませんでした。電波の状態を確かめてください。'; render(); return; }
+      await joinRoom(code, name); break;
+    }
+    case 'laws': S.showLaws = !S.showLaws; render(); break;
+    case 'sound': SFX.setMuted(!SFX.isMuted()); if (!SFX.isMuted()) SFX.play('gavel'); render(); break;
+    case 'cfg-open': S.showCfg = true; render(); break;
+    case 'cfg-close': S.showCfg = false; render(); break;
+    case 'cfg-reset': send({ t: 'cfg', cfg: E.defaultCfg() }); break;
+    case 'play': send({ t: 'play', ids: [...S.sel] }); S.sel.clear(); break;
+    case 'pass': send({ t: 'pass' }); S.sel.clear(); break;
+    case 'exchange': send({ t: 'exchange', ids: [...S.sel] }); S.sel.clear(); break;
+    case 'tsure': send({ t: 'tsure', id: [...S.sel][0] }); S.sel.clear(); break;
+    case 'tsure-skip': send({ t: 'tsure', id: null }); S.sel.clear(); break;
+    case 'give7': case 'drop10': send({ t: a, ids: [...S.sel] }); S.sel.clear(); break;
+    case 'give7-skip': case 'drop10-skip': send({ t: a.replace('-skip', ''), ids: [] }); S.sel.clear(); break;
+    case 'gekokujo': send({ t: 'gekokujo', target: S.choice }); S.choice = null; break;
+    case 'veto': send({ t: 'veto', key: S.choice }); S.choice = null; break;
+    case 'vote': send({ t: 'vote', key: S.choice }); S.choice = null; break;
+    case 'param': { const v = pr.key === 'fav' ? S.choice : parseInt(S.choice, 10); send({ t: 'param', v }); S.choice = null; break; }
+    case 'diag-next': S.diagStep = S.diagStep >= S.pub.players.length ? 0 : S.diagStep + 1; if (S.diagStep < S.pub.players.length) SFX.play('drumroll'); render(); break;
+    case 'again': S.diagStep = 0; send({ t: 'again' }); break;
+    case 'start': case 'cpu+': case 'cpu-': case 'next': case 'finish': S.diagStep = 0; send({ t: a }); break;
+  }
+});
+
+/* 手札:タップで選ぶ。選んだ札を上へ払うと出す */
+let drag = null;
+document.addEventListener('pointerdown', ev => {
+  const c = ev.target.closest('.fan.live [data-card]');
+  if (!c) return;
+  drag = { id: c.dataset.card, x: ev.clientX, y: ev.clientY, dy: 0, moved: false };
+  S.dragging = true;
+});
+document.addEventListener('pointermove', ev => {
+  if (!drag) return;
+  const dy = ev.clientY - drag.y, dx = ev.clientX - drag.x;
+  if (Math.abs(dy) > 8 || Math.abs(dx) > 8) drag.moved = true;
+  drag.dy = dy;
+  if (dy < -6 && S.canPlay) {
+    const ids = S.sel.has(drag.id) ? [...S.sel] : [];
+    document.querySelectorAll('.fan .card').forEach(el => { el.style.setProperty('--lift', ids.includes(el.dataset.card) ? Math.max(dy, -160) + 'px' : '0px'); });
+    const fan = document.querySelector('.fan'); if (fan) fan.classList.toggle('armed', dy < -70 && ids.length > 0);
+  }
+});
+function endDrag(ev) {
+  if (!drag) return;
+  const d = drag; drag = null; S.dragging = false;
+  if (!d.moved) {
+    if (S.sel.has(d.id)) S.sel.delete(d.id); else S.sel.add(d.id);
+    SFX.play('select');
+  } else if (d.dy < -70 && S.canPlay && S.sel.has(d.id)) {
+    send({ t: 'play', ids: [...S.sel] }); S.sel.clear();
+  }
+  lastHtml = ''; render();
+}
+document.addEventListener('pointerup', endDrag);
+document.addEventListener('pointercancel', endDrag);
+window.addEventListener('resize', () => { lastHtml = ''; render(); });
+
+/* ---------- 起動 ---------- */
+async function beginPhoneHost(name) {
+  let code = qs.get('code');
+  if (!code) { code = newCode(); try { for (let i = 0; i < 5 && !LOCAL && await roomExists(code); i++) code = newCode(); } catch (e) { /* 確かめられなくても進める */ } }
+  S.code = code; S.isHost = true; S.view = 'phone';
+  S.pid = qs.get('pid') || store.get('dfg-pid-' + code) || rid(); store.set('dfg-pid-' + code, S.pid);
+  render();
+  try { await startHost(code, 'phone', S.pid); } catch (e) { S.err = '部屋を作れませんでした。通信の設定を確かめてください。'; render(); return; }
+  HOST.local(S.pid, { t: 'join', name });
+  history.replaceState(null, '', baseUrl() + '?host&code=' + code + (LOCAL ? '&local=1' : ''));
+}
+async function joinRoom(code, name) {
+  S.code = code; S.view = 'phone'; S.err = '';
+  S.pid = qs.get('pid') || store.get('dfg-pid-' + code) || rid(); store.set('dfg-pid-' + code, S.pid);
+  render();
+  S.net = await clientNet(code, S.pid, pub => { S.pub = pub; S.pubAt = Date.now(); render(); }, priv => { S.priv = priv; render(); });
+  const join = () => S.net.send({ t: 'join', name, auto: qs.has('auto') });
+  join();
+  // 親が後から開いた場合に備えて、参加が反映されるまで送り直す
+  const retry = setInterval(() => { if (S.pub && S.pub.players.some(p => p.id === S.pid)) clearInterval(retry); else join(); }, 1500);
+  history.replaceState(null, '', baseUrl() + '?room=' + code + (LOCAL ? '&local=1' : ''));
+}
+async function boot() {
+  S.name = store.get('dfg-name') || '';
+  if (qs.has('demo')) { bootDemo(); return; }
+  if (qs.has('tv')) {
+    let code = qs.get('code');
+    if (!code) { code = newCode(); try { for (let i = 0; i < 5 && !LOCAL && await roomExists(code); i++) code = newCode(); } catch (e) { /* 確かめられなくても進める */ } }
+    S.view = 'tv'; S.isHost = true; S.code = code; render();
+    try { await startHost(code, 'tv', null); } catch (e) { S.err = '部屋を作れませんでした。通信の設定を確かめてください。'; render(); return; }
+    history.replaceState(null, '', baseUrl() + '?tv&code=' + code + (LOCAL ? '&local=1' : ''));
+    for (let i = 0; i < (parseInt(qs.get('cpu'), 10) || 0); i++) HOST.local('tv', { t: 'cpu+' });
+    return;
+  }
+  if (qs.has('host') && qs.get('code') && S.name) { await beginPhoneHost(S.name); return; }
+  if (qs.has('host')) { S.view = 'hostform'; render(); return; }
+  if (qs.get('room')) {
+    S.code = qs.get('room').toUpperCase();
+    const nm = qs.get('name') || (store.get('dfg-pid-' + S.code) ? S.name : '');
+    if (nm) { S.name = nm; await joinRoom(S.code, nm); return; }
+    S.view = 'join'; render(); return;
+  }
+  render();
+}
+function bootDemo() {
+  const code = 'DEMO' ;
+  const b = baseUrl();
+  const names = ['きむら', 'さとう', 'たなか'];
+  document.body.innerHTML = `<div class="demo"><iframe src="${b}?tv&local=1&code=${code}&cpu=1" title="テレビ"></iframe>
+    <div class="phones">${names.map((n, i) => `<iframe src="${b}?room=${code}&local=1&name=${encodeURIComponent(n)}&pid=demo${i}${qs.has('auto') ? '&auto=1' : ''}" title="${n}のスマホ"></iframe>`).join('')}</div></div>`;
+}
+boot();
+})();
+
+</script>
+</body>
+</html>
