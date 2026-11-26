@@ -945,11 +945,11 @@ const LAWS = {
     text: () => '次の回に限り、革命が起きた状態で始める。回が終わると失効する。' },
 };
 // 初期設定では候補に出さない法律(設定画面で有効にできる)。全員に同じように効くため、投票で利害が分かれにくい
-const LAW_OFF = ['strong', 'tsure', 'fav', 'joker', 'fate', 'gekokujo', 'kyuhin', 'genzei'];
-const LAW_VER = 5;
+const LAW_OFF = ['ban', 'tsure', 'fav', 'joker', 'fate', 'gekokujo', 'kyuhin', 'genzei'];
+const LAW_VER = 6;
 // 並び順(設定画面と法律の一覧):初めから候補に入るものを先に、その中は 出し方 → 交換 → 得点 → 一回限り の順
-const LAW_KEYS = ['ban', 'rev3', 'agari', 'mawashi', 'jono', 'double', 'hosho', 'seiken', 'koukai', 'gyakuten',
-  'strong', 'fav', 'joker', 'tsure', 'fate', 'gekokujo', 'kyuhin', 'genzei'];
+const LAW_KEYS = ['strong', 'rev3', 'agari', 'mawashi', 'jono', 'double', 'hosho', 'seiken', 'koukai', 'gyakuten',
+  'ban', 'fav', 'joker', 'tsure', 'fate', 'gekokujo', 'kyuhin', 'genzei'];
 if (LAW_KEYS.length !== Object.keys(LAWS).length || !Object.keys(LAWS).every(k => LAW_KEYS.includes(k))) throw new Error('LAW_KEYS と LAWS が食い違っています');
 const KANJI = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
