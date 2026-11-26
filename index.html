@@ -2182,7 +2182,7 @@ const DUCK = {
   opening: 4.6, revolution: 4.2, crown: 3.6, fanfare: 3.2, enacted: 3.0, drumroll: 3.0, knock3: 2.4,
   bellVote: 2.0, gavel: 1.6, storm: 2.6, foul: 2.6, stamp: 1.6, reverse: 1.6, whoosh: 1.3, drop: 1.6, out: 1.5,
 };
-const BG = { want: false, on: true, list: [], base: '', i: 0, els: [], cur: 0, gain: null, fails: 0, timer: null, started: false };
+const BG = { want: false, on: true, list: [], base: '', bases: [''], bi: 0, i: 0, els: [], cur: 0, gain: null, fails: 0, timer: null, started: false };
 try { BG.on = localStorage.getItem('dfg-bgm') !== '0'; } catch (e) { /* 保存できない環境 */ }
 function bgmLevel() { return BG.on && !muted ? BGM_LEVEL : 0; }
 function bgmEls() {
@@ -2193,16 +2193,22 @@ function bgmEls() {
     const a = new Audio(); a.preload = 'auto'; a.crossOrigin = 'anonymous';
     try { ctx.createMediaElementSource(a).connect(BG.gain); } catch (e) { return false; }
     a.addEventListener('ended', () => { if (BG.els[BG.cur] === a) bgmNext(); });
-    a.addEventListener('error', () => { if (BG.els[BG.cur] !== a) return; BG.fails++; if (BG.fails < BG.list.length) bgmNext(); });
-    a.addEventListener('playing', () => { if (BG.els[BG.cur] === a) BG.fails = 0; });
+    a.addEventListener('error', () => {
+      if (BG.els[BG.cur] !== a) return;
+      // 見つからなければ、ほかの置き場所(bgmフォルダ/index.htmlと同じ場所)を試す
+      if (BG.fails === 0 && BG.bi < BG.bases.length - 1) { BG.bi++; BG.base = BG.bases[BG.bi]; bgmPlayCurrent(); return; }
+      BG.fails++; if (BG.fails < BG.list.length) bgmNext();
+    });
+    a.addEventListener('playing', () => { if (BG.els[BG.cur] === a) { BG.fails = 0; try { localStorage.setItem('dfg-bgm-base', BG.base); } catch (e) { /* 保存できない環境 */ } } });
     BG.els.push(a);
   }
   return true;
 }
 function bgmSrc(i) { return BG.base + BG.list[i % BG.list.length]; }
+function sameFile(a, i) { try { return new URL(a.src).href === new URL(bgmSrc(i), location.href).href; } catch (e) { return false; } }
 function bgmPlayCurrent() {
   const a = BG.els[BG.cur];
-  if (!a.src || !a.src.endsWith(BG.list[BG.i])) a.src = bgmSrc(BG.i);
+  if (!a.src || !sameFile(a, BG.i)) a.src = bgmSrc(BG.i);
   const p = a.play(); if (p && p.catch) p.catch(() => { /* 画面を一度押すまで再生できない */ });
   // 次の曲を先読みしておく
   const b = BG.els[1 - BG.cur]; b.src = bgmSrc(BG.i + 1); b.load();
@@ -2213,8 +2219,13 @@ function bgmNext() {
   try { BG.els[1 - BG.cur].pause(); } catch (e) { /* 止められなくても次へ進む */ }
   bgmPlayCurrent();
 }
-function bgmStart(list, base) {
-  BG.want = true; BG.list = list; BG.base = base || '';
+function bgmStart(list, bases) {
+  BG.want = true; BG.list = list;
+  BG.bases = Array.isArray(bases) ? bases : [bases || ''];
+  // 前に鳴った置き場所を先に試す
+  let last = null; try { last = localStorage.getItem('dfg-bgm-base'); } catch (e) { /* 保存できない環境 */ }
+  if (last != null && BG.bases.includes(last)) BG.bases = [last].concat(BG.bases.filter(b => b !== last));
+  BG.bi = 0; BG.base = BG.bases[0];
   if (!list.length || !bgmEls()) return;
   if (!BG.started) { BG.started = true; try { BG.i = (+localStorage.getItem('dfg-bgm-i') || 0) % list.length; } catch (e) { BG.i = 0; } }
   bgmResume();
@@ -3247,7 +3258,7 @@ let bgmPlaying = false;
 function bgmWanted() { return !!S.pub && (S.view === 'tv' || (S.isHost && S.pub.mode === 'phone')); }
 function bgmCheck() {
   const w = bgmWanted();
-  if (w && !bgmPlaying) { bgmPlaying = true; SFX.bgmStart(BGM_FILES, 'bgm/'); }
+  if (w && !bgmPlaying) { bgmPlaying = true; SFX.bgmStart(BGM_FILES, ['bgm/', '']); }
   else if (!w && bgmPlaying) { bgmPlaying = false; SFX.bgmStop(); }
 }
 document.addEventListener('pointerdown', () => { SFX.unlock(); keepAwake(); }, { once: true });
