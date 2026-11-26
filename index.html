@@ -818,6 +818,22 @@ html,body{overflow-x:hidden}
 .rtable .pt .adj{display:block;font-size:.62em;font-weight:500;color:var(--sub);letter-spacing:.04em;line-height:1.2}
 .lawbar .lb.hit{color:var(--gold2);text-decoration:underline;text-underline-offset:3px}
 
+/* 情報公開法:公開中の手札 */
+.openhand{padding:1em 0 1.1em;border-bottom:1px solid var(--docrule)}
+.openhand .oh-h{display:block;font-family:var(--serif);font-weight:700;letter-spacing:.06em;margin-bottom:.7em}
+.openhand .oh-cards{display:flex;flex-wrap:wrap;gap:.5vw .2vw;--cw:2.5vw}
+.openhand .oh-cards .card{margin-right:-.5vw}
+.openhand .oh-none{color:var(--docsub)}
+.ph .openhand{padding:10px 0 12px;border-bottom:1px solid var(--rule)}
+.ph .openhand .oh-h{font-size:13px;color:var(--gold2);margin-bottom:8px}
+.ph .openhand .oh-cards{--cw:30px;gap:6px 0}
+.ph .openhand .oh-cards .card{margin-right:-6px}
+.ph .openhand.mine .oh-h{margin:0}
+.side-in.compact .law .tx{display:none}
+.side-in.compact .law{padding:.7em 0}
+.openhand .oh-k{display:block;font-size:.8em;color:var(--docsub);letter-spacing:.12em;margin-bottom:.2em}
+.ph .openhand .oh-k{font-size:11px;color:var(--sub)}
+
 </style>
 <script>
 /* ===== Firebaseの設定 =====
@@ -897,10 +913,17 @@ const LAWS = {
     text: () => '大富豪は、回の終わりに得点を二点多く受け取る。' },
   hosho:    { w: 1, side: -1, name: () => '最低保障',
     text: () => '貧民と大貧民は、回の終わりに得点を一点多く受け取る。' },
+  // 場を一変させる時限立法(次の一回だけ。終わると失効)。開会前の採決には出さない(第1回には交換も大富豪もないため)
+  seiken:   { w: 0.6, side: -1, once: true, name: () => '政権交代',
+    text: () => '次の回に限り、カード交換を逆向きにする。大富豪と富豪が強い札を渡し、大貧民と貧民が好きな札を返す。回が終わると失効する。' },
+  koukai:   { w: 0.6, side: -1, once: true, name: () => '情報公開法',
+    text: () => '次の回に限り、大富豪の手札を全員に公開する。回が終わると失効する。' },
+  gyakuten: { w: 0.6, side: -1, once: true, name: () => '逆転国会',
+    text: () => '次の回に限り、革命が起きた状態で始める。回が終わると失効する。' },
 };
 // 初期設定では候補に出さない法律(設定画面で有効にできる)。全員に同じように効くため、投票で利害が分かれにくい
-const LAW_OFF = ['strong', 'tsure', 'fav', 'joker', 'mawashi', 'agari'];
-const LAW_VER = 2;
+const LAW_OFF = ['strong', 'tsure', 'fav', 'joker', 'mawashi', 'agari', 'fate', 'gekokujo'];
+const LAW_VER = 3;
 const LAW_KEYS = Object.keys(LAWS);
 const KANJI = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
@@ -967,7 +990,7 @@ function lawUsable(cfg, k) {
   if (!cfg.laws[k]) return false;
   if ((k === 'gekokujo' || k === 'rev3') && !cfg.rev) return false;
   if (k === 'joker' && !cfg.jokers) return false;
-  if ((k === 'jono' || k === 'kyuhin') && !cfg.exchange) return false;
+  if ((k === 'jono' || k === 'kyuhin' || k === 'seiken') && !cfg.exchange) return false;
   return true;
 }
 function shuffle(a, rnd) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -1206,9 +1229,15 @@ function startRound(G, now) {
     };
     const jono = lawParam(G.laws, 'jono'), kyuhin = lawParam(G.laws, 'kyuhin');
     const k0 = jono ? 3 : kyuhin ? 1 : 2, k1 = 1;
-    const got0 = give(o[n - 1], o[0], k0);
-    need[o[0]] = { to: o[n - 1], n: k0, got: got0 };
-    if (k1) { const got1 = give(o[n - 2], o[1], k1); need[o[1]] = { to: o[n - 2], n: k1, got: got1 }; }
+    // 政権交代:上の階級が強い札を渡し、下の階級が好きな札を返す
+    const seiken = !!lawParam(G.laws, 'seiken');
+    const pair = (hi, lo, k) => {
+      const [from, to] = seiken ? [hi, lo] : [lo, hi];
+      need[to] = { to: from, n: k, got: give(from, to, k) };
+    };
+    pair(o[0], o[n - 1], k0);
+    if (k1) pair(o[1], o[n - 2], k1);
+    if (seiken) { say(G, '政権交代。今回は大富豪と富豪が、強い札を渡します。', 'law'); lawHit(G, 'seiken', o[0]); }
     if (jono) { say(G, '上納令により、大貧民は大富豪に3枚を渡します。', 'law'); lawHit(G, 'jono', o[n - 1]); }
     if (kyuhin) { say(G, '救貧法により、大貧民と大富豪の交換は1枚ずつです。', 'law'); lawHit(G, 'kyuhin', o[n - 1]); }
     G.phase = 'exchange';
@@ -1229,6 +1258,9 @@ function beginPlay(G, now) {
     G.fate = all[Math.floor(R(G) * all.length)];
     say(G, `今回の当たり札は${label(G.fate)}です。`, 'law');
   }
+  if (lawParam(G.laws, 'gyakuten')) { G.rev = true; say(G, '逆転国会。今回は革命が起きた状態で始まります。', 'law'); lawHit(G, 'gyakuten'); }
+  G.open = null;
+  if (lawParam(G.laws, 'koukai') && G.order) { G.open = G.order[0]; say(G, `情報公開法により、${pName(G, G.open)}さんの手札が公開されました。`, 'law'); lawHit(G, 'koukai', G.open); }
   let lead;
   if (G.order) lead = G.order[G.order.length - 1];
   else lead = G.players.find(p => G.hands[p.id].includes('D3')).id;
@@ -1624,6 +1656,10 @@ function endRound(G, now) {
   });
   if (genzei) lawHit(G, 'genzei', order[0], `大富豪減税により、${pName(G, order[0])}さんに2点を上乗せします。`);
   if (hosho) lawHit(G, 'hosho', order[n - 1], '最低保障により、貧民と大貧民に1点ずつ上乗せします。');
+  // 時限立法(倍点令のほか)はこの回で失効
+  const gone = G.laws.filter(l => LAWS[l.key].once && l.key !== 'double');
+  if (gone.length) { G.laws = G.laws.filter(l => !gone.includes(l)); say(G, `${gone.map(l => `「${LAWS[l.key].name()}」`).join('')}は役目を終えて失効しました。`); }
+  G.open = null;
   // 大富豪の連続記録
   G.streak = G.streak && G.streak.id === order[0] ? { id: order[0], n: G.streak.n + 1 } : { id: order[0], n: 1 };
   G.comment = commentary(G, order, prev);
@@ -1782,7 +1818,7 @@ function paramOptions(G, key) {
 function startLawSelection(G, now) {
   const nextLast = !!G.cfg.rounds && G.round + 1 >= G.cfg.rounds && G.cfg.lastx2;
   const pool = LAW_KEYS.filter(k => lawUsable(G.cfg, k) && !G.laws.some(l => l.key === k) && !(k === 'double' && nextLast)
-    && !(LAWS[k].param && !G.order)                                        // 開会前は数字やマークを決める大富豪がいない
+    && !((LAWS[k].param || LAWS[k].once && k !== 'double') && !G.order)    // 開会前は大富豪も交換もないので、数字・マークの法律と時限立法は出さない
     && !(k === 'jono' && lawParam(G.laws, 'kyuhin')) && !(k === 'kyuhin' && lawParam(G.laws, 'jono')));  // 交換の法律は両立しない
   const cands = [];
   const p = pool.slice();
@@ -2057,7 +2093,7 @@ function pubView(G, now) {
     })),
     turn: G.phase === 'play' ? G.turn : null,
     field: { top: G.field.top, topIds: G.field.topIds, topPid: G.field.topPid, prevIds: G.field.prevIds, lock: G.field.lock, stack: G.field.stack || [] },
-    cfg: G.cfg, rev: G.rev, jback: !!G.jback, dir: G.dir || 1, laws: G.laws.map((l, i) => ({ key: l.key, param: l.param, no: i + 1, hits: l.hits || 0, name: LAWS[l.key].name(l.param), text: LAWS[l.key].text(l.param) })), lawHit: G.lawHit || null,
+    cfg: G.cfg, rev: G.rev, jback: !!G.jback, dir: G.dir || 1, laws: G.laws.map((l, i) => ({ key: l.key, param: l.param, no: i + 1, hits: l.hits || 0, name: LAWS[l.key].name(l.param), text: LAWS[l.key].text(l.param) })), lawHit: G.lawHit || null, openHand: G.open && lawParam(G.laws, 'koukai') && G.hands && G.hands[G.open] ? { pid: G.open, ids: cardSort(G.hands[G.open]) } : null,
     log: G.log.slice(-5), flash: G.flash, fate: G.fate,
     waiting: waitingFor(G),
     pending: G.pending ? { type: G.pending.type, pid: G.pending.pid || null, cands: G.pending.cands || null, key: G.pending.key || null } : null,
@@ -2177,6 +2213,12 @@ const LAW = {
   kyuhin: `<path class="a" d="M8 30a24 22 0 0 1 48 0z"/><path d="M8 30q6-5 12 0 6-5 12 0 6-5 12 0 6-5 12 0"/><path d="M32 8v-3"/><rect class="w" x="24" y="36" width="16" height="22" rx="2"/>`,
   // 大富豪減税:王冠と、下を向いた矢印の付いた硬貨
   genzei: `<path class="a" d="M12 26l3-12 7 6 5-10 5 10 7-6 3 12z"/><path d="M12 30h30"/><circle class="w" cx="44" cy="46" r="11"/><path d="M44 40v11M39.5 47l4.5 4.5 4.5-4.5"/>`,
+  // 政権交代:王冠と札が入れ替わる矢印
+  seiken: `<path class="a" d="M8 24l3-10 5 4 4-8 4 8 5-4 3 10z"/><rect class="w" x="38" y="36" width="16" height="22" rx="2"/><path class="as" d="M36 14c10 0 16 6 16 16M48 26l4 5 4-5"/><path class="as" d="M28 56c-10 0-16-6-16-16M16 44l-4-5-4 5"/>`,
+  // 情報公開法:手札を見る目
+  koukai: `<rect class="w" x="12" y="28" width="16" height="24" rx="2" transform="rotate(-10 20 40)"/><rect class="w" x="24" y="26" width="16" height="24" rx="2"/><rect class="w" x="36" y="28" width="16" height="24" rx="2" transform="rotate(10 44 40)"/><path d="M10 14c8-9 36-9 44 0-8 9-36 9-44 0z"/><circle class="a" cx="32" cy="14" r="4.5"/>`,
+  // 逆転国会:議事堂を逆さにして回す
+  gyakuten: `<path d="M12 18h40M16 18v14M24 18v14M40 18v14M48 18v14M10 32h44L32 48z"/><path class="as" d="M54 46a22 22 0 0 1-36 8M20 50l-3 5 6 1"/>`,
   // 最低保障:手のひらの上の硬貨(床で受け止める)
   hosho: `<circle class="a" cx="32" cy="22" r="10"/><path d="M28 22h8M32 18v8" stroke-width="1.6"/><path d="M8 40c6 0 10 4 16 4h12c3 0 3 4 0 4H26M8 52h28c6 0 12-4 20-12"/>`,
 };
@@ -3102,7 +3144,7 @@ function tvSide(pub) {
       : [`会期は${roundsText(c)}。ふつうの大富豪を遊びます。`, '今夜は法律を作りません(設定で切り替えられます)。', '最後に、遊び方から今夜の本性を診断します。'];
     return `<aside class="tv-side doc"><div class="laws-h">議事の流れ</div><div class="side-in"><ol class="howto">${steps.map(t => `<li>${t}</li>`).join('')}</ol></div></aside>`;
   }
-  return `<aside class="tv-side doc"><div class="laws-h">現行法<span>${pub.laws.length}/${c.maxLaws}</span></div><div class="side-in">${c.lawsOn ? lawsHtml(pub) : '<p class="laws-none">今夜は法律を作らない設定です。</p>'}</div>
+  return `<aside class="tv-side doc"><div class="laws-h">現行法<span>${pub.laws.length}/${c.maxLaws}</span></div><div class="side-in ${pub.openHand && pub.phase === 'play' ? 'compact' : ''}">${openHandHtml(pub)}${c.lawsOn ? lawsHtml(pub) : '<p class="laws-none">今夜は法律を作らない設定です。</p>'}</div>
     <div class="foot">${logo('sm')}<span>議場 <b>${esc(pub.code)}</b></span></div></aside>`;
 }
 const voteLabel = s => s % 60 ? `${s}秒` : `${s / 60}分`;
@@ -3383,6 +3425,12 @@ function phEnacted(pub) {
   return `<div class="panel enacted"><span class="opt-art">${I.law(v.result)}</span>${stamp('可決')}<h2>${esc(pub.lawInfo[v.result].name)}</h2>
     <p>${v.options.map(k => `${esc(pub.lawInfo[k].name)} ${v.counts[k]}票`).join('、')}${v.expired ? `。「${esc(v.expired)}」は失効しました` : ''}。</p></div>`;
 }
+// 情報公開法:大富豪の手札を見せる
+function openHandHtml(pub) {
+  const o = pub.openHand; if (!o || pub.phase !== 'play') return '';
+  if (o.pid === S.pid && S.view !== 'tv') return `<div class="openhand mine"><span class="oh-h">情報公開法 ― あなたの手札は全員に公開されています</span></div>`;
+  return `<div class="openhand"><span class="oh-k">情報公開法により公開中</span><span class="oh-h">${esc(pname(pub, o.pid))}さんの手札 ${o.ids.length}枚</span><div class="oh-cards">${o.ids.map(id => cardHtml(id)).join('') || '<span class="oh-none">上がりました</span>'}</div></div>`;
+}
 function lawBar(pub) {
   const n = pub.laws.length;
   if (!S.showLaws) return `<button class="lawbar" data-act="laws"><span>現行法</span>${n ? pub.laws.map(l => `<span class="lb ${lawHitNow(l.key) ? 'hit' : ''}">${I.law(l.key)}${esc(l.name)}</span>`).join('') : '<span class="lb none">なし</span>'}<span class="more">${n ? '開く' : ''}</span></button>`;
@@ -3468,7 +3516,7 @@ function phPlay(pub, priv, m) {
   const ordered = Array.from({ length: n }, (_, k) => pub.players[((ci + d * (k - half)) % n + n) % n]);
   const pts = pub.points || {};
   const plist = `<div class="ph-order" aria-label="手番の順"><div class="track" data-turn="${esc(pub.turn || '')}">${ordered.map((p, k) => `${k ? '<span class="ar" aria-hidden="true">›</span>' : ''}<div class="oc ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''} ${p.id === S.pid ? 'me' : ''}"><span class="n">${p.id === S.pid ? 'あなた' : esc(p.name)}</span><span class="s"><span class="sv">${p.out > 0 ? p.out + '抜け' : p.out === -1 ? '都落ち' : p.out === -2 ? '反則' : p.passed ? 'パス' : p.count + '枚'}</span><b>${pts[p.id] || 0}点</b></span></div>`).join('')}</div></div>`;
-  const body = `<div class="ph-table">${pileHtml(pub, 'min(11vw,52px)')}${finfo}</div>${plist}${pub.cfg.lawsOn ? lawBar(pub) : ''}
+  const body = `<div class="ph-table">${pileHtml(pub, 'min(11vw,52px)')}${finfo}</div>${plist}${openHandHtml(pub)}${pub.cfg.lawsOn ? lawBar(pub) : ''}
     <div class="ph-status ${myTurn || (prompt && prompt.type !== 'gave') ? 'mine' : ''}">${title}</div><div class="ph-note">${note}</div>
     <div class="hand-area">${fanHtml(hand, pub, tapMode, hint)}</div>`;
   return { body, bar };
