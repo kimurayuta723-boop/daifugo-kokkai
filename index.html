@@ -797,7 +797,7 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .is-ph .flash span{min-height:var(--h,52px);box-sizing:border-box;line-height:1.5}
 .is-ph .flash em{letter-spacing:.06em}
 /* 演出が画面幅を超えて横スクロールを生まないように */
-html,body{overflow-x:hidden}
+html,body{overflow-x:clip}
 /* 空の場:縦書きが枠の高さを超えて2列に折れないように */
 .pile.empty span{white-space:nowrap;font-size:min(.9em,calc(var(--cw)*.17))}
 /* 診断画面:右上の「ホーム・BGM・音」ボタンとカードの角が重ならないよう、カードを少し下げる */
@@ -833,6 +833,27 @@ html,body{overflow-x:hidden}
 .side-in.compact .law{padding:.7em 0}
 .openhand .oh-k{display:block;font-size:.8em;color:var(--docsub);letter-spacing:.12em;margin-bottom:.2em}
 .ph .openhand .oh-k{font-size:11px;color:var(--sub)}
+.ph-final h2{margin-bottom:10px}
+.ph-final .mini-table tr.me td{color:var(--gold2);font-weight:700}
+.ph-final + .ph-diag{margin-top:14px}
+/* 法律の一覧(ホーム) */
+.lawbook{max-width:980px}
+.lb-steps{list-style:none;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:18px 0 34px;padding:0}
+.lb-steps li{border-top:2px solid var(--gold);padding:12px 4px 0;display:block}
+.lb-steps .k{display:block;font-family:var(--serif);color:var(--gold2);font-size:20px;line-height:1;margin-bottom:8px}
+.lb-steps b{display:block;font-family:var(--serif);font-size:15px;letter-spacing:.06em;margin-bottom:6px}
+.lb-steps p{font-size:12.5px;line-height:1.8;color:var(--sub)}
+.lb-h{font-family:var(--serif);font-size:19px;letter-spacing:.1em;color:var(--gold2);margin:8px 0 14px;display:flex;align-items:baseline;gap:.6em}
+.lb-h small{font-family:var(--num);font-size:14px;color:var(--sub)}
+.lb-note{font-size:13px;color:var(--sub);margin:-6px 0 14px}
+.lgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:34px}
+.lc{display:grid;grid-template-columns:52px 1fr;gap:14px;align-items:start;border-radius:12px;padding:16px 18px}
+.lc .ill{width:52px;height:52px}
+.lc .nm{font-family:var(--serif);font-weight:700;font-size:17px;letter-spacing:.06em;line-height:1.4}
+.lc .tags{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px}
+.lc .tags .side{margin:0;font-size:11px}
+.lc p{font-size:13.5px;line-height:1.85;margin-top:6px;color:var(--docink)}
+@media (max-width:760px){.lb-steps{grid-template-columns:1fr;gap:0}.lb-steps li{display:grid;grid-template-columns:28px 1fr;padding:12px 0;border-top:1px solid var(--rule)}.lb-steps li:first-child{border-top:2px solid var(--gold)}.lgrid{grid-template-columns:1fr}}
 
 </style>
 <script>
@@ -2521,7 +2542,7 @@ function setMuted(m) { muted = m; try { localStorage.setItem('dfg-mute', m ? '1'
    12曲を順に流して最後から最初へ戻る。曲ごとのファイルを1曲ずつ読み込み、次の曲は再生中に先読みする。
    音量は控えめにし、大きな効果音が鳴るあいだは静かに下げて、終わると戻す(ダッキング)。
    ファイルが読めないときは黙って止める(遊びには影響しない)。 */
-const BGM_LEVEL = 0.26;          // 効果音に対するBGMの大きさ(控えめ)
+const BGM_LEVEL = 0.16;          // 効果音に対するBGMの大きさ(控えめ。約-4dB下げた)
 // 効果音ごとに、BGMを下げておく秒数。手札を出す音や選択音のような短く頻繁な音では下げない(音量が揺れて落ち着かないため)
 const DUCK = {
   opening: 4.6, revolution: 4.2, crown: 3.6, fanfare: 3.2, enacted: 3.0, drumroll: 3.0, knock3: 2.4,
@@ -2550,7 +2571,8 @@ function bgmEls() {
       if (BG.fails === 0 && BG.bi < BG.bases.length - 1) { BG.bi++; BG.base = BG.bases[BG.bi]; bgmPlayCurrent(); return; }
       BG.fails++; if (BG.fails < BG.list.length) bgmNext();
     });
-    a.addEventListener('playing', () => { if (BG.els[BG.cur] === a) { BG.fails = 0; try { localStorage.setItem('dfg-bgm-base', BG.base); } catch (e) { /* 保存できない環境 */ } } });
+    // 鳴り始めた曲の番号をその都度残す(画面を閉じたり読み込み直したりしても、次は続きの曲から流す)
+    a.addEventListener('playing', () => { if (BG.els[BG.cur] === a) { BG.fails = 0; try { localStorage.setItem('dfg-bgm-base', BG.base); localStorage.setItem('dfg-bgm-i', String(BG.i)); } catch (e) { /* 保存できない環境 */ } } });
     BG.els.push(a);
   }
   return true;
@@ -2601,7 +2623,8 @@ function bgmStart(list, bases) {
   if (last != null && BG.bases.includes(last)) BG.bases = [last].concat(BG.bases.filter(b => b !== last));
   BG.bi = 0; BG.base = BG.bases[0];
   if (!list.length || !bgmEls()) return;
-  if (!BG.started) { BG.started = true; try { BG.i = (+localStorage.getItem('dfg-bgm-i') || 0) % list.length; } catch (e) { BG.i = 0; } }
+  // 前回最後に流れた曲の次から、決まった順(1→12→1…)で流す。同じ曲が続けて流れないように
+  if (!BG.started) { BG.started = true; try { const v = localStorage.getItem('dfg-bgm-i'); BG.i = v == null ? 0 : (+v + 1) % list.length; } catch (e) { BG.i = 0; } }
   bgmResume();
 }
 function bgmResume() {
@@ -2616,7 +2639,6 @@ function bgmStop() {
   if (!BG.els.length) return;
   fadeTo(0, 0.6);
   setTimeout(() => { if (!BG.want) BG.els.forEach(a => a.pause()); }, 700);
-  try { localStorage.setItem('dfg-bgm-i', String(BG.i)); } catch (e) { /* 保存できない環境 */ }
 }
 function fadeTo(v, sec) {
   if (!BG.gain) return;
@@ -3021,7 +3043,7 @@ function vEntry() {
       <button class="btn" data-act="go-host">スマホだけで議場を開く</button>
       <button class="btn" data-act="go-join">議場に入る</button>
     </div>
-    <div class="links"><button class="link" data-act="types-open">診断の16タイプを見る</button></div>
+    <div class="links"><button class="link" data-act="lawbook-open">法律の一覧を見る</button><button class="link" data-act="types-open">診断の16タイプを見る</button></div>
     <p class="note">テレビで議場を開くと、場と法律はテレビに、手札は各自のスマホに出ます。スマホだけで遊ぶときは、議場を開いた人のスマホが親になります。親の画面は最後まで開いたままにしてください。${LOCAL ? '<br>いまは試用モードです(同じブラウザのタブ同士でだけつながります)。' : ''}</p>
   </div>`;
 }
@@ -3326,6 +3348,30 @@ function typeCard(d) {
   return `<div class="type-card"><span class="tc-ix tl">${esc(ch[0])}</span>${I.type(d.code || d.type)}<span class="tc-nm">${esc(d.name)}</span><span class="tc-code">${esc(ch)}</span><span class="tc-ix br">${esc(ch[0])}</span></div>`;
 }
 /* 16タイプの一覧 */
+/* ホームの「法律の一覧」:決まり方と、全部の法律 */
+function vLaws() {
+  const def = E.defaultCfg().laws;
+  const card = k => {
+    const L = E.LAWS[k], sd = L.side;
+    const tags = [sd ? (sd > 0 ? '大富豪に有利' : '貧民・大貧民に有利') : '', L.once ? '一回限り' : '', L.param ? '数字やマークは大富豪が決める' : ''].filter(Boolean);
+    return `<div class="lc doc"><span class="lc-art">${I.law(k)}</span><div class="lc-body"><div class="nm">${esc(L.name())}</div>${tags.length ? `<div class="tags">${tags.map(t => `<span class="side">${t}</span>`).join('')}</div>` : ''}<p>${esc(L.text())}</p></div></div>`;
+  };
+  const on = E.LAW_KEYS.filter(k => def[k]), off = E.LAW_KEYS.filter(k => !def[k]);
+  const steps = [
+    ['開会前の採決', '法案が三つ出て、全員1票で最初の法律を一つ決めます。同数ならくじで決まります。'],
+    ['回の終わりの審議', '回が終わるたびに法案が三つ出て、大富豪が一つを「重要法案」に指定します。'],
+    ['採決', '大富豪は2票、重要法案に入れると3票、ほかの人は1票。同数のときは大貧民の票で決まります。交渉は自由です。'],
+    ['施行と失効', '決まった法律は次の回から有効です。上限(初めは三つ)を超えると古い順に失効し、革命が起きるとすべて廃止されます。「一回限り」の法律は、次の回が終わると失効します。'],
+    ['法律が効いたとき', 'テレビの現行法の欄で、その条文に「適用」の判が押され、適用された回数が残ります。'],
+  ];
+  return `<div class="zukan lawbook"><div class="zukan-head"><div><div class="eyebrow">立法の手引き</div><h1>法律の一覧</h1></div><button class="btn" data-act="lawbook-close">戻る</button></div>
+    <ol class="lb-steps">${steps.map(([h, t], i) => `<li><span class="k">${E.KANJI[i]}</span><div><b>${h}</b><p>${t}</p></div></li>`).join('')}</ol>
+    <h2 class="lb-h">初めから候補に入る法律<small>${on.length}</small></h2>
+    <div class="lgrid">${on.map(card).join('')}</div>
+    <h2 class="lb-h">設定で加えられる法律<small>${off.length}</small></h2>
+    <p class="lb-note">待機画面の「ルールと法律の設定」で有効にすると、候補に入ります。</p>
+    <div class="lgrid">${off.map(card).join('')}</div></div>`;
+}
 function vTypes(pub) {
   const who = {};
   if (pub && pub.diag) pub.players.forEach(p => { const d = pub.diag[p.id]; if (d) (who[d.code] = who[d.code] || []).push(p.name); });
@@ -3400,7 +3446,11 @@ function vPhone(pub, priv) {
     }
     case 'diag': {
       const d = pub.diag[S.pid];
-      body = `<div class="panel ph-diag">${typeCard(d)}<p class="small">今夜のあなたは(総合${d.place}位・${d.pts}点)</p><div class="ty">${esc(d.name)}</div>
+      // 首班指名:総合順位と今夜の総理大臣(テレビがないスマホだけの遊び方でも、ここで最終順位を確かめられる)
+      const fin = pub.final || [];
+      body = `<div class="panel ph-final"><p class="small" style="color:var(--gold)">閉会 ― 総合成績と首班指名</p><h2>今夜の総理大臣は${esc(pname(pub, fin[0] && fin[0].id))}さん</h2>
+        <table class="mini-table">${fin.map((r, i) => `<tr class="${r.id === S.pid ? 'me' : ''}"><td>${i + 1}位　${esc(pname(pub, r.id))}${r.id === S.pid ? '(あなた)' : ''}</td><td>大富豪${r.tops}回　<b>${r.pts}点</b></td></tr>`).join('')}</table></div>
+        <div class="panel ph-diag">${typeCard(d)}<p class="small">今夜のあなたは(総合${d.place}位・${d.pts}点)</p><div class="ty">${esc(d.name)}</div>
         <div class="dx-code">${d.chars.map(c => `<span>${c}</span>`).join('')}</div><div class="sb">${esc(d.catch)}</div>
         ${axesHtml(d)}<p class="ds">${esc(d.desc)}</p>
         <h3>今夜の立ち回り</h3><div class="dx-an">${d.analysis.map(t => `<div>${esc(t)}</div>`).join('')}</div>
@@ -3582,7 +3632,7 @@ function render() {
     S.lhN = pub.lawHit.n;
   }
   document.body.className = (S.view === 'tv' ? 'is-tv' : 'is-ph') + (pub && pub.rev ? ' rev' : '');
-  if (S.view === 'entry') html = S.showTypes ? vTypes(null) : vEntry();
+  if (S.view === 'entry') html = S.showTypes ? vTypes(null) : S.showLawbook ? vLaws() : vEntry();
   else if (S.view === 'join') html = vJoin(false);
   else if (S.view === 'hostform') html = vJoin(true);
   else if (!pub) html = `<div class="entry"><h1>接続しています</h1><p class="lead">${S.err ? esc(S.err) : 'しばらくお待ちください。'}</p></div>`;
@@ -3772,6 +3822,8 @@ document.addEventListener('click', async ev => {
     case 'cfg-open': S.showCfg = true; render(); break;
     case 'types-open': S.showTypes = true; S.openType = null; lastHtml = ''; render(); window.scrollTo(0, 0); break;
     case 'types-close': S.showTypes = false; lastHtml = ''; render(); break;
+    case 'lawbook-open': S.showLawbook = true; lastHtml = ''; render(); window.scrollTo(0, 0); break;
+    case 'lawbook-close': S.showLawbook = false; lastHtml = ''; render(); break;
     case 'brief-next': send({ t: 'brief', step: (S.pub.brief || 0) + 1 }); break;
     case 'brief-back': send({ t: 'brief', step: Math.max(0, (S.pub.brief || 0) - 1) }); break;
     case 'begin': send({ t: 'begin' }); break;
