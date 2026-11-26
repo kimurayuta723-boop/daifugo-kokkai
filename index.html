@@ -774,6 +774,10 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .ph-order{display:block;position:relative}
 .ph-order .track{display:inline-flex;align-items:stretch;gap:4px;padding:0 50%}
 .ph-order .oc{width:92px;min-width:0}
+/* 議席番号(手番の順) */
+.tv-p.seat .sno{position:absolute;top:0;left:.7vw;transform:translateY(-55%);font-size:.7em;letter-spacing:.12em;color:var(--gold);background:var(--bg);padding:0 .45em;line-height:1.5;border-radius:.3em}
+.tv-p.seat.turn .sno{color:var(--gold2)}
+.tv-head .round small{letter-spacing:.12em}
 
 </style>
 <script>
@@ -1134,7 +1138,7 @@ function startRound(G, now) {
   ids.forEach(id => { G.hands[id] = []; });
   d.forEach((c, i) => G.hands[ids[i % ids.length]].push(c));
   ids.forEach(id => { G.hands[id] = cardSort(G.hands[id]); });
-  say(G, isLast(G) ? `第${G.round}回、最終回を始めます。` : `第${G.round}回を始めます。`);
+  say(G, isLast(G) ? `第${G.round}回、最終の本会議を開きます。` : `第${G.round}回本会議を開きます。`);
   if (G.order && G.cfg.exchange) {
     const o = G.order, n = o.length, ctx = makeCtx(G);
     const need = {};
@@ -1527,7 +1531,7 @@ function endRound(G, now) {
   G.comment = commentary(G, order, prev);
   G.order = order;
   G.phase = 'roundEnd'; G.pending = null; G.turn = null;
-  say(G, `第${G.round}回が終わりました。大富豪は${pName(G, order[0])}さんです。`);
+  say(G, `第${G.round}回本会議が閉じました。大富豪は${pName(G, order[0])}さんです。`);
 }
 
 /* ---------- 得点と解説 ---------- */
@@ -2716,12 +2720,12 @@ function vEntry() {
     <p class="lead">回が終わるたびに、みんなの投票で法律が一つ増えます。<br>革命が起きると、法律はすべて廃止。<br>最後に、立ち回りから今夜の本性を診断します。</p>
     <div class="stack">
       ${resumeHtml()}
-      <button class="btn main" data-act="go-tv">テレビで部屋を作る</button>
-      <button class="btn" data-act="go-host">スマホだけで部屋を作る</button>
-      <button class="btn" data-act="go-join">部屋に入る</button>
+      <button class="btn main" data-act="go-tv">テレビで議場を開く</button>
+      <button class="btn" data-act="go-host">スマホだけで議場を開く</button>
+      <button class="btn" data-act="go-join">議場に入る</button>
     </div>
     <div class="links"><button class="link" data-act="types-open">診断の16タイプを見る</button></div>
-    <p class="note">テレビで部屋を作ると、場と法律はテレビに、手札は各自のスマホに出ます。スマホだけで遊ぶときは、部屋を作った人のスマホが親になります。親の画面は最後まで開いたままにしてください。${LOCAL ? '<br>いまは試用モードです(同じブラウザのタブ同士でだけつながります)。' : ''}</p>
+    <p class="note">テレビで議場を開くと、場と法律はテレビに、手札は各自のスマホに出ます。スマホだけで遊ぶときは、議場を開いた人のスマホが親になります。親の画面は最後まで開いたままにしてください。${LOCAL ? '<br>いまは試用モードです(同じブラウザのタブ同士でだけつながります)。' : ''}</p>
   </div>`;
 }
 
@@ -2741,15 +2745,15 @@ function resumeHtml() {
   const L = lastRoom();
   if (!L) return '';
   const who = L.role === 'tv' ? 'テレビ' : L.role === 'host' ? '親のスマホ' : '参加者';
-  return `<button class="btn resume" data-act="resume"><span>続きから戻る</span><small>部屋 ${esc(L.code)}(${who}として)</small></button>`;
+  return `<button class="btn resume" data-act="resume"><span>続きから戻る</span><small>議場 ${esc(L.code)}(${who}として)</small></button>`;
 }
 function myRole() { return S.view === 'tv' ? 'tv' : S.isHost ? 'host' : 'player'; }
 function homeConfirmHtml() {
   if (!S.confirmHome) return '';
   const role = myRole();
   const msg = role === 'player'
-    ? 'ホームに戻っても、部屋からは抜けません。あなたの番が来ると進行が止まるので、ホームの「続きから戻る」で早めに戻ってください。'
-    : `${role === 'tv' ? 'このテレビ' : 'このスマホ'}が親なので、戻るあいだ部屋の進行は止まります。12時間以内なら、ホームの「続きから戻る」で同じ部屋の続きから再開できます。`;
+    ? 'ホームに戻っても、あなたの議席は残ります。あなたの番が来ると進行が止まるので、ホームの「続きから戻る」で早めに戻ってください。'
+    : `${role === 'tv' ? 'このテレビ' : 'このスマホ'}が親なので、戻るあいだ議事は止まります。12時間以内なら、ホームの「続きから戻る」で同じ議場の続きから再開できます。`;
   return `<div class="confirm-back"><div class="confirm doc" role="dialog" aria-label="ホームに戻る">
     <h3>ホームに戻りますか</h3><p>${msg}</p>
     <div class="confirm-btns"><button class="btn" data-act="home-cancel">やめる</button><button class="btn main" data-act="home-go">ホームに戻る</button></div></div></div>`;
@@ -2762,12 +2766,12 @@ function goHome() {
 function vJoin(host) {
   return `<div class="entry">
     <div class="entry-head">${logo()}</div>
-    <h2 class="entry-h">${host ? '部屋を作る' : '部屋に入る'}</h2>
+    <h2 class="entry-h">${host ? '議場を開く' : '議場に入る'}</h2>
     <p class="lead">${host ? 'あなたのスマホが親になります。' : 'テレビか親のスマホに出ている4文字を入力してください。'}</p>
     ${S.err ? `<p class="err">${esc(S.err)}</p>` : ''}
-    ${host ? '' : `<div class="field"><label for="code">部屋の番号</label><input id="code" class="code" maxlength="4" autocomplete="off" value="${esc(S.code)}"></div>`}
+    ${host ? '' : `<div class="field"><label for="code">議場の番号</label><input id="code" class="code" maxlength="4" autocomplete="off" value="${esc(S.code)}"></div>`}
     <div class="field"><label for="name">名前(8文字まで)</label><input id="name" maxlength="8" autocomplete="off" value="${esc(S.name)}"></div>
-    <div class="stack"><button class="btn main" data-act="${host ? 'do-host' : 'do-join'}">${host ? '部屋を作る' : '入る'}</button>
+    <div class="stack"><button class="btn main" data-act="${host ? 'do-host' : 'do-join'}">${host ? '議場を開く' : '入る'}</button>
     <button class="link" data-act="home">戻る</button></div>
   </div>`;
 }
@@ -2778,7 +2782,7 @@ const roundsText = c => c.rounds ? `全${c.rounds}回${c.lastx2 ? '(最終回は
 function roundLabel(pub) {
   const c = pub.cfg;
   if (pub.last) return `最終回<small>第${pub.round}回${c.lastx2 ? '・得点二倍' : ''}</small>`;
-  return `第${pub.round}回${c.rounds ? `<small>全${c.rounds}回</small>` : ''}`;
+  return `第${pub.round}回 本会議${c.rounds ? `<small>会期 全${c.rounds}回</small>` : ''}`;
 }
 /* ---------- テレビ ---------- */
 function controls(pub, compact) {
@@ -2790,9 +2794,9 @@ function controls(pub, compact) {
       const last = briefPages(pub).length - 1, st = Math.min(pub.brief, last);
       return (st < last ? b('brief-next', '次へ', true) : b('begin', '開会する', true)) + b('brief-back', '戻る', false, st === 0) + (st < last ? b('begin', '説明を飛ばして開会') : '');
     }
-    case 'vote': return b('close-vote', '投票を締め切る', true, !pub.vote.voted.length);
-    case 'roundEnd': return pub.last ? b('finish', '閉会する(総合結果と診断へ)', true) : b('next', pub.cfg.lawsOn ? '法律を決める' : '次の回を始める', true) + b('finish', '今夜はここまで(結果と診断へ)');
-    case 'enacted': return b('next', '次の回を始める', true) + b('finish', '今夜はここまで(結果と診断へ)');
+    case 'vote': return b('close-vote', '採決を締め切る', true, !pub.vote.voted.length);
+    case 'roundEnd': return pub.last ? b('finish', '閉会する(首班指名と診断へ)', true) : b('next', pub.cfg.lawsOn ? '法案の審議へ' : '次の本会議へ', true) + b('finish', '今夜はここまで(閉会して診断へ)');
+    case 'enacted': return b('next', '次の本会議へ', true) + b('finish', '今夜はここまで(閉会して診断へ)');
     case 'diag': return compact ? b('types-open', '16タイプの一覧') + b('again', '同じ顔ぶれでもう一度') : b('diag-next', S.diagStep === 0 ? '診断の発表へ' : S.diagStep <= n ? (S.diagStep < n ? '次の人' : '全員の結果') : '最初から', true) + b('types-open', '16タイプの一覧') + b('again', '同じ顔ぶれでもう一度');
   }
   return '';
@@ -2803,8 +2807,8 @@ function briefPages(pub) {
   const item = (art, h, p) => `<div class="bitem doc">${art}<h4>${h}</h4><p>${p}</p></div>`;
   P.push({ t: '本日の議事次第', roomy: true, h: `<div class="bgrid" style="--n:4">
     ${item(I.medal(`<rect class="w" x="14" y="10" width="22" height="32" rx="3"/><rect class="w" x="28" y="20" width="22" height="32" rx="3"/><path class="s" d="M39 30l3.5 4.5L39 39l-3.5-4.5z" style="color:#ad2a20"/>`), '一 大富豪を遊ぶ', 'ふつうの大富豪です。手札をなくした順に、大富豪・富豪…と階級が決まります。')}
-    ${c.lawsOn ? item(I.law('strong'), '二 法律をつくる', '回が終わるたびに、法律案が三つ出て、全員の投票で新しい法律が一つ決まります。') : item(I.gavel(), '二 法律はなし', '今夜は法律をつくりません。ルールどおりの大富豪で競います。')}
-    ${item(I.rank('大富豪'), '三 得点を競う', `回ごとに階級で得点が入ります。${pub.cfg.rounds ? `<span class="nw">全${pub.cfg.rounds}回</span>を終えたら閉会し、` : '最後に'}合計点で総合順位を決めます。`)}
+    ${c.lawsOn ? item(I.law('strong'), '二 法律をつくる', '回が終わるたびに、法案が三つ出て、全員の投票で新しい法律が一つ決まります。') : item(I.gavel(), '二 法律はなし', '今夜は法律をつくりません。ルールどおりの大富豪で競います。')}
+    ${item(I.rank('大富豪'), '三 得点を競う', `回ごとに階級で得点が入ります。${pub.cfg.rounds ? `<span class="nw">全${pub.cfg.rounds}回</span>を終えたら閉会し、` : '最後に'}合計点の1位を今夜の総理大臣に指名します。`)}
     ${item(I.type('APCG'), '四 本性を診断', 'パスの仕方、強い札の使いどき、考える時間、投票先から、16タイプのどれかに分けます。')}</div>` });
   const strength = `<div class="strength">${['C3', 'H7', 'S11', 'D14', 'C15', 'X1'].map((id, i) => (i ? '<span class="arrow">‹</span>' : '') + cardHtml(id)).join('')}</div>`;
   const basics = [
@@ -2819,8 +2823,8 @@ function briefPages(pub) {
   P.push({ t: '大富豪の基本', h: `<p class="sub" style="font-size:1.1em">弱い札から順に、3・4・5…K・A・2・ジョーカー。${c.jokers ? `ジョーカーは${c.jokers}枚入っています。` : 'ジョーカーは入っていません。'}</p>${strength}<div class="bgrid" style="--n:${basics.length > 4 ? 4 : 3}">${basics.join('')}</div>` });
   const locs = E.LOCAL_RULES.filter(r => c[r.key]);
   if (locs.length) P.push({ t: '今夜のローカルルール', h: `<div class="bgrid" style="--n:3">${locs.map(r => item('', r.name, r.text + '。')).join('')}</div>` });
-  if (c.lawsOn) P.push({ t: '法律のつくり方', roomy: true, h: `<div class="bgrid" style="--n:4">
-    ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24M20 38h16"/>'), '一 三つの法律案', '回が終わると、法律案がランダムに三つ出ます。')}
+  if (c.lawsOn) P.push({ t: '立法の手続き', roomy: true, h: `<div class="bgrid" style="--n:4">
+    ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24M20 38h16"/>'), '一 三つの法案', '回が終わると、法案がランダムに三つ出ます。')}
     ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h12"/><path class="g" d="M40 32l3 6.2 6.8 1-4.9 4.8 1.2 6.8-6.1-3.2-6.1 3.2 1.2-6.8-4.9-4.8 6.8-1z"/>'), '二 大富豪が指定', '大富豪が、三つのうち一つを「重要法案」に指定します。大富豪がその案に入れると3票になります。')}
     ${item(I.medal('<path class="w" d="M16 26h32v24H16z"/><path class="g" d="M24 10h16v20H24z"/><path d="M22 26h20"/>'), '三 全員で投票', `三つから一つを選びます。大富豪は2票、重要法案に入れると3票。同数のときは大貧民の票で決まります。全員が入れるか、主催者が締め切ったら開票です。交渉は自由です。`)}
     ${item(I.medal('<path class="a" d="M14 18h36v28H14z" opacity=".15"/><path class="as" d="M14 18h36v28H14z" stroke-width="3"/><path d="M22 32h20"/>'), '四 可決', `決まった法律は次の回から有効です。法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`)}</div>` });
@@ -2839,12 +2843,12 @@ function tvSide(pub) {
   const c = pub.cfg;
   if (pub.phase === 'lobby') {
     const steps = c.lawsOn
-      ? [`会期は${roundsText(c)}。ふつうの大富豪を一回ずつ遊びます。`, '回が終わると、法律案が三つ出ます。大富豪が一つを「重要法案」に指定します。', '三つの中から全員で投票します。大富豪は2票、重要法案に入れると3票。同数なら大貧民が決めます。', `法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`, '最後に、遊び方から今夜の本性を診断します。']
+      ? [`会期は${roundsText(c)}。ふつうの大富豪を一回ずつ遊びます。`, '回が終わると、法案が三つ出ます。大富豪が一つを「重要法案」に指定します。', '三つの中から全員で投票します。大富豪は2票、重要法案に入れると3票。同数なら大貧民が決めます。', `法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`, '最後に、遊び方から今夜の本性を診断します。']
       : [`会期は${roundsText(c)}。ふつうの大富豪を遊びます。`, '今夜は法律を作りません(設定で切り替えられます)。', '最後に、遊び方から今夜の本性を診断します。'];
-    return `<aside class="tv-side doc"><div class="laws-h">遊び方</div><div class="side-in"><ol class="howto">${steps.map(t => `<li>${t}</li>`).join('')}</ol></div></aside>`;
+    return `<aside class="tv-side doc"><div class="laws-h">議事の流れ</div><div class="side-in"><ol class="howto">${steps.map(t => `<li>${t}</li>`).join('')}</ol></div></aside>`;
   }
   return `<aside class="tv-side doc"><div class="laws-h">現行法<span>${pub.laws.length}/${c.maxLaws}</span></div><div class="side-in">${c.lawsOn ? lawsHtml(pub) : '<p class="laws-none">今夜は法律を作らない設定です。</p>'}</div>
-    <div class="foot">${logo('sm')}<span>部屋 <b>${esc(pub.code)}</b></span></div></aside>`;
+    <div class="foot">${logo('sm')}<span>議場 <b>${esc(pub.code)}</b></span></div></aside>`;
 }
 const voteLabel = s => s % 60 ? `${s}秒` : `${s / 60}分`;
 /* 設定:基本ルールと法律の有効・無効 */
@@ -2874,7 +2878,7 @@ function vTv(pub) {
   if (S.showTypes) return vTypes(pub);
   if (pub.phase === 'lobby') return vTvLobby(pub);
   if (pub.phase === 'brief') return sheet(pub, vTvBrief(pub), true);
-  if (pub.phase === 'roundEnd') return sheet(pub, `<div class="eyebrow">${pub.last ? `最終回(第${pub.round}回)` : `第${pub.round}回${pub.cfg.rounds ? ` / 全${pub.cfg.rounds}回` : ''}`}の結果${x2Text(pub.results[0]) ? '　' + x2Text(pub.results[0]) : ''}</div><div class="big">大富豪は${esc(pname(pub, pub.order[0]))}さん</div>${resultsTable(pub)}${standingHtml(pub)}${commentHtml(pub)}`);
+  if (pub.phase === 'roundEnd') return sheet(pub, `<div class="eyebrow">${pub.last ? `最終回(第${pub.round}回)本会議の結果` : `第${pub.round}回 本会議の結果${pub.cfg.rounds ? `(会期 全${pub.cfg.rounds}回)` : ''}`}${x2Text(pub.results[0]) ? '　' + x2Text(pub.results[0]) : ''}</div><div class="big">大富豪は${esc(pname(pub, pub.order[0]))}さん</div>${resultsTable(pub)}${standingHtml(pub)}${commentHtml(pub)}`);
   if (pub.phase === 'mark') return sheet(pub, vTvMark(pub));
   if (pub.phase === 'vote') return sheet(pub, vTvVote(pub));
   if (pub.phase === 'enacted') return sheet(pub, vTvEnacted(pub));
@@ -2889,6 +2893,7 @@ function vTv(pub) {
     const st = p.out > 0 ? `${p.out}番目に上がり` : p.out === -1 ? '都落ち' : p.out === -2 ? '反則上がり' : p.passed ? 'パス' : pub.turn === p.id ? '考え中' : (f.topPid === p.id && f.topIds.length) ? '<span class="lp">場の札</span>' : '';
     const x = 50 + RX * Math.cos(ang(i)), y = 50 + RY * Math.sin(ang(i));
     return `<div class="tv-p seat ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%">
+      <span class="sno">議席${i + 1}</span>
       <div class="sh"><span class="nm">${esc(p.name)}</span><span class="pt">${pts[p.id] || 0}<small>点</small></span></div>
       <div class="r2"><span class="tt">${rankTag(p.title)}</span><span class="hold">${p.out ? '' : backsHtml(p.count, 6)}<span class="ct">${p.count}<small>枚</small></span></span></div>
       <div class="st">${st || '&nbsp;'}</div></div>`;
@@ -2914,7 +2919,7 @@ function vTv(pub) {
   </main>${tvSide(pub)}</div>`;
 }
 function commentHtml(pub) {
-  return pub.comment ? `<div class="comment doc">${I.mic()}<p><small>解説のひとこと</small>${esc(pub.comment)}</p></div>` : '';
+  return pub.comment ? `<div class="comment doc">${I.mic()}<p><small>国会中継の解説</small>${esc(pub.comment)}</p></div>` : '';
 }
 
 function sheet(pub, inner, noSide) {
@@ -2926,7 +2931,7 @@ function vTvLobby(pub) {
   const url = baseUrl() + '?room=' + pub.code + (LOCAL ? '&local=1' : '');
   const list = pub.players.map(p => `<div class="${p.cpu ? 'cpu' : ''}">${esc(p.name)}</div>`).join('') || '<div class="sub">まだ誰もいません</div>';
   return `<div class="sheet"><main class="sheet-main lobby">
-    <div class="lobby-top"><div>${logo()}<div class="eyebrow" style="margin-top:2.2em">部屋の番号</div><div class="codebox">${esc(pub.code)}</div>
+    <div class="lobby-top"><div>${logo()}<div class="eyebrow" style="margin-top:2.2em">議場の番号</div><div class="codebox">${esc(pub.code)}</div>
     <div class="url">${esc(url)}</div></div><div class="qrbox">${QR.svg(url, '#1f1a15', '#f4ecda')}<span>スマホのカメラで読み取ると参加できます</span></div></div>
     <div class="plist">${list}</div>
     <p class="sub" style="margin-top:1.4em">4〜7人で遊べます。足りない分はCPUで埋められます。<br>${esc(cfgSummary(pub.cfg))}</p>
@@ -2953,12 +2958,12 @@ function resultsTable(pub) {
 function billHtml(pub, key, i, extra) {
   const L = pub.lawInfo[key];
   extra = extra || {};
-  return `<div class="bill doc ${extra.out ? 'out' : ''}"><span class="bill-art">${I.law(key)}</span><div class="no">法律案 ${E.KANJI[i]}</div><div class="nm">${esc(L.name)}</div><div class="tx">${esc(L.text)}</div>${extra.after || ''}${extra.stamp || ''}</div>`;
+  return `<div class="bill doc ${extra.out ? 'out' : ''}"><span class="bill-art">${I.law(key)}</span><div class="no">議案第${E.KANJI[i]}号</div><div class="nm">${esc(L.name)}</div><div class="tx">${esc(L.text)}</div>${extra.after || ''}${extra.stamp || ''}</div>`;
 }
 const stamp = (t, ink) => `<div class="stamp ${ink ? 'ink' : ''}">${t}</div>`;
 function vTvMark(pub) {
   const c = pub.pending.cands;
-  return `<div class="eyebrow">法律案の審議</div><div class="big">大富豪の${esc(pname(pub, pub.pending.pid))}さんが、<span class="nw">重要法案</span>を指定します</div>
+  return `<div class="eyebrow">法案の審議</div><div class="big">大富豪の${esc(pname(pub, pub.pending.pid))}さんが、<span class="nw">重要法案</span>を指定します</div>
     <p class="sub">重要法案に大富豪が入れると3票になります。</p>
     <div class="bills" style="--n:3">${c.map((k, i) => billHtml(pub, k, i)).join('')}</div>`;
 }
@@ -2968,7 +2973,7 @@ function vTvVote(pub) {
   const voted = pub.players.filter(p => v.voted.includes(p.id)).map(p => esc(p.name));
   const wait = pub.players.filter(p => !v.voted.includes(p.id)).map(p => esc(p.name));
   return `<div class="vote-head">
-      <div><div class="eyebrow">作戦時間 ― 投票は各自のスマホで</div><div class="big" style="margin-bottom:.2em">${v.options.length > 2 ? 'どれを通しますか' : 'どちらを通しますか'}</div>
+      <div><div class="eyebrow">根回しの時間 ― 投票は各自のスマホで</div><div class="big" style="margin-bottom:.2em">${v.options.length > 2 ? 'どの法案を通しますか' : 'どちらの法案を通しますか'}</div>
       <p class="sub">大富豪の${esc(pname(pub, top))}さんは2票${v.marked ? `、重要法案「${esc(pub.lawInfo[v.marked].name)}」に入れると3票` : ''}。同数のときは大貧民の${esc(pname(pub, pub.order[pub.order.length - 1]))}さんの票で決まります。全員が入れるか、締め切ると開票です。</p></div>
       <div class="timer">${voted.length}<small style="font-size:.4em">/${pub.players.length}票</small></div></div>
     <div class="bills" style="--n:${v.options.length}">${v.options.map((k, i) => billHtml(pub, k, i, k === v.marked ? { stamp: stamp('重要') } : null)).join('')}</div>
@@ -2977,7 +2982,7 @@ function vTvVote(pub) {
 
 function vTvEnacted(pub) {
   const v = pub.vote;
-  if (!v || !v.result) return `<div class="big">新しい法律案はありません</div>`;
+  if (!v || !v.result) return `<div class="big">新しい法案はありません</div>`;
   const cards = v.options.map((k, i) => billHtml(pub, k, i, {
     out: k !== v.result,
     after: `<div class="cnt">${v.counts[k]}<small>票</small></div><p class="sub">${pub.players.filter(p => v.votes && v.votes[p.id] === k).map(p => esc(p.name)).join('、') || '投票なし'}</p>`,
@@ -2992,7 +2997,7 @@ function vTvDiag(pub) {
   const n = pub.players.length, step = S.diagStep;
   if (step === 0) {
     const fin = pub.final || [];
-    return `<div class="eyebrow">閉会 ― 総合成績</div><div class="big">総合優勝は${esc(pname(pub, fin[0] && fin[0].id))}さん</div>
+    return `<div class="eyebrow">閉会 ― 総合成績と首班指名</div><div class="big">今夜の総理大臣は${esc(pname(pub, fin[0] && fin[0].id))}さん</div>
       <table class="final">${fin.map((r, i) => `<tr style="animation:rowin .5s ${i * 0.15}s both"><td class="crown">${i === 0 ? I.rank('大富豪') : ''}</td><td>${i + 1}位</td><td>${esc(pname(pub, r.id))}</td><td class="sub">大富豪 ${r.tops}回</td><td class="pt">${r.pts}点</td></tr>`).join('')}</table>`;
   }
   if (step > n) {
@@ -3042,9 +3047,9 @@ function vTypes(pub) {
 function me(pub) { return pub.players.find(p => p.id === S.pid); }
 function vPhone(pub, priv) {
   const m = me(pub);
-  if (!m) return `<div class="entry"><div class="entry-head">${logo()}</div><h2 class="entry-h">部屋 ${esc(pub.code)}</h2><p class="lead">${pub.phase === 'lobby' ? '参加の受付を待っています…' : 'この部屋はもう始まっています。'}</p></div>`;
+  if (!m) return `<div class="entry"><div class="entry-head">${logo()}</div><h2 class="entry-h">議場 ${esc(pub.code)}</h2><p class="lead">${pub.phase === 'lobby' ? '参加の受付を待っています…' : 'この議場ではもう本会議が始まっています。'}</p></div>`;
   if (S.showTypes) return vTypes(pub);
-  const top = `<div class="ph-top"><span class="me">${esc(m.name)}${m.title ? rankTag(m.title) : ''}${pub.round ? `<span class="mypt">${(pub.points || {})[m.id] || 0}点</span>` : ''}</span><span class="rd"><button class="iconbtn" data-act="home-ask">ホーム</button><button class="iconbtn" data-act="sound">${SFX.isMuted() ? '音 切' : '音 入'}</button>${S.isHost && pub.mode === 'phone' ? `<button class="iconbtn" data-act="bgm" ${SFX.isMuted() ? 'disabled' : ''}>${SFX.bgmOn() ? 'BGM 入' : 'BGM 切'}</button>` : ''}${pub.round ? (pub.last ? '最終回' : `第${pub.round}回${pub.cfg.rounds ? '/' + pub.cfg.rounds : ''}`) : `部屋 ${esc(pub.code)}`}</span></div>`;
+  const top = `<div class="ph-top"><span class="me">${esc(m.name)}${m.title ? rankTag(m.title) : ''}${pub.round ? `<span class="mypt">${(pub.points || {})[m.id] || 0}点</span>` : ''}</span><span class="rd"><button class="iconbtn" data-act="home-ask">ホーム</button><button class="iconbtn" data-act="sound">${SFX.isMuted() ? '音 切' : '音 入'}</button>${S.isHost && pub.mode === 'phone' ? `<button class="iconbtn" data-act="bgm" ${SFX.isMuted() ? 'disabled' : ''}>${SFX.bgmOn() ? 'BGM 入' : 'BGM 切'}</button>` : ''}${pub.round ? (pub.last ? '最終回' : `第${pub.round}回${pub.cfg.rounds ? '/' + pub.cfg.rounds : ''}`) : `議場 ${esc(pub.code)}`}</span></div>`;
   let body = '', bar = '';
   const isLeader = pub.leader === S.pid;
   const ctl = isLeader ? controls(pub, true) : '';
@@ -3052,7 +3057,7 @@ function vPhone(pub, priv) {
   switch (pub.phase) {
     case 'lobby': {
       const joinUrl = baseUrl() + '?room=' + pub.code + (LOCAL ? '&local=1' : '');
-      body = `<div class="panel">${S.isHost ? `<div class="qrbox phq">${QR.svg(joinUrl, '#1f1a15', '#f4ecda')}</div>` : heroFan()}<h2>部屋 ${esc(pub.code)}</h2><p>${S.isHost ? 'ほかの人はこのQRコードを読み取るか、「部屋に入る」からこの4文字を入力します。' : 'みんながそろうまで待ちます。'}</p>
+      body = `<div class="panel">${S.isHost ? `<div class="qrbox phq">${QR.svg(joinUrl, '#1f1a15', '#f4ecda')}</div>` : heroFan()}<h2>議場 ${esc(pub.code)}</h2><p>${S.isHost ? 'ほかの人はこのQRコードを読み取るか、「議場に入る」からこの4文字を入力します。' : 'みんながそろうまで待ちます。'}</p>
         <table class="mini-table">${pub.players.map(p => `<tr><td>${esc(p.name)}</td><td>${p.cpu ? 'CPU' : p.id === S.pid ? 'あなた' : ''}</td></tr>`).join('')}</table></div>`;
       if (isLeader && S.showCfg) { body = `<div class="panel"><h2>ルールと法律の設定</h2>${cfgHtml(pub)}</div>`; bar = '<div class="ph-bar one"><button class="btn main" data-act="cfg-close">決めた</button></div>'; break; }
       body += `<p class="ph-note" style="margin-top:12px">${esc(cfgSummary(pub.cfg))}</p>`;
@@ -3068,7 +3073,7 @@ function vPhone(pub, priv) {
     case 'roundEnd': case 'enacted': {
       const mine = pub.results ? pub.results.find(r => r.id === S.pid) : null;
       body = pub.phase === 'roundEnd'
-        ? `<div class="panel"><h2>${pub.last ? '最終回' : `第${pub.round}回`}の結果</h2>${mine ? `<p>あなたは${mine.title}。+${mine.pts}点${mine.x2 ? `(${mine.x2 === 'law' ? '倍点令' : '最終回'}で二倍)` : ''}、合計${mine.total}点です。</p>` : ''}<table class="mini-table">${pub.results.map((r, i) => `<tr><td>${i + 1}. ${esc(pname(pub, r.id))}</td><td>${rankTag(r.title)}　${r.total}点</td></tr>`).join('')}</table>${commentHtml(pub)}</div>`
+        ? `<div class="panel"><h2>${pub.last ? '最終回' : `第${pub.round}回`} 本会議の結果</h2>${mine ? `<p>あなたは${mine.title}。+${mine.pts}点${mine.x2 ? `(${mine.x2 === 'law' ? '倍点令' : '最終回'}で二倍)` : ''}、合計${mine.total}点です。</p>` : ''}<table class="mini-table">${pub.results.map((r, i) => `<tr><td>${i + 1}. ${esc(pname(pub, r.id))}</td><td>${rankTag(r.title)}　${r.total}点</td></tr>`).join('')}</table>${commentHtml(pub)}</div>`
         : phEnacted(pub);
       if (pub.cfg.lawsOn) body += `<div class="lawlist"><div class="doc">${lawsHtml(pub)}</div></div>`;
       if (isLeader) bar = `<div class="ph-bar col">${ctl}</div>`;
@@ -3079,18 +3084,18 @@ function vPhone(pub, priv) {
         body = `<div class="panel"><h2>重要法案を一つ選んでください</h2><p>三つの中から全員の投票で一つが決まります。重要法案に入れると、あなたの票は3票になります(ほかの案なら2票)。</p>
           <div class="opts">${prompt.cands.map(k => optHtml(pub, k, S.choice === k)).join('')}</div></div>`;
         bar = `<div class="ph-bar one"><button class="btn main" data-act="mark" ${S.choice && prompt.cands.includes(S.choice) ? '' : 'disabled'}>重要法案に指定する</button></div>`;
-      } else body = `<div class="panel"><h2>法律案の審議</h2><p>大富豪の${esc(pname(pub, pub.pending.pid))}さんが、三つの案から重要法案を選んでいます。</p>
+      } else body = `<div class="panel"><h2>法案の審議</h2><p>大富豪の${esc(pname(pub, pub.pending.pid))}さんが、三つの案から重要法案を選んでいます。</p>
           <div class="opts">${pub.pending.cands.map(k => optHtml(pub, k, false, true)).join('')}</div></div>`;
       break;
     }
     case 'vote': {
       const mine = priv && priv.myVote;
       const top0 = pub.order[0] === S.pid;
-      body = `<div class="panel"><div class="vote-row"><h2>投票</h2><span class="ph-timer">${pub.vote.voted.length}/${pub.players.length}票</span></div>
+      body = `<div class="panel"><div class="vote-row"><h2>採決</h2><span class="ph-timer">${pub.vote.voted.length}/${pub.players.length}票</span></div>
         <p>${top0 ? `あなたは大富豪なので2票です。${pub.vote.marked ? '重要法案に入れると3票になります。' : ''}` : pub.order && pub.order[pub.order.length - 1] === S.pid ? '1票です。同数のときは、あなたの票で決まります。' : '1票です。'}開票までなら入れ直せます。全員が入れるか、主催者が締め切ると開票です。</p>
         <div class="opts">${pub.vote.options.map(k => optHtml(pub, k, (S.choice || mine) === k, false, k === pub.vote.marked)).join('')}</div>
         <p class="ph-note" style="margin-top:12px">${mine ? `「${esc(pub.lawInfo[mine].name)}」に投票しました。` : ''}</p></div>`;
-      bar = `<div class="ph-bar ${isLeader ? '' : 'one'}">${isLeader ? controls(pub, true).replace('btn main', 'btn') : ''}<button class="btn main" data-act="vote" ${S.choice ? '' : 'disabled'}>この法律に入れる</button></div>`;
+      bar = `<div class="ph-bar ${isLeader ? '' : 'one'}">${isLeader ? controls(pub, true).replace('btn main', 'btn') : ''}<button class="btn main" data-act="vote" ${S.choice ? '' : 'disabled'}>この法案に投票する</button></div>`;
       break;
     }
     case 'diag': {
@@ -3116,7 +3121,7 @@ function optHtml(pub, k, on, ro, marked) {
 }
 function phEnacted(pub) {
   const v = pub.vote;
-  if (!v || !v.result) return '<div class="panel"><h2>新しい法律案はありません</h2></div>';
+  if (!v || !v.result) return '<div class="panel"><h2>新しい法案はありません</h2></div>';
   return `<div class="panel enacted"><span class="opt-art">${I.law(v.result)}</span>${stamp('可決')}<h2>${esc(pub.lawInfo[v.result].name)}</h2>
     <p>${v.options.map(k => `${esc(pub.lawInfo[k].name)} ${v.counts[k]}票`).join('、')}${v.expired ? `。「${esc(v.expired)}」は失効しました` : ''}。</p></div>`;
 }
@@ -3433,10 +3438,10 @@ document.addEventListener('click', async ev => {
     case 'do-join': {
       const code = (document.getElementById('code').value || '').trim().toUpperCase();
       const name = (document.getElementById('name').value || '').trim();
-      if (code.length !== 4) { S.err = '部屋の番号は4文字です。'; render(); return; }
+      if (code.length !== 4) { S.err = '議場の番号は4文字です。'; render(); return; }
       if (!name) { S.err = '名前を入力してください。'; render(); return; }
       S.name = name; store.set('dfg-name', name);
-      try { if (!(await roomExists(code))) { S.err = 'その番号の部屋が見つかりません。'; render(); return; } }
+      try { if (!(await roomExists(code))) { S.err = 'その番号の議場が見つかりません。'; render(); return; } }
       catch (e) { S.err = '通信できませんでした。電波の状態を確かめてください。'; render(); return; }
       await joinRoom(code, name); break;
     }
@@ -3510,7 +3515,7 @@ async function beginPhoneHost(name) {
   S.code = code; S.isHost = true; S.view = 'phone';
   S.pid = qs.get('pid') || store.get('dfg-pid-' + code) || rid(); store.set('dfg-pid-' + code, S.pid);
   render();
-  try { await startHost(code, 'phone', S.pid); } catch (e) { S.err = '部屋を作れませんでした。通信の設定を確かめてください。'; render(); return; }
+  try { await startHost(code, 'phone', S.pid); } catch (e) { S.err = '議場を開けませんでした。通信の設定を確かめてください。'; render(); return; }
   HOST.local(S.pid, { t: 'join', name });
   history.replaceState(null, '', baseUrl() + '?host&code=' + code + (LOCAL ? '&local=1' : ''));
 }
@@ -3533,7 +3538,7 @@ async function boot() {
     let code = qs.get('code');
     if (!code) { code = newCode(); try { for (let i = 0; i < 5 && !LOCAL && await roomExists(code); i++) code = newCode(); } catch (e) { /* 確かめられなくても進める */ } }
     S.view = 'tv'; S.isHost = true; S.code = code; render();
-    try { await startHost(code, 'tv', null); } catch (e) { S.err = '部屋を作れませんでした。通信の設定を確かめてください。'; render(); return; }
+    try { await startHost(code, 'tv', null); } catch (e) { S.err = '議場を開けませんでした。通信の設定を確かめてください。'; render(); return; }
     history.replaceState(null, '', baseUrl() + '?tv&code=' + code + (LOCAL ? '&local=1' : ''));
     for (let i = 0; i < (parseInt(qs.get('cpu'), 10) || 0); i++) HOST.local('tv', { t: 'cpu+' });
     return;
