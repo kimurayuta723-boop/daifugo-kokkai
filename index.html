@@ -724,6 +724,52 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .dg{align-items:start;min-height:6vw}
 .dg .nm{font-size:.92em;line-height:1.6}
 .dg .sub{line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* ---------- テレビ:卓を囲む円形の席(手番の順に時計回り) ---------- */
+.ring-main{grid-template-rows:auto 1fr auto}
+.ring{position:relative;min-height:0;margin:.4vw 0 .2vw}
+.ring-line{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ring-line ellipse{fill:none;stroke:var(--tableline);stroke-width:1.5;vector-effect:non-scaling-stroke;opacity:.55}
+.ring-arrow{position:absolute;width:1.3vw;height:1.3vw;display:block}
+.ring-arrow svg{width:100%;height:100%;fill:none;stroke:var(--gold);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;opacity:.85}
+.ring-table.table{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:36%;height:42%;margin:0;padding:1vw}
+.ring-table .who{font-size:.95em;text-align:center}
+.ring .tv-players{position:absolute;inset:0;display:block;border:0;margin:0}
+.tv-p.seat{position:absolute;transform:translate(-50%,-50%);width:13.4vw;margin:0;padding:.55vw .8vw .45vw;border:1px solid var(--rule);border-top:1px solid var(--rule);border-radius:.7vw;background:var(--bg2);transition:background .3s,border-color .3s}
+.tv-p.seat.turn{border-color:var(--gold)}
+.tv-p.seat .sh{display:flex;align-items:baseline;justify-content:space-between;gap:.5em;min-width:0}
+.tv-p.seat .nm{font-size:1.05em;min-width:0}
+.tv-p.seat .pt{flex:none;font-family:var(--num);font-weight:700;font-size:1.15em;color:var(--gold2);letter-spacing:0}
+.tv-p.seat .pt small{font-family:var(--sans);font-weight:400;font-size:.62em;color:var(--sub);margin-left:.15em}
+.tv-p.seat.turn .pt{color:#2a1a10}.tv-p.seat.turn .pt small{color:#6b5a48}
+.tv-p.seat .tt{min-height:1.5em;font-size:.86em}
+.tv-p.seat .hold{height:2.4vw;margin:.15vw 0 0;--bw:1.25vw;--bs:.3vw;gap:.45em}
+.tv-p.seat .ct{font-size:1.45em}
+.tv-p.seat .st{min-height:1.4em;font-size:.86em;line-height:1.4;margin-top:.1vw}
+.ring-foot{text-align:center}
+.ring-foot .tv-say{min-height:1.6em;font-size:1.35em}
+.ring-foot .tv-log{min-height:3.1em;margin-top:.3em;justify-items:center}
+/* 席は3行:名前と持ち点 / 階級と手札 / 状態 */
+.tv-p.seat{padding:.5vw .75vw .4vw}
+.tv-p.seat.turn{background:var(--doc)}
+.tv-p.seat .r2{display:flex;align-items:center;justify-content:space-between;gap:.4em;margin-top:.2vw;min-height:2.2vw}
+.tv-p.seat .r2 .tt{min-height:0;font-size:.82em;white-space:nowrap}
+.tv-p.seat .r2 .hold{height:auto;margin:0;display:flex;align-items:center;--bw:1.05vw;--bs:.25vw;gap:.35em}
+.tv-p.seat .ct{font-size:1.3em}
+.tv-p.seat .st{margin-top:.15vw;min-height:1.35em}
+.ring{margin:.2vw 0 .6vw}
+/* スマホ:手番の順(自分から回る向きに)と持ち点 */
+.ph-order{display:flex;align-items:stretch;gap:4px;overflow-x:auto;padding:2px 0 8px;margin:4px 0 2px;scrollbar-width:none}
+.ph-order::-webkit-scrollbar{display:none}
+.ph-order .oc{flex:none;display:flex;flex-direction:column;justify-content:center;min-width:64px;padding:5px 9px;border:1px solid var(--rule);border-radius:8px;background:var(--bg2);line-height:1.35}
+.ph-order .oc .n{font-size:12.5px;font-weight:700;white-space:nowrap;max-width:7em;overflow:hidden;text-overflow:ellipsis}
+.ph-order .oc .s{font-size:11px;color:var(--sub);white-space:nowrap;display:flex;gap:.6em;justify-content:space-between}
+.ph-order .oc .s b{font-family:var(--num);color:var(--gold2);font-weight:700}
+.ph-order .oc.me{border-color:var(--gold)}
+.ph-order .oc.turn{background:var(--doc);border-color:var(--gold)}
+.ph-order .oc.turn .n{color:#2a1a10}.ph-order .oc.turn .s{color:#6b5a48}.ph-order .oc.turn .s b{color:#8a2b17}
+.ph-order .oc.out{opacity:.55}
+.ph-order .ar{flex:none;align-self:center;color:var(--gold);font-size:15px;line-height:1}
+.ph-top .me .mypt{font-family:var(--num);font-size:13px;font-weight:700;color:var(--gold2)}
 
 </style>
 <script>
@@ -2831,17 +2877,36 @@ function vTv(pub) {
   if (pub.phase === 'diag') return sheet(pub, vTvDiag(pub), true);
   const f = pub.field;
   const who = f.topIds.length ? `<div class="who">${esc(pname(pub, f.topPid))}さん　${esc(E.describe(f.top))}</div>` : '<div class="who">&nbsp;</div>';
-  const players = pub.players.map(p => {
+  // 席は手番の順(参加順)に、卓を囲んで時計回りに並べる。1人目は手前の中央
+  const n = pub.players.length, pts = pub.points || {};
+  const RX = 38, RY = 38;
+  const ang = i => (90 + i * 360 / n) * Math.PI / 180;
+  const players = pub.players.map((p, i) => {
     const st = p.out > 0 ? `${p.out}番目に上がり` : p.out === -1 ? '都落ち' : p.out === -2 ? '反則上がり' : p.passed ? 'パス' : pub.turn === p.id ? '考え中' : (f.topPid === p.id && f.topIds.length) ? '<span class="lp">場の札</span>' : '';
-    return `<div class="tv-p ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''}">
-      <div class="nm">${esc(p.name)}</div><div class="tt">${rankTag(p.title) || '&nbsp;'}</div>
-      <div class="hold">${p.out ? '' : backsHtml(p.count, pub.players.length >= 7 ? 8 : 11)}<span class="ct">${p.count}<small>枚</small></span></div><div class="st">${st}</div></div>`;
+    const x = 50 + RX * Math.cos(ang(i)), y = 50 + RY * Math.sin(ang(i));
+    return `<div class="tv-p seat ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%">
+      <div class="sh"><span class="nm">${esc(p.name)}</span><span class="pt">${pts[p.id] || 0}<small>点</small></span></div>
+      <div class="r2"><span class="tt">${rankTag(p.title)}</span><span class="hold">${p.out ? '' : backsHtml(p.count, 6)}<span class="ct">${p.count}<small>枚</small></span></span></div>
+      <div class="st">${st || '&nbsp;'}</div></div>`;
   }).join('');
-  return `<div class="tv"><main class="tv-main">
+  // 回る向き:席と席のあいだに、卓の縁に沿った矢印を置く(9リバースで逆向きになる)
+  const dir = pub.dir === -1 ? -1 : 1;
+  let arrows = '';
+  for (let i = 0; i < n; i++) {
+    const t = ang(i) + Math.PI / n;
+    const x = 50 + RX * Math.cos(t), y = 50 + RY * Math.sin(t);
+    const deg = Math.atan2(RY * Math.cos(t), -RX * Math.sin(t)) * 180 / Math.PI + (dir === -1 ? 180 : 0);
+    arrows += `<span class="ring-arrow" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%;transform:translate(-50%,-50%) rotate(${deg.toFixed(1)}deg)"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1.5L7.5 5 2 8.5"/></svg></span>`;
+  }
+  return `<div class="tv"><main class="tv-main ring-main">
     <div class="tv-head"><span class="round">${roundLabel(pub)}</span><span class="chips">${fieldInfo(pub)}</span></div>
-    <div class="table">${pileHtml(pub, '7.2vw')}${who}</div>
-    <div><div class="tv-say">${esc(statusLine(pub))}</div><div class="tv-log">${(pub.log || []).slice(-3).map(t => `<div>${esc(t)}</div>`).join('')}</div></div>
-    <div class="tv-players" style="--n:${pub.players.length}">${players}</div>
+    <div class="ring" style="--n:${n}">
+      <svg class="ring-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="50" cy="50" rx="${RX}" ry="${RY}"/></svg>
+      ${arrows}
+      <div class="table ring-table">${pileHtml(pub, '5.4vw')}${who}</div>
+      <div class="tv-players">${players}</div>
+    </div>
+    <div class="ring-foot"><div class="tv-say">${esc(statusLine(pub))}</div><div class="tv-log">${(pub.log || []).slice(-2).map(t => `<div>${esc(t)}</div>`).join('')}</div></div>
   </main>${tvSide(pub)}</div>`;
 }
 function commentHtml(pub) {
@@ -2975,7 +3040,7 @@ function vPhone(pub, priv) {
   const m = me(pub);
   if (!m) return `<div class="entry"><div class="entry-head">${logo()}</div><h2 class="entry-h">部屋 ${esc(pub.code)}</h2><p class="lead">${pub.phase === 'lobby' ? '参加の受付を待っています…' : 'この部屋はもう始まっています。'}</p></div>`;
   if (S.showTypes) return vTypes(pub);
-  const top = `<div class="ph-top"><span class="me">${esc(m.name)}${m.title ? rankTag(m.title) : ''}</span><span class="rd"><button class="iconbtn" data-act="home-ask">ホーム</button><button class="iconbtn" data-act="sound">${SFX.isMuted() ? '音 切' : '音 入'}</button>${S.isHost && pub.mode === 'phone' ? `<button class="iconbtn" data-act="bgm" ${SFX.isMuted() ? 'disabled' : ''}>${SFX.bgmOn() ? 'BGM 入' : 'BGM 切'}</button>` : ''}${pub.round ? (pub.last ? '最終回' : `第${pub.round}回${pub.cfg.rounds ? '/' + pub.cfg.rounds : ''}`) : `部屋 ${esc(pub.code)}`}</span></div>`;
+  const top = `<div class="ph-top"><span class="me">${esc(m.name)}${m.title ? rankTag(m.title) : ''}${pub.round ? `<span class="mypt">${(pub.points || {})[m.id] || 0}点</span>` : ''}</span><span class="rd"><button class="iconbtn" data-act="home-ask">ホーム</button><button class="iconbtn" data-act="sound">${SFX.isMuted() ? '音 切' : '音 入'}</button>${S.isHost && pub.mode === 'phone' ? `<button class="iconbtn" data-act="bgm" ${SFX.isMuted() ? 'disabled' : ''}>${SFX.bgmOn() ? 'BGM 入' : 'BGM 切'}</button>` : ''}${pub.round ? (pub.last ? '最終回' : `第${pub.round}回${pub.cfg.rounds ? '/' + pub.cfg.rounds : ''}`) : `部屋 ${esc(pub.code)}`}</span></div>`;
   let body = '', bar = '';
   const isLeader = pub.leader === S.pid;
   const ctl = isLeader ? controls(pub, true) : '';
@@ -3128,9 +3193,12 @@ function phPlay(pub, priv, m) {
   }
   S.canPlay = canPlay && myTurn;
   const finfo = `<div class="info">${f.topIds.length ? `<b>${esc(pname(pub, f.topPid))}さん</b><br>${esc(E.describe(f.top))}` : '場に札はありません'}<div class="chips">${fieldInfo(pub)}</div></div>`;
-  const others = pub.players.filter(p => p.id !== S.pid);
-  const plist = `<div class="ph-players">${others.map(p => `<div class="${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''}"><span class="n">${esc(p.name)}</span>${p.out ? '' : backsHtml(Math.min(p.count, 3), 3)}<span class="ct">${p.out > 0 ? p.out + '位' : p.out === -1 ? '落' : p.out === -2 ? '反則' : p.passed ? 'パス' : p.count + '枚'}</span></div>`).join('')}</div>`;
-  const body = `<div class="ph-table">${pileHtml(pub, 'min(11vw,52px)')}${finfo}</div>${pub.mode === 'phone' ? plist : ''}${pub.cfg.lawsOn ? lawBar(pub) : ''}
+  // 手番の順:自分から、回る向きに並べる(自分の番まであと何人かが分かる)
+  const n = pub.players.length, myI = pub.players.findIndex(p => p.id === S.pid), d = pub.dir === -1 ? -1 : 1;
+  const ordered = pub.players.map((_, k) => pub.players[((myI + d * k) % n + n) % n]);
+  const pts = pub.points || {};
+  const plist = `<div class="ph-order" aria-label="手番の順">${ordered.map((p, k) => `${k ? '<span class="ar" aria-hidden="true">›</span>' : ''}<div class="oc ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''} ${p.id === S.pid ? 'me' : ''}"><span class="n">${p.id === S.pid ? 'あなた' : esc(p.name)}</span><span class="s">${p.out > 0 ? p.out + '番目に上がり' : p.out === -1 ? '都落ち' : p.out === -2 ? '反則' : p.passed ? 'パス' : p.count + '枚'}<b>${pts[p.id] || 0}点</b></span></div>`).join('')}</div>`;
+  const body = `<div class="ph-table">${pileHtml(pub, 'min(11vw,52px)')}${finfo}</div>${plist}${pub.cfg.lawsOn ? lawBar(pub) : ''}
     <div class="ph-status ${myTurn || (prompt && prompt.type !== 'gave') ? 'mine' : ''}">${title}</div><div class="ph-note">${note}</div>
     <div class="hand-area">${fanHtml(hand, pub, tapMode, hint)}</div>`;
   return { body, bar };
