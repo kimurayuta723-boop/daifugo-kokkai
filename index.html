@@ -778,6 +778,30 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .tv-p.seat .sno{position:absolute;top:0;left:.7vw;transform:translateY(-55%);font-size:.7em;letter-spacing:.12em;color:var(--gold);background:var(--bg);padding:0 .45em;line-height:1.5;border-radius:.3em}
 .tv-p.seat.turn .sno{color:var(--gold2)}
 .tv-head .round small{letter-spacing:.12em}
+/* 上がった人の表示 */
+.ph-order .oc .s{overflow:hidden}
+.ph-order .oc .s .sv{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ph-order .oc .s b{flex:none}
+.tv-p.seat .done{font-family:var(--serif);font-weight:700;font-size:1.05em;letter-spacing:.08em;color:var(--sub)}
+.tv-p.seat.out{opacity:.72}
+
+/* スマホ上部:2段構成(狭い画面で名前とボタンが重ならないように) */
+.ph-top{display:block;padding:8px 16px 10px}
+.ph-top .r1{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ph-top .r1 .rnd{font-size:13px;color:var(--sub);white-space:nowrap;letter-spacing:.04em}
+.ph-top .rd{gap:0}
+.ph-top .me{display:flex;align-items:baseline;gap:.7em;margin-top:6px;overflow:visible;font-size:17px;letter-spacing:.04em}
+.ph-top .me .nm{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ph-top .me .rank,.ph-top .me .mypt{flex:none}
+.ph-top .me .mypt{margin-left:auto;font-size:15px}
+.is-ph .flash span{min-height:var(--h,52px);box-sizing:border-box;line-height:1.5}
+.is-ph .flash em{letter-spacing:.06em}
+/* 演出が画面幅を超えて横スクロールを生まないように */
+html,body{overflow-x:hidden}
+/* 空の場:縦書きが枠の高さを超えて2列に折れないように */
+.pile.empty span{white-space:nowrap;font-size:min(.9em,calc(var(--cw)*.17))}
+/* 診断画面:右上の「ホーム・BGM・音」ボタンとカードの角が重ならないよう、カードを少し下げる */
+.is-tv .diag-one .type-card{margin-top:5.6vw}
 
 </style>
 <script>
@@ -1098,6 +1122,8 @@ function st(G, pid) {
 function moment(G, pid, score, text) { (G.moments[pid] = G.moments[pid] || []).push({ score, text, round: G.round }); }
 function rl(G) { return G.rlog || (G.rlog = { revs: [], fouls: [], locals: [], passes: {}, cuts: {}, ochi: null, geko: null, fate: null }); }
 const HOLD = { rev: 4200, cut: 2400, law: 2200, out: 2000 };
+// 試合中の実況の言い回しを順にずらして選ぶ(乱数は使わない:札の配りやCPUの判断に影響させないため)
+function vary(G, arr) { G.vc = (G.vc || 0) + 1; return arr[(G.vc * 7 + G.round) % arr.length]; }
 function say(G, text, kind) {
   G.log.push(text); if (G.log.length > 8) G.log.shift();
   if (kind) G.hold = Math.max(G.hold || 0, HOLD[kind] || (kind.startsWith('r-') ? 3200 : 1500));
@@ -1349,7 +1375,13 @@ function doPlay(G, pid, ids, now) {
   const strongN = ids.filter(c => { const r = parse(c).r; return r === 15 || r === JOKER_V; }).length;
   if (strongN) { if (hand.length >= 6) s.strongEarly += strongN; if (hand.length <= 2) s.strongLate += strongN; }
   G.history.push({ r: G.round, pid, ids: G.field.topIds, d: describe(p) }); if (G.history.length > 60) G.history.shift();
-  say(G, `${pName(G, pid)}さんが${describe(p)}を出しました。`);
+  {
+    const nm = pName(G, pid), d = describe(p);
+    say(G, !prevTop ? vary(G, [`${nm}さんが${d}を出しました。`, `${nm}さんが${d}から切り出します。`, `${nm}さんが${d}で口火を切りました。`, `${nm}さんの発言は${d}から。`])
+      : strongN && !G.rev ? vary(G, [`${nm}さんが${d}を投入。強気の一手です。`, `${nm}さん、ここで${d}。`, `${nm}さんが${d}で押さえにかかります。`])
+      : vary(G, [`${nm}さんが${d}を出しました。`, `${nm}さんは${d}で応じます。`, `${nm}さんが${d}を重ねました。`, `${nm}さんの答弁は${d}。`, `${nm}さんが${d}を出しました。`]));
+    if (hand.length === 1) say(G, vary(G, [`${nm}さん、残り一枚です。`, `${nm}さんの手札はあと一枚。`, `${nm}さん、上がりまであと一枚。議場がざわつきます。`]));
+  }
   // 運命の一枚
   if (G.fate && ids.includes(G.fate) && hand.length === 0) {
     G.fateWin = pid; st(G, pid).fate++; rl(G).fate = pid;
@@ -1380,7 +1412,7 @@ function doPlay(G, pid, ids, now) {
     G.rev = !G.rev; s.revs++;
     const hadLaws = G.laws.length > 0;
     if (G.laws.some(l => l.key === 'double')) rl(G).dblLost = pid;
-    say(G, p.type === 'seq' ? `${pName(G, pid)}さんが階段で革命を起こしました。` : `${pName(G, pid)}さんが革命を起こしました。`, 'rev');
+    { const nm = pName(G, pid), how = p.type === 'seq' ? '階段で' : ''; say(G, vary(G, [`${nm}さんが${how}革命を起こしました。`, `革命です。${nm}さんが${how}強さをひっくり返しました。`, `${nm}さん、${how}まさかの革命。`]), 'rev'); }
     rl(G).revs.push(pid);
     moment(G, pid, hadLaws ? 6 : 5, hadLaws ? `第${G.round}回、革命を起こして法律をすべて廃止した` : `第${G.round}回、革命を起こした`);
     if (lawParam(G.laws, 'gekokujo') && G.order) {
@@ -1393,7 +1425,7 @@ function doPlay(G, pid, ids, now) {
     }
     abolish(G);
   }
-  if (cut && !special) { s.kiri++; say(G, '8切りで場が流れます。', 'cut'); rl(G).cuts[pid] = (rl(G).cuts[pid] || 0) + 1; }
+  if (cut && !special) { s.kiri++; say(G, vary(G, ['8切りで場が流れます。', '8切り。ここで場を流します。', '8切りが出ました。場が流れます。']), 'cut'); rl(G).cuts[pid] = (rl(G).cuts[pid] || 0) + 1; }
   proceed(G, now);
   return true;
 }
@@ -1423,7 +1455,7 @@ function finishCheck(G, pid, now, ret) {
   } else if (G.hands[pid].length === 0) {
     G.finished.push(pid);
     const place = G.finished.length;
-    say(G, `${pName(G, pid)}さんが${place}番目に上がりました。`, 'out');
+    { const nm = pName(G, pid); say(G, place === 1 ? vary(G, [`${nm}さんが1番目に上がりました。`, `${nm}さんが一番乗りで上がりました。`, `${nm}さん、真っ先に上がりました。`]) : vary(G, [`${nm}さんが${place}番目に上がりました。`, `${nm}さん、${place}番目で上がりです。`, `${nm}さんが${place}番目に議場を後にしました。`]), 'out'); }
     // 都落ち
     if (place === 1 && G.cfg.ochi && G.order && G.order[0] !== pid && isActive(G, G.order[0])) {
       G.ochi = G.order[0]; st(G, G.ochi).ochi++;
@@ -1452,7 +1484,7 @@ function advance(G, from, now) {
   const cont = act.filter(id => !G.passed.includes(id) && id !== G.lastPid);
   if (!G.field.top) { G.turn = isActive(G, from) ? nextActive(G, from) : nextActive(G, from); G.cpuAt = now + 1500; return; }
   if (cont.length === 0) {
-    say(G, '場が流れました。');
+    say(G, vary(G, ['場が流れました。', '続く人はなく、場が流れました。', '異議なし。場が流れます。', '誰も出さず、場が流れました。']));
     clearField(G, G.lastPid);
   } else {
     let t = nextActive(G, from, cont);
@@ -1478,7 +1510,7 @@ function doPass(G, pid, now) {
   if (candidates(G.hands[pid], ctx).length) s.passOpt++;
   G.passed.push(pid);
   rl(G).passes[pid] = (rl(G).passes[pid] || 0) + 1;
-  say(G, `${pName(G, pid)}さんはパス。`);
+  { const nm = pName(G, pid); say(G, vary(G, [`${nm}さんはパス。`, `${nm}さん、見送りです。`, `${nm}さんはパス。`, `${nm}さん、ここは静観します。`, `${nm}さんは今回は見送り。`])); }
   G.blockedOnce = G.blockedOnce || {};
   if (lawParam(G.laws, 'agari') && G.hands[pid].length === 1 && !G.blockedOnce[pid]) {
     G.blockedOnce[pid] = true;
@@ -1543,30 +1575,122 @@ function standings(G) {
 }
 function pick(G, arr) { return arr[Math.floor(R(G) * arr.length)]; }
 function commentary(G, order, prev) {
+  // 同じ言い回しが続かないよう、出来事ごとに複数の文を用意し、直近で使った出来事の種類は後回しにする
   const L = rl(G), n = order.length, nm = id => pName(G, id) + 'さん';
-  const top = order[0], last = order[n - 1];
+  const top = order[0], last = order[n - 1], second = order[1];
   const c = [];
-  if (L.geko) c.push([9, pick(G, [`${nm(L.geko[0])}の下剋上革命で、${nm(L.geko[1])}の手札がまるごと持っていかれました。議場騒然です。`, `手札の総入れ替え。${nm(L.geko[1])}はしばらく自分の手札が信じられないでしょう。`])]);
-  if (L.ochi) c.push([8, pick(G, [`${nm(L.ochi)}、まさかの都落ち。王冠は思ったより重かったようです。`, `${nm(L.ochi)}は大富豪から一気に大貧民へ。政権交代の瞬間でした。`])]);
-  if (L.fouls.length) c.push([8, pick(G, [`${nm(L.fouls[0])}、最後の一枚で反則。勝ち方にも作法があります。`, `強い札で決めたつもりが反則上がり。${nm(L.fouls[0])}には次回に期待しましょう。`])]);
-  if (L.fate) c.push([7, `当たり札で上がった${nm(L.fate)}。運も実力のうち、と本人は言っています。`]);
-  if (prev && prev[prev.length - 1] === top) c.push([8, pick(G, [`大貧民から大富豪へ。${nm(top)}の大逆転劇でした。`, `前回の大貧民が今回の大富豪。${nm(top)}、これぞ下剋上です。`])]);
-  if (L.revs.length >= 2) c.push([7, `革命が${L.revs.length}回。強さが行ったり来たりの、落ち着かない回でした。`]);
-  else if (L.revs.length === 1) c.push([5, pick(G, [`${nm(L.revs[0])}の革命で流れが変わりました。強い札を温存していた人ほど痛い回です。`, `革命を起こしたのは${nm(L.revs[0])}。議場の空気が一変しました。`])]);
-  if (G.streak && G.streak.n >= 3) c.push([7, `${nm(top)}、${G.streak.n}期連続の大富豪。もはや長期政権です。`]);
-  else if (G.streak && G.streak.n === 2) c.push([4, `${nm(top)}が大富豪を守りました。この政権、なかなか崩れません。`]);
+  const add = (key, score, arr) => c.push({ key, score, text: pick(G, arr) });
+  if (L.geko) add('geko', 9, [
+    `${nm(L.geko[0])}の下剋上革命で、${nm(L.geko[1])}の手札がまるごと持っていかれました。議場騒然です。`,
+    `手札の総入れ替え。${nm(L.geko[1])}はしばらく自分の手札が信じられないでしょう。`,
+    `下剋上革命が発動。${nm(L.geko[0])}が${nm(L.geko[1])}の手札を丸ごと手に入れました。`,
+    `${nm(L.geko[1])}、手札を差し押さえられる格好に。${nm(L.geko[0])}の大胆な一手でした。`]);
+  if (L.ochi) add('ochi', 8, [
+    `${nm(L.ochi)}、まさかの都落ち。王冠は思ったより重かったようです。`,
+    `${nm(L.ochi)}は大富豪から一気に大貧民へ。政権交代の瞬間でした。`,
+    `一番に上がれなかった${nm(L.ochi)}が都落ち。与党の座は一夜で消えました。`,
+    `都落ちで${nm(L.ochi)}は野に下りました。次は挑戦者の立場です。`]);
+  if (L.fouls.length) add('foul', 8, [
+    `${nm(L.fouls[0])}、最後の一枚で反則。勝ち方にも作法があります。`,
+    `強い札で決めたつもりが反則上がり。${nm(L.fouls[0])}には次回に期待しましょう。`,
+    `${nm(L.fouls[0])}の上がり札は反則と判定されました。手続きの不備です。`,
+    `反則上がりで最下位に。${nm(L.fouls[0])}、締めの一枚は慎重に選びたいところでした。`]);
+  if (L.fate) add('fate', 7, [
+    `当たり札で上がった${nm(L.fate)}。運も実力のうち、と本人は言っています。`,
+    `${nm(L.fate)}が当たり札を引き当てました。次の回は二階級特進です。`,
+    `最後の一枚が当たり札。${nm(L.fate)}には追い風が吹いています。`]);
+  if (prev && prev[prev.length - 1] === top) add('comeback', 8, [
+    `大貧民から大富豪へ。${nm(top)}の大逆転劇でした。`,
+    `前回の大貧民が今回の大富豪。${nm(top)}、これぞ下剋上です。`,
+    `不利な手札交換をはね返して、${nm(top)}が頂点へ。見事な巻き返しです。`,
+    `${nm(top)}、最下位からの政権奪取。議場から拍手が起きています。`]);
+  if (L.revs.length >= 2) add('revs', 7, [
+    `革命が${L.revs.length}回。強さが行ったり来たりの、落ち着かない回でした。`,
+    `${L.revs.length}度の革命で、札の強さは何度もひっくり返りました。読み合いが難しい回です。`,
+    `革命の応酬、${L.revs.length}回。最後まで誰が勝つのか分かりませんでした。`]);
+  else if (L.revs.length === 1) add('rev', 5, [
+    `${nm(L.revs[0])}の革命で流れが変わりました。強い札を温存していた人ほど痛い回です。`,
+    `革命を起こしたのは${nm(L.revs[0])}。議場の空気が一変しました。`,
+    `${nm(L.revs[0])}の革命が、この回の分かれ目になりました。`,
+    `革命ひとつで勢力図が塗り替わる。${nm(L.revs[0])}がそれを見せてくれました。`]);
+  if (G.streak && G.streak.n >= 3) add('streak', 7, [
+    `${nm(top)}、${G.streak.n}期連続の大富豪。もはや長期政権です。`,
+    `${G.streak.n}回続けて大富豪の${nm(top)}。この牙城を崩すのは誰でしょうか。`,
+    `${nm(top)}の政権は${G.streak.n}期目に入りました。野党の奮起が待たれます。`]);
+  else if (G.streak && G.streak.n === 2) add('streak', 4, [
+    `${nm(top)}が大富豪を守りました。この政権、なかなか崩れません。`,
+    `${nm(top)}、二期連続の大富豪。手札交換の有利を生かしました。`,
+    `大富豪の座は引き続き${nm(top)}に。安定した政権運営です。`]);
+  if (prev && prev[n - 1] === last && n > 2) add('stuck', 5, [
+    `${nm(last)}は二回続けて大貧民。そろそろ風向きが変わってほしいところです。`,
+    `${nm(last)}、また大貧民に。それでも一票の重みは変わりません。`,
+    `連続の大貧民となった${nm(last)}。次の採決では存在感を示せるでしょうか。`]);
+  if (prev && prev[0] === last) add('fall', 6, [
+    `前回の大富豪、${nm(last)}が今回は大貧民。栄枯盛衰です。`,
+    `${nm(last)}、頂点から最下位へ。議場の風は冷たいものです。`,
+    `大富豪だった${nm(last)}が一転して大貧民。政治の世界は一寸先が闇です。`]);
+  if (prev) {
+    const up = order.map((id, i) => [id, prev.indexOf(id) - i]).filter(x => x[1] >= 2 && x[0] !== top).sort((a, b) => b[1] - a[1])[0];
+    if (up) add('climb', 4, [
+      `${nm(up[0])}が${up[1]}つ順位を上げました。じわりと存在感を増しています。`,
+      `隠れた主役は${nm(up[0])}。前回から大きく順位を上げました。`,
+      `${nm(up[0])}の躍進が光った回でした。`]);
+  }
   const pm = Object.entries(L.passes).sort((a, b) => b[1] - a[1])[0];
-  if (pm && pm[1] >= 6) c.push([4, `${nm(pm[0])}のパスは${pm[1]}回。沈黙は金、とは限りません。`]);
+  if (pm && pm[1] >= 9) add('pass', 3, [
+    `${nm(pm[0])}のパスは${pm[1]}回。沈黙は金、とは限りません。`,
+    `${pm[1]}回のパスで機をうかがった${nm(pm[0])}。慎重派の議員です。`,
+    `${nm(pm[0])}、この回は${pm[1]}回の見送り。答弁の機会を待ち続けました。`]);
   const cm = Object.entries(L.cuts).sort((a, b) => b[1] - a[1])[0];
-  if (cm && cm[1] >= 2) c.push([4, `${nm(cm[0])}の8切りが${cm[1]}回。場を流す名人です。`]);
-  if (L.dblLost) c.push([7, `${nm(L.dblLost)}の革命で倍点令も廃止。得点二倍の夢は消えました。`]);
-  if (L.dbl) c.push([6, pick(G, [`倍点令のおかげで${nm(top)}は一気に${POINTS['大富豪'] * 2}点。点差が大きく動きました。`, `得点二倍の回を制したのは${nm(top)}。${nm(last)}は痛い0点です。`])]);
-  if (isLast(G)) c.push([3, `最終回を制したのは${nm(top)}。これにて閉会です。`]);
-  if (L.locals.length >= 4) c.push([5, `ローカルルールが${L.locals.length}回も発動。もはや誰も強さを覚えていません。`]);
-  if (prev && prev[0] === last) c.push([6, `前回の大富豪、${nm(last)}が今回は大貧民。栄枯盛衰です。`]);
-  c.push([1, pick(G, [`${nm(top)}が手堅く大富豪に。次の法律は${nm(top)}の思うまま、とはいかないかもしれません。`, `${nm(top)}の安定した答弁で決着。${nm(last)}は次の回で巻き返せるでしょうか。`, `大富豪は${nm(top)}、大貧民は${nm(last)}。カード交換が楽しみです。`])]);
-  c.sort((a, b) => b[0] - a[0]);
-  return c[0][1];
+  if (cm && cm[1] >= 2) add('cut', 4, [
+    `${nm(cm[0])}の8切りが${cm[1]}回。場を流す名人です。`,
+    `8切り${cm[1]}回。${nm(cm[0])}は議事進行を握っていました。`,
+    `都合が悪くなると8切り。${nm(cm[0])}の強行採決が${cm[1]}回ありました。`]);
+  if (L.dblLost) add('dblLost', 7, [
+    `${nm(L.dblLost)}の革命で倍点令も廃止。得点二倍の夢は消えました。`,
+    `倍点令は革命とともに失効。${nm(L.dblLost)}が二倍の得点を帳消しにしました。`]);
+  if (L.dbl) add('dbl', 6, [
+    `倍点令のおかげで${nm(top)}は一気に${POINTS['大富豪'] * 2}点。点差が大きく動きました。`,
+    `得点二倍の回を制したのは${nm(top)}。${nm(last)}は痛い0点です。`,
+    `倍点令の回で大富豪。${nm(top)}にとっては値千金の勝利です。`]);
+  if (L.locals.length >= 4) add('locals', 5, [
+    `ローカルルールが${L.locals.length}回も発動。もはや誰も強さを覚えていません。`,
+    `特殊ルールが${L.locals.length}回。議事録の担当者は大忙しです。`,
+    `${L.locals.length}回の特殊ルールで場は大荒れ。順番も強さもめまぐるしく変わりました。`]);
+  if (isLast(G)) add('last', 3, [
+    `最終回を制したのは${nm(top)}。これにて閉会です。`,
+    `会期の締めくくりは${nm(top)}の大富豪でした。`,
+    `最後の本会議は${nm(top)}が制しました。あとは首班指名を待つばかりです。`]);
+  if (isLast(G)) add('plain', 1, [
+    `${nm(top)}が大富豪の座に。${nm(second)}は一歩及びませんでした。`,
+    `勝負を決めたのは終盤の札さばき。${nm(top)}に軍配が上がりました。`,
+    `大富豪は${nm(top)}、大貧民は${nm(last)}。会期の幕が下ります。`]);
+  else add('plain', 1, [
+    `${nm(top)}が手堅く大富豪に。次の法律は${nm(top)}の思うまま、とはいかないかもしれません。`,
+    `${nm(top)}の安定した答弁で決着。${nm(last)}は次の回で巻き返せるでしょうか。`,
+    `大富豪は${nm(top)}、大貧民は${nm(last)}。カード交換が楽しみです。`,
+    `${nm(top)}が大富豪の座に。${nm(second)}は一歩及びませんでした。`,
+    `勝負を決めたのは終盤の札さばき。${nm(top)}に軍配が上がりました。`,
+    `${nm(top)}、大富豪として次の法案を指定する権利を得ました。`,
+    `${nm(last)}は大貧民に。ただし採決では、同数のときの決定権を持ちます。`]);
+  // 直近2回に使った種類は後回しにする(同じ出来事が続いても言い回しが偏らないように)
+  const recent = G.cHist || [];
+  c.forEach(x => { if (recent.includes(x.key)) x.score -= 3; x.score += R(G) * 1.5; });
+  c.sort((a, b) => b.score - a.score);
+  const main = c[0];
+  G.cHist = recent.concat(main.key).slice(-2);
+  return main.text + standingsTail(G, nm);
+}
+// 総合順位にふれる一言(最終回と1回目は付けない)
+function standingsTail(G, nm) {
+  if (isLast(G) || G.round < 2 || R(G) < 0.35) return '';
+  const s = standings(G); if (s.length < 2) return '';
+  const a = s[0], b = s[1], gap = a.pts - b.pts;
+  const left = G.cfg.rounds ? G.cfg.rounds - G.round : 0;
+  if (gap === 0) { const k = s.filter(x => x.pts === a.pts).length; return k === 2 ? pick(G, [`総合では${nm(a.id)}と${nm(b.id)}が${a.pts}点で並んでいます。`, `総合首位は${a.pts}点で${nm(a.id)}と${nm(b.id)}が並走中です。`]) : `総合首位には${a.pts}点で${k}人が並んでいます。`; }
+  if (gap <= 2) return pick(G, [`総合首位の${nm(a.id)}と2位の差は${gap}点。まだ分かりません。`, `首位の${nm(a.id)}を、2位が${gap}点差で追っています。`]);
+  if (left === 1) return `残りは最終回のみ。首位${nm(a.id)}が${gap}点リードしています。`;
+  return pick(G, [`総合首位は${nm(a.id)}、${a.pts}点です。`, `総合では${nm(a.id)}が${gap}点差で首位に立っています。`, '']);
 }
 
 /* ---------- 法律の選定 ---------- */
@@ -2265,7 +2389,10 @@ const DUCK = {
   opening: 4.6, revolution: 4.2, crown: 3.6, fanfare: 3.2, enacted: 3.0, drumroll: 3.0, knock3: 2.4,
   bellVote: 2.0, gavel: 1.6, storm: 2.6, foul: 2.6, stamp: 1.6, reverse: 1.6, whoosh: 1.3, drop: 1.6, out: 1.5,
 };
-const BG = { want: false, on: true, list: [], base: '', bases: [''], bi: 0, i: 0, els: [], cur: 0, gain: null, fails: 0, timer: null, started: false };
+// 曲のつなぎ:各曲の終わりには約3.5秒の無音があるので、無音に入る3秒前から次の曲を重ねて鳴らし始め、
+// 前の曲は3秒かけて消し、次の曲は3秒かけて上げる(クロスフェード)
+const XF = 3.0, XF_AT = 6.5;
+const BG = { eg: [], xf: false, want: false, on: true, list: [], base: '', bases: [''], bi: 0, i: 0, els: [], cur: 0, gain: null, fails: 0, timer: null, started: false };
 try { BG.on = localStorage.getItem('dfg-bgm') !== '0'; } catch (e) { /* 保存できない環境 */ }
 function bgmLevel() { return BG.on && !muted ? BGM_LEVEL : 0; }
 function bgmEls() {
@@ -2274,7 +2401,10 @@ function bgmEls() {
   BG.gain = ctx.createGain(); BG.gain.gain.value = 0; BG.gain.connect(ctx.destination);
   for (let k = 0; k < 2; k++) {
     const a = new Audio(); a.preload = 'auto'; a.crossOrigin = 'anonymous';
-    try { ctx.createMediaElementSource(a).connect(BG.gain); } catch (e) { return false; }
+    const eg = ctx.createGain(); eg.gain.value = 1; eg.connect(BG.gain);
+    try { ctx.createMediaElementSource(a).connect(eg); } catch (e) { return false; }
+    BG.eg.push(eg);
+    a.addEventListener('timeupdate', () => { if (BG.els[BG.cur] === a && !BG.xf && a.duration > XF_AT * 2 && a.currentTime >= a.duration - XF_AT) bgmCross(); });
     a.addEventListener('ended', () => { if (BG.els[BG.cur] === a) bgmNext(); });
     a.addEventListener('error', () => {
       if (BG.els[BG.cur] !== a) return;
@@ -2289,14 +2419,37 @@ function bgmEls() {
 }
 function bgmSrc(i) { return BG.base + BG.list[i % BG.list.length]; }
 function sameFile(a, i) { try { return new URL(a.src).href === new URL(bgmSrc(i), location.href).href; } catch (e) { return false; } }
-function bgmPlayCurrent() {
+// from を省くと今の値から動かす
+function egSet(k, v, sec, from) {
+  const g = BG.eg[k] && BG.eg[k].gain; if (!g) return; const t = ctx.currentTime;
+  g.cancelScheduledValues(t); g.setValueAtTime(sec ? (from != null ? from : g.value) : v, t); if (sec) g.linearRampToValueAtTime(v, t + sec);
+}
+function bgmPlayCurrent(noPreload) {
   const a = BG.els[BG.cur];
+  if (!BG.xf) egSet(BG.cur, 1);
   if (!a.src || !sameFile(a, BG.i)) a.src = bgmSrc(BG.i);
   const p = a.play(); if (p && p.catch) p.catch(() => { /* 画面を一度押すまで再生できない */ });
+  if (noPreload) return;
   // 次の曲を先読みしておく
   const b = BG.els[1 - BG.cur]; b.src = bgmSrc(BG.i + 1); b.load();
 }
+function bgmCross() {
+  const old = BG.cur;
+  BG.xf = true;
+  BG.i = (BG.i + 1) % BG.list.length;
+  BG.cur = 1 - BG.cur;
+  egSet(BG.cur, 1, XF, 0);
+  egSet(old, 0, XF);
+  bgmPlayCurrent(true);  // 前の曲がまだ鳴っているので、先読みは重ね終わってから
+  setTimeout(() => {
+    BG.xf = false;
+    try { BG.els[old].pause(); } catch (e) { /* 止められなくても続ける */ }
+    egSet(old, 1);
+    if (BG.want) { const b = BG.els[old]; b.src = bgmSrc(BG.i + 1); b.load(); }
+  }, XF * 1000 + 300);
+}
 function bgmNext() {
+  BG.xf = false;
   BG.i = (BG.i + 1) % BG.list.length;
   BG.cur = 1 - BG.cur;
   try { BG.els[1 - BG.cur].pause(); } catch (e) { /* 止められなくても次へ進む */ }
@@ -2644,7 +2797,7 @@ function backsHtml(n, max) {
 let animKey = '';
 function pileHtml(pub, cw) {
   const st = pub.field.stack || [];
-  if (!st.length) return `<div class="pile empty" style="--cw:${cw}"><span>場に札はありません</span></div>`;
+  if (!st.length) return `<div class="pile empty" style="--cw:${cw}"><span>場に札なし</span></div>`;
   const topKey = st[st.length - 1].ids.join(',') + st.length;
   const fresh = topKey !== animKey; animKey = topKey;
   return `<div class="pile" style="--cw:${cw}">${st.map((p, i) => {
@@ -2706,6 +2859,8 @@ function flashCheck(pub) {
   const art = f.kind === 'rev' ? I.type('rebel') : f.kind === 'law' ? I.gavel() : '';
   el.className = 'flash k-' + f.kind;
   el.innerHTML = `<span>${art}<em>${esc(f.text)}</em></span>`;
+  // スマホでは上部の帯(2段)をちょうど覆う高さにして、下の文字が半端に透けて重ならないようにする
+  const top = document.querySelector('.ph-top'); if (top) el.style.setProperty('--h', top.offsetHeight + 'px');
   requestAnimationFrame(() => el.classList.add('on'));
   clearTimeout(flashTimer); flashTimer = setTimeout(() => el.classList.remove('on'), 3400);
   if (S.view !== 'tv' && navigator.vibrate && f.kind === 'rev') try { navigator.vibrate([60, 40, 60]); } catch (e) { /* 振動できない端末 */ }
@@ -2890,12 +3045,13 @@ function vTv(pub) {
   const RX = 38, RY = 38;
   const ang = i => (90 + i * 360 / n) * Math.PI / 180;
   const players = pub.players.map((p, i) => {
-    const st = p.out > 0 ? `${p.out}番目に上がり` : p.out === -1 ? '都落ち' : p.out === -2 ? '反則上がり' : p.passed ? 'パス' : pub.turn === p.id ? '考え中' : (f.topPid === p.id && f.topIds.length) ? '<span class="lp">場の札</span>' : '';
+    // 上がった人は2行目に「1抜け」などを出すので、3行目は空ける(同じことを二度書かない)
+    const st = p.out ? '' : p.passed ? 'パス' : pub.turn === p.id ? '考え中' : (f.topPid === p.id && f.topIds.length) ? '<span class="lp">場の札</span>' : '';
     const x = 50 + RX * Math.cos(ang(i)), y = 50 + RY * Math.sin(ang(i));
     return `<div class="tv-p seat ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''}" style="left:${x.toFixed(2)}%;top:${y.toFixed(2)}%">
       <span class="sno">議席${i + 1}</span>
       <div class="sh"><span class="nm">${esc(p.name)}</span><span class="pt">${pts[p.id] || 0}<small>点</small></span></div>
-      <div class="r2"><span class="tt">${rankTag(p.title)}</span><span class="hold">${p.out ? '' : backsHtml(p.count, 6)}<span class="ct">${p.count}<small>枚</small></span></span></div>
+      <div class="r2"><span class="tt">${rankTag(p.title)}</span>${p.out ? `<span class="done">${p.out > 0 ? p.out + '抜け' : p.out === -1 ? '都落ち' : '反則'}</span>` : `<span class="hold">${backsHtml(p.count, 6)}<span class="ct">${p.count}<small>枚</small></span></span>`}</div>
       <div class="st">${st || '&nbsp;'}</div></div>`;
   }).join('');
   // 回る向き:席と席のあいだに、卓の縁に沿った矢印を置く(9リバースで逆向きになる)
@@ -3049,7 +3205,8 @@ function vPhone(pub, priv) {
   const m = me(pub);
   if (!m) return `<div class="entry"><div class="entry-head">${logo()}</div><h2 class="entry-h">議場 ${esc(pub.code)}</h2><p class="lead">${pub.phase === 'lobby' ? '参加の受付を待っています…' : 'この議場ではもう本会議が始まっています。'}</p></div>`;
   if (S.showTypes) return vTypes(pub);
-  const top = `<div class="ph-top"><span class="me">${esc(m.name)}${m.title ? rankTag(m.title) : ''}${pub.round ? `<span class="mypt">${(pub.points || {})[m.id] || 0}点</span>` : ''}</span><span class="rd"><button class="iconbtn" data-act="home-ask">ホーム</button><button class="iconbtn" data-act="sound">${SFX.isMuted() ? '音 切' : '音 入'}</button>${S.isHost && pub.mode === 'phone' ? `<button class="iconbtn" data-act="bgm" ${SFX.isMuted() ? 'disabled' : ''}>${SFX.bgmOn() ? 'BGM 入' : 'BGM 切'}</button>` : ''}${pub.round ? (pub.last ? '最終回' : `第${pub.round}回${pub.cfg.rounds ? '/' + pub.cfg.rounds : ''}`) : `議場 ${esc(pub.code)}`}</span></div>`;
+  // 上段:回数と操作ボタン/下段:自分の名前・肩書・持ち点。1行に詰めると狭い画面で名前とボタンが重なるため2段に分ける
+  const top = `<div class="ph-top"><div class="r1"><span class="rnd">${pub.round ? (pub.last ? '最終回' : `第${pub.round}回${pub.cfg.rounds ? '/' + pub.cfg.rounds : ''}`) : `議場 ${esc(pub.code)}`}</span><span class="rd"><button class="iconbtn" data-act="home-ask">ホーム</button><button class="iconbtn" data-act="sound">${SFX.isMuted() ? '音 切' : '音 入'}</button>${S.isHost && pub.mode === 'phone' ? `<button class="iconbtn" data-act="bgm" ${SFX.isMuted() ? 'disabled' : ''}>${SFX.bgmOn() ? 'BGM 入' : 'BGM 切'}</button>` : ''}</span></div><div class="me"><span class="nm">${esc(m.name)}</span>${m.title ? rankTag(m.title) : ''}${pub.round ? `<span class="mypt">${(pub.points || {})[m.id] || 0}点</span>` : ''}</div></div>`;
   let body = '', bar = '';
   const isLeader = pub.leader === S.pid;
   const ctl = isLeader ? controls(pub, true) : '';
@@ -3209,7 +3366,7 @@ function phPlay(pub, priv, m) {
   const half = Math.floor(n / 2);
   const ordered = Array.from({ length: n }, (_, k) => pub.players[((ci + d * (k - half)) % n + n) % n]);
   const pts = pub.points || {};
-  const plist = `<div class="ph-order" aria-label="手番の順"><div class="track" data-turn="${esc(pub.turn || '')}">${ordered.map((p, k) => `${k ? '<span class="ar" aria-hidden="true">›</span>' : ''}<div class="oc ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''} ${p.id === S.pid ? 'me' : ''}"><span class="n">${p.id === S.pid ? 'あなた' : esc(p.name)}</span><span class="s">${p.out > 0 ? p.out + '番目に上がり' : p.out === -1 ? '都落ち' : p.out === -2 ? '反則' : p.passed ? 'パス' : p.count + '枚'}<b>${pts[p.id] || 0}点</b></span></div>`).join('')}</div></div>`;
+  const plist = `<div class="ph-order" aria-label="手番の順"><div class="track" data-turn="${esc(pub.turn || '')}">${ordered.map((p, k) => `${k ? '<span class="ar" aria-hidden="true">›</span>' : ''}<div class="oc ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''} ${p.id === S.pid ? 'me' : ''}"><span class="n">${p.id === S.pid ? 'あなた' : esc(p.name)}</span><span class="s"><span class="sv">${p.out > 0 ? p.out + '抜け' : p.out === -1 ? '都落ち' : p.out === -2 ? '反則' : p.passed ? 'パス' : p.count + '枚'}</span><b>${pts[p.id] || 0}点</b></span></div>`).join('')}</div></div>`;
   const body = `<div class="ph-table">${pileHtml(pub, 'min(11vw,52px)')}${finfo}</div>${plist}${pub.cfg.lawsOn ? lawBar(pub) : ''}
     <div class="ph-status ${myTurn || (prompt && prompt.type !== 'gave') ? 'mine' : ''}">${title}</div><div class="ph-note">${note}</div>
     <div class="hand-area">${fanHtml(hand, pub, tapMode, hint)}</div>`;
@@ -3256,6 +3413,14 @@ function phParam(pub, pr) {
 
 /* ---------- 描画と操作 ---------- */
 let lastHtml = '';
+// テレビの左側が縦にあふれるとき(7人の結果表と2行の解説が重なったときなど)、はみ出さない大きさまで文字を少しずつ縮める
+function fitTv() {
+  document.querySelectorAll('.is-tv .tv-main, .is-tv .sheet-main').forEach(el => {
+    el.style.fontSize = '';
+    for (let k = 1; k <= 6 && el.scrollHeight > el.clientHeight + 1; k++) el.style.fontSize = (1 - k * 0.04) + 'em';
+  });
+}
+window.addEventListener('resize', () => fitTv());
 function render() {
   if (S.dragging) { S.pendingRender = true; return; }
   if (!document.getElementById('illus-defs')) { const d = document.createElement('div'); d.id = 'illus-defs'; d.innerHTML = I.DEFS; document.body.appendChild(d); }
@@ -3276,6 +3441,7 @@ function render() {
     document.querySelectorAll('input').forEach(i => { if (vals[i.id] != null) i.value = vals[i.id]; });
     if (keep) { const el = document.getElementById(keep); if (el) el.focus(); }
     centerOrder();
+    fitTv();
   }
   if (pub) flashCheck(pub);
   if (pub && pub !== S.seen) { const prev = S.seen; S.seen = pub; fxCheck(prev, pub); }
