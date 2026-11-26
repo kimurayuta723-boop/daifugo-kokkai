@@ -669,6 +669,32 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .opt .mk{display:inline-block;font-family:var(--sans);font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--shu);border:1.5px solid var(--shu);border-radius:3px;padding:0 6px;margin-bottom:4px}
 .timer{white-space:nowrap}
 .ph-bar .btn{white-space:nowrap;font-size:14px}
+/* BGMの入切(音の入切の左隣) */
+.bgm-btn{position:fixed;right:70px;top:10px;z-index:60;font-size:12px;color:var(--sub);border:1px solid var(--rule);border-radius:99px;padding:3px 10px;background:var(--bg2)}
+.is-tv .bgm-btn{right:calc(29vw + 76px);top:14px}
+.bgm-btn:disabled{opacity:.4}
+.ph-top .rd .iconbtn+.iconbtn{margin-left:4px}
+.ph-top .rd .iconbtn:disabled{opacity:.4}
+/* ホームに戻る */
+.home-btn{position:fixed;right:136px;top:10px;z-index:60;font-size:12px;color:var(--sub);border:1px solid var(--rule);border-radius:99px;padding:3px 10px;background:var(--bg2)}
+.is-tv .home-btn{right:calc(29vw + 150px);top:14px}
+.confirm-back{position:fixed;inset:0;z-index:100;background:rgba(24,6,10,.72);display:grid;place-items:center;padding:20px}
+.confirm{max-width:460px;width:100%;border-radius:12px;padding:26px 26px 22px;border-top:5px solid var(--gold)}
+.confirm h3{font-family:var(--serif);font-size:21px;letter-spacing:.06em;margin-bottom:10px;color:var(--docink)}
+.confirm p{font-size:14.5px;line-height:1.9;color:var(--docink)}
+.confirm-btns{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:20px}
+.confirm .btn{min-height:46px;color:var(--docink);border-color:var(--docrule)}
+.confirm .btn.main{color:#2a1a10}
+.is-tv .confirm{max-width:34vw;padding:2.2vw 2.4vw 2vw;border-radius:.9vw}
+.is-tv .confirm h3{font-size:1.9vw}.is-tv .confirm p{font-size:1.2vw}.is-tv .confirm .btn{min-height:3.4vw;font-size:1.1vw}
+/* ホーム画面:続きから戻る */
+.btn.resume{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.3;border-color:var(--gold);color:var(--gold2)}
+.btn.resume small{font-size:11.5px;font-weight:400;color:var(--sub);letter-spacing:.04em}
+/* 上の帯:ボタンが増えても名前の側を縮めて1行に収める */
+.ph-top{gap:8px}
+.ph-top .me{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ph-top .rd{flex:none;white-space:nowrap}
+.ph-top .rd .iconbtn{padding:2px 8px}
 
 </style>
 <script>
@@ -2132,6 +2158,7 @@ function play(name) {
   if (!init()) return;
   if (ctx.state === 'suspended') ctx.resume();
   const t = ctx.currentTime + 0.02;
+  if (DUCK[name]) duck(DUCK[name]);
   if (FILES[name]) { playFile(name, t); return; }
   try { if (S[name]) S[name](t); } catch (e) { /* 音が出せなくても遊びは続ける */ }
 }
@@ -2142,8 +2169,89 @@ async function playFile(name, t) {
     const s = ctx.createBufferSource(); s.buffer = buf; s.connect(out(0.15, 1)); s.start(t);
   } catch (e) { if (S[name]) S[name](t); }
 }
-function unlock() { if (!muted && init() && ctx.state === 'suspended') ctx.resume(); }
-function setMuted(m) { muted = m; try { localStorage.setItem('dfg-mute', m ? '1' : '0'); } catch (e) { /* 保存できない環境 */ } if (!m) unlock(); }
+function unlock() { if (!muted && init() && ctx.state === 'suspended') ctx.resume(); if (BG.want) bgmResume(); }
+function setMuted(m) { muted = m; try { localStorage.setItem('dfg-mute', m ? '1' : '0'); } catch (e) { /* 保存できない環境 */ } if (!m) unlock(); bgmApply(); }
+
+/* ---------- BGM ----------
+   12曲を順に流して最後から最初へ戻る。曲ごとのファイルを1曲ずつ読み込み、次の曲は再生中に先読みする。
+   音量は控えめにし、大きな効果音が鳴るあいだは静かに下げて、終わると戻す(ダッキング)。
+   ファイルが読めないときは黙って止める(遊びには影響しない)。 */
+const BGM_LEVEL = 0.26;          // 効果音に対するBGMの大きさ(控えめ)
+// 効果音ごとに、BGMを下げておく秒数。手札を出す音や選択音のような短く頻繁な音では下げない(音量が揺れて落ち着かないため)
+const DUCK = {
+  opening: 4.6, revolution: 4.2, crown: 3.6, fanfare: 3.2, enacted: 3.0, drumroll: 3.0, knock3: 2.4,
+  bellVote: 2.0, gavel: 1.6, storm: 2.6, foul: 2.6, stamp: 1.6, reverse: 1.6, whoosh: 1.3, drop: 1.6, out: 1.5,
+};
+const BG = { want: false, on: true, list: [], base: '', i: 0, els: [], cur: 0, gain: null, fails: 0, timer: null, started: false };
+try { BG.on = localStorage.getItem('dfg-bgm') !== '0'; } catch (e) { /* 保存できない環境 */ }
+function bgmLevel() { return BG.on && !muted ? BGM_LEVEL : 0; }
+function bgmEls() {
+  if (BG.els.length) return true;
+  if (!init()) return false;
+  BG.gain = ctx.createGain(); BG.gain.gain.value = 0; BG.gain.connect(ctx.destination);
+  for (let k = 0; k < 2; k++) {
+    const a = new Audio(); a.preload = 'auto'; a.crossOrigin = 'anonymous';
+    try { ctx.createMediaElementSource(a).connect(BG.gain); } catch (e) { return false; }
+    a.addEventListener('ended', () => { if (BG.els[BG.cur] === a) bgmNext(); });
+    a.addEventListener('error', () => { if (BG.els[BG.cur] !== a) return; BG.fails++; if (BG.fails < BG.list.length) bgmNext(); });
+    a.addEventListener('playing', () => { if (BG.els[BG.cur] === a) BG.fails = 0; });
+    BG.els.push(a);
+  }
+  return true;
+}
+function bgmSrc(i) { return BG.base + BG.list[i % BG.list.length]; }
+function bgmPlayCurrent() {
+  const a = BG.els[BG.cur];
+  if (!a.src || !a.src.endsWith(BG.list[BG.i])) a.src = bgmSrc(BG.i);
+  const p = a.play(); if (p && p.catch) p.catch(() => { /* 画面を一度押すまで再生できない */ });
+  // 次の曲を先読みしておく
+  const b = BG.els[1 - BG.cur]; b.src = bgmSrc(BG.i + 1); b.load();
+}
+function bgmNext() {
+  BG.i = (BG.i + 1) % BG.list.length;
+  BG.cur = 1 - BG.cur;
+  try { BG.els[1 - BG.cur].pause(); } catch (e) { /* 止められなくても次へ進む */ }
+  bgmPlayCurrent();
+}
+function bgmStart(list, base) {
+  BG.want = true; BG.list = list; BG.base = base || '';
+  if (!list.length || !bgmEls()) return;
+  if (!BG.started) { BG.started = true; try { BG.i = (+localStorage.getItem('dfg-bgm-i') || 0) % list.length; } catch (e) { BG.i = 0; } }
+  bgmResume();
+}
+function bgmResume() {
+  if (!BG.want || !BG.els.length || !BG.on || muted) { bgmApply(); return; }
+  if (ctx.state === 'suspended') ctx.resume();
+  const a = BG.els[BG.cur];
+  if (a.paused) bgmPlayCurrent();
+  bgmApply();
+}
+function bgmStop() {
+  BG.want = false;
+  if (!BG.els.length) return;
+  fadeTo(0, 0.6);
+  setTimeout(() => { if (!BG.want) BG.els.forEach(a => a.pause()); }, 700);
+  try { localStorage.setItem('dfg-bgm-i', String(BG.i)); } catch (e) { /* 保存できない環境 */ }
+}
+function fadeTo(v, sec) {
+  if (!BG.gain) return;
+  const g = BG.gain.gain, t = ctx.currentTime;
+  g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(v, t + sec);
+}
+function bgmApply() {
+  if (!BG.gain) return;
+  if (!BG.want || !BG.on || muted) { fadeTo(0, 0.5); setTimeout(() => { if (!BG.want || !BG.on || muted) BG.els.forEach(a => a.pause()); }, 600); return; }
+  if (!BG.timer) fadeTo(bgmLevel(), 1.2);
+}
+// 効果音のあいだだけBGMを下げる:0.35秒で静かに消し、効果音が終わったら2秒かけて戻す
+function duck(sec) {
+  if (!BG.gain || !BG.want || !BG.on || muted) return;
+  fadeTo(0, 0.35);
+  clearTimeout(BG.timer);
+  BG.timer = setTimeout(() => { BG.timer = null; fadeTo(bgmLevel(), 2.0); }, sec * 1000);
+}
+function setBgm(on) { BG.on = on; try { localStorage.setItem('dfg-bgm', on ? '1' : '0'); } catch (e) { /* 保存できない環境 */ } if (on) bgmResume(); else bgmApply(); }
+
 /* 試験用:録音せずに合成だけを動かして音量を測る */
 async function render(name, sec) {
   const oc = new OfflineAudioContext(2, 44100 * (sec || 4), 44100);
@@ -2152,7 +2260,7 @@ async function render(name, sec) {
   const d = buf.getChannelData(0); let peak = 0, sum = 0; for (let i = 0; i < d.length; i++) { peak = Math.max(peak, Math.abs(d[i])); sum += d[i] * d[i]; }
   return { peak, rms: Math.sqrt(sum / d.length), buf };
 }
-root.SFX = { play, unlock, setMuted, isMuted: () => muted, render, names: Object.keys(S) };
+root.SFX = { play, unlock, setMuted, isMuted: () => muted, render, names: Object.keys(S), bgmStart, bgmStop, setBgm, bgmOn: () => BG.on, duck, _bgm: () => BG };
 })(this);
 
 </script>
@@ -2365,6 +2473,8 @@ async function startHost(code, mode, me) {
     if (sv && sv.G && sv.G.code === code && Date.now() - sv.at < 12 * 3600e3) { G = sv.G; G._rnd = null; G.cpuAt = 0; G.ver++; if (G.phase === 'veto') { G.phase = 'mark'; if (G.pending) G.pending.type = 'mark'; } /* 旧版の保存データ */ (G.autoIds || []).forEach(id => autoIds.add(id)); S.restored = G.phase !== 'lobby'; }
   } catch (e) { /* 読めなければ新しく始める */ }
   let saveTimer = null;
+  // ホームへ戻るときは、待たずにすぐ保存する
+  S.saveNow = () => { clearTimeout(saveTimer); try { const { _rnd, ...g } = G; store.set('dfg-host-' + code, JSON.stringify({ at: Date.now(), G: g })); } catch (e) { /* 保存できなくても戻れる */ } };
   const save = () => {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => { try { const { _rnd, ...g } = G; store.set('dfg-host-' + code, JSON.stringify({ at: Date.now(), G: g })); } catch (e) { /* 保存できなくても遊べる */ } }, 250);
@@ -2515,6 +2625,7 @@ function vEntry() {
     <div class="rule">法をつくる大富豪</div>
     <p class="lead">回が終わるたびに、みんなの投票で法律が一つ増えます。<br>革命が起きると、法律はすべて廃止。<br>最後に、立ち回りから今夜の本性を診断します。</p>
     <div class="stack">
+      ${resumeHtml()}
       <button class="btn main" data-act="go-tv">テレビで部屋を作る</button>
       <button class="btn" data-act="go-host">スマホだけで部屋を作る</button>
       <button class="btn" data-act="go-join">部屋に入る</button>
@@ -2524,6 +2635,40 @@ function vEntry() {
   </div>`;
 }
 
+/* 最後にいた部屋(12時間以内)。ホームから続きに戻れるようにする */
+function lastRoom() {
+  try {
+    const L = JSON.parse(store.get('dfg-last') || 'null');
+    if (!L || Date.now() - L.at > 12 * 3600e3) return null;
+    if (L.role !== 'player') {
+      const sv = JSON.parse(store.get('dfg-host-' + L.code) || 'null');
+      if (!sv || Date.now() - sv.at > 12 * 3600e3) return null;
+    }
+    return L;
+  } catch (e) { return null; }
+}
+function resumeHtml() {
+  const L = lastRoom();
+  if (!L) return '';
+  const who = L.role === 'tv' ? 'テレビ' : L.role === 'host' ? '親のスマホ' : '参加者';
+  return `<button class="btn resume" data-act="resume"><span>続きから戻る</span><small>部屋 ${esc(L.code)}(${who}として)</small></button>`;
+}
+function myRole() { return S.view === 'tv' ? 'tv' : S.isHost ? 'host' : 'player'; }
+function homeConfirmHtml() {
+  if (!S.confirmHome) return '';
+  const role = myRole();
+  const msg = role === 'player'
+    ? 'ホームに戻っても、部屋からは抜けません。あなたの番が来ると進行が止まるので、ホームの「続きから戻る」で早めに戻ってください。'
+    : `${role === 'tv' ? 'このテレビ' : 'このスマホ'}が親なので、戻るあいだ部屋の進行は止まります。12時間以内なら、ホームの「続きから戻る」で同じ部屋の続きから再開できます。`;
+  return `<div class="confirm-back"><div class="confirm doc" role="dialog" aria-label="ホームに戻る">
+    <h3>ホームに戻りますか</h3><p>${msg}</p>
+    <div class="confirm-btns"><button class="btn" data-act="home-cancel">やめる</button><button class="btn main" data-act="home-go">ホームに戻る</button></div></div></div>`;
+}
+function goHome() {
+  if (S.code) store.set('dfg-last', JSON.stringify({ code: S.code, role: myRole(), at: Date.now() }));
+  if (S.saveNow) S.saveNow();
+  location.href = baseUrl() + (qs.has('local') ? '?local=1' : '');
+}
 function vJoin(host) {
   return `<div class="entry">
     <div class="entry-head">${logo()}</div>
@@ -2789,7 +2934,7 @@ function vPhone(pub, priv) {
   const m = me(pub);
   if (!m) return `<div class="entry"><div class="entry-head">${logo()}</div><h2 class="entry-h">部屋 ${esc(pub.code)}</h2><p class="lead">${pub.phase === 'lobby' ? '参加の受付を待っています…' : 'この部屋はもう始まっています。'}</p></div>`;
   if (S.showTypes) return vTypes(pub);
-  const top = `<div class="ph-top"><span class="me">${esc(m.name)}${m.title ? rankTag(m.title) : ''}</span><span class="rd"><button class="iconbtn" data-act="sound">${SFX.isMuted() ? '音 切' : '音 入'}</button>${pub.round ? (pub.last ? '最終回' : `第${pub.round}回${pub.cfg.rounds ? '/' + pub.cfg.rounds : ''}`) : `部屋 ${esc(pub.code)}`}</span></div>`;
+  const top = `<div class="ph-top"><span class="me">${esc(m.name)}${m.title ? rankTag(m.title) : ''}</span><span class="rd"><button class="iconbtn" data-act="home-ask">ホーム</button><button class="iconbtn" data-act="sound">${SFX.isMuted() ? '音 切' : '音 入'}</button>${S.isHost && pub.mode === 'phone' ? `<button class="iconbtn" data-act="bgm" ${SFX.isMuted() ? 'disabled' : ''}>${SFX.bgmOn() ? 'BGM 入' : 'BGM 切'}</button>` : ''}${pub.round ? (pub.last ? '最終回' : `第${pub.round}回${pub.cfg.rounds ? '/' + pub.cfg.rounds : ''}`) : `部屋 ${esc(pub.code)}`}</span></div>`;
   let body = '', bar = '';
   const isLeader = pub.leader === S.pid;
   const ctl = isLeader ? controls(pub, true) : '';
@@ -2990,6 +3135,7 @@ function render() {
   else if (!pub) html = `<div class="entry"><h1>接続しています</h1><p class="lead">${S.err ? esc(S.err) : 'しばらくお待ちください。'}</p></div>`;
   else if (S.view === 'tv') html = vTv(pub);
   else html = vPhone(pub, S.priv);
+  if (pub && S.view !== 'entry') html += homeConfirmHtml();
   if (html !== lastHtml) {
     const keep = document.activeElement && document.activeElement.id;
     const vals = {}; document.querySelectorAll('input').forEach(i => { vals[i.id] = i.value; });
@@ -3082,10 +3228,27 @@ function ruleFx(k, big) {
   }
 }
 function soundButton() {
-  if (S.view !== 'tv') { const b = document.querySelector('.sound-btn'); if (b) b.remove(); return; }
+  bgmCheck();
+  if (S.view !== 'tv' || !S.pub) { document.querySelectorAll('.sound-btn,.bgm-btn,.home-btn').forEach(b => b.remove()); return; }
   let b = document.querySelector('.sound-btn');
   if (!b) { b = document.createElement('button'); b.className = 'sound-btn'; b.dataset.act = 'sound'; document.body.appendChild(b); }
   b.textContent = SFX.isMuted() ? '音 切' : '音 入';
+  let g = document.querySelector('.bgm-btn');
+  if (!g) { g = document.createElement('button'); g.className = 'bgm-btn'; g.dataset.act = 'bgm'; document.body.appendChild(g); }
+  g.textContent = SFX.bgmOn() ? 'BGM 入' : 'BGM 切';
+  g.disabled = SFX.isMuted();
+  let h = document.querySelector('.home-btn');
+  if (!h) { h = document.createElement('button'); h.className = 'home-btn'; h.dataset.act = 'home-ask'; h.textContent = 'ホーム'; document.body.appendChild(h); }
+}
+/* BGM:流すのはテレビと、スマホだけで遊ぶときの親のスマホだけ。ほかのスマホでは流さない */
+const BGM_FILES = ['01_kanki', '02_eine_kleine', '03_elise', '04_haru', '05_canon', '06_lullaby', '07_mao',
+  '08_gymnopedie', '09_minuet', '10_greensleeves', '11_turkish_march', '12_ieji'].map(n => n + '.mp3');
+let bgmPlaying = false;
+function bgmWanted() { return !!S.pub && (S.view === 'tv' || (S.isHost && S.pub.mode === 'phone')); }
+function bgmCheck() {
+  const w = bgmWanted();
+  if (w && !bgmPlaying) { bgmPlaying = true; SFX.bgmStart(BGM_FILES, 'bgm/'); }
+  else if (!w && bgmPlaying) { bgmPlaying = false; SFX.bgmStop(); }
 }
 document.addEventListener('pointerdown', () => { SFX.unlock(); keepAwake(); }, { once: true });
 /* 遊んでいる間は画面を消さない(対応しているブラウザだけ) */
@@ -3121,6 +3284,15 @@ document.addEventListener('click', async ev => {
   const pr = S.priv && S.priv.prompt;
   switch (a) {
     case 'home': S.view = 'entry'; S.err = ''; render(); break;
+    case 'home-ask': S.confirmHome = true; render(); break;
+    case 'home-cancel': S.confirmHome = false; render(); break;
+    case 'home-go': goHome(); break;
+    case 'resume': {
+      const L = lastRoom(); if (!L) { render(); break; }
+      const lq = qs.has('local') ? '&local=1' : '';
+      location.href = baseUrl() + (L.role === 'tv' ? `?tv&code=${L.code}` : L.role === 'host' ? `?host&code=${L.code}` : `?room=${L.code}`) + lq;
+      break;
+    }
     case 'go-tv': location.href = baseUrl() + '?tv' + (LOCAL ? '&local=1' : ''); break;
     case 'go-host': S.view = 'hostform'; render(); break;
     case 'go-join': S.view = 'join'; render(); break;
@@ -3141,6 +3313,7 @@ document.addEventListener('click', async ev => {
     }
     case 'laws': S.showLaws = !S.showLaws; render(); break;
     case 'sound': SFX.setMuted(!SFX.isMuted()); if (!SFX.isMuted()) SFX.play('gavel'); render(); break;
+    case 'bgm': SFX.setBgm(!SFX.bgmOn()); render(); soundButton(); break;
     case 'cfg-open': S.showCfg = true; render(); break;
     case 'types-open': S.showTypes = true; S.openType = null; lastHtml = ''; render(); window.scrollTo(0, 0); break;
     case 'types-close': S.showTypes = false; lastHtml = ''; render(); break;
@@ -3214,6 +3387,7 @@ async function beginPhoneHost(name) {
 }
 async function joinRoom(code, name) {
   S.code = code; S.view = 'phone'; S.err = '';
+  if (name) store.set('dfg-name', name);  // ホームから続きに戻るとき、名前を入れ直さずに済むように
   S.pid = qs.get('pid') || store.get('dfg-pid-' + code) || rid(); store.set('dfg-pid-' + code, S.pid);
   render();
   S.net = await clientNet(code, S.pid, pub => { S.pub = pub; S.pubAt = Date.now(); render(); }, priv => { S.priv = priv; render(); });
