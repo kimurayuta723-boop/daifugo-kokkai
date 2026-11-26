@@ -854,6 +854,8 @@ html,body{overflow-x:clip}
 .lc .tags .side{margin:0;font-size:11px}
 .lc p{font-size:13.5px;line-height:1.85;margin-top:6px;color:var(--docink)}
 @media (max-width:760px){.lb-steps{grid-template-columns:1fr;gap:0}.lb-steps li{display:grid;grid-template-columns:28px 1fr;padding:12px 0;border-top:1px solid var(--rule)}.lb-steps li:first-child{border-top:2px solid var(--gold)}.lgrid{grid-template-columns:1fr}}
+.cfg .lsub{font-size:12px;letter-spacing:.14em;color:var(--sub);margin:16px 0 6px;padding-top:10px;border-top:1px solid var(--rule)}
+.is-tv .cfg .lsub{font-size:.85em}
 
 </style>
 <script>
@@ -901,51 +903,54 @@ const TITLES = {
 /* ---------- 法律 ---------- */
 const LAWS = {
   strong:   { param: 'rank', w: 1,
-    name: p => `最強の数字の指定${p ? '(' + RL[p] + ')' : ''}`,
+    name: p => `${p ? RL[p] : '○'}最強法`,
     text: p => `${p ? RL[p] : '指定した数字'}を2より強い数字とする。革命中は最も弱い数字とする。` },
   ban:      { param: 'rank', w: 1,
-    name: p => `${p ? RL[p] : '○'}禁止令`,
+    name: p => `${p ? RL[p] : '○'}禁止法`,
     text: p => `${p ? RL[p] : '指定した数字'}を出してはならない。` },
-  tsure:    { w: 1, name: () => '道連れ令',
+  tsure:    { w: 1, name: () => '道連れ法',
     text: () => '上がった者の次の者は、手札を一枚捨てることができる。' },
   fav:      { param: 'suit', w: 1,
-    name: p => `優遇マーク${p ? '(' + SUIT_CH[p] + ')' : ''}`,
+    name: p => `${p ? SUIT_CH[p] : '○'}優遇法`,
     text: p => `${p ? SUIT_NAME[p] : '指定したマーク'}の札を含む出し方は、場と同じ強さでも出すことができる。` },
-  joker:    { w: 1, name: () => 'ジョーカー封印',
+  joker:    { w: 1, name: () => 'ジョーカー封印法',
     text: () => 'ジョーカーは単独で出してはならない。ほかの札と組み合わせる場合に限り使うことができる。' },
-  fate:     { w: 1, name: () => '運命の一枚',
+  fate:     { w: 1, name: () => '当たり札法',
     text: () => '回の初めに当たり札を一枚定める。当たり札で上がった者は、次の回で階級を二つ上げる。' },
-  mawashi:  { w: 0.4, name: () => '手札まわし令',
+  mawashi:  { w: 0.4, name: () => '手札回し法',
     text: () => '場が五回流れるごとに、全員の手札を次の者へ移す。' },
-  gekokujo: { w: 1, name: () => '下剋上革命',
+  gekokujo: { w: 1, name: () => '下剋上法',
     text: () => '革命を起こした者は、自分より上の階級の者を一人指名し、手札をすべて交換する。' },
-  agari:    { w: 1, name: () => '上がり阻止',
+  agari:    { w: 1, name: () => '上がり阻止法',
     text: () => '残り一枚の者がパスしたときは、流れた札の中から二枚を引く。ただし一回につき一人一度までとする。' },
-  double:   { w: 1, name: () => '倍点令',
+  double:   { w: 1, name: () => '倍点法',
     text: () => '次の回に限り、得点を二倍とする。回が終わると失効する。' },
-  rev3:     { w: 1, name: () => '三枚革命',
+  rev3:     { w: 1, name: () => '三枚革命法',
     text: () => '同じ数字を三枚出したときも、革命が起きる。' },
   // 階級に効く法律。side:1は上の階級に、-1は下の階級に有利
-  jono:     { w: 1, side: 1, name: () => '上納令',
+  jono:     { w: 1, side: 1, name: () => '上納法',
     text: () => 'カード交換で、大貧民は大富豪に三枚を渡し、大富豪も三枚を返す。富豪と貧民の交換は変わらない。' },
   kyuhin:   { w: 1, side: -1, name: () => '救貧法',
     text: () => 'カード交換で、大貧民と大富豪が渡す札を一枚ずつにする。富豪と貧民の交換は変わらない。' },
-  genzei:   { w: 1, side: 1, name: () => '大富豪減税',
+  genzei:   { w: 1, side: 1, name: () => '大富豪減税法',
     text: () => '大富豪は、回の終わりに得点を二点多く受け取る。' },
-  hosho:    { w: 1, side: -1, name: () => '最低保障',
+  hosho:    { w: 1, side: -1, name: () => '最低保障法',
     text: () => '貧民と大貧民は、回の終わりに得点を一点多く受け取る。' },
   // 場を一変させる時限立法(次の一回だけ。終わると失効)。開会前の採決には出さない(第1回には交換も大富豪もないため)
-  seiken:   { w: 0.6, side: -1, once: true, name: () => '政権交代',
+  seiken:   { w: 0.6, side: -1, once: true, name: () => '政権交代法',
     text: () => '次の回に限り、カード交換を逆向きにする。大富豪と富豪が強い札を渡し、大貧民と貧民が好きな札を返す。回が終わると失効する。' },
   koukai:   { w: 0.6, side: -1, once: true, name: () => '情報公開法',
     text: () => '次の回に限り、大富豪の手札を全員に公開する。回が終わると失効する。' },
-  gyakuten: { w: 0.6, side: -1, once: true, name: () => '逆転国会',
+  gyakuten: { w: 0.6, side: -1, once: true, name: () => '逆転開会法',
     text: () => '次の回に限り、革命が起きた状態で始める。回が終わると失効する。' },
 };
 // 初期設定では候補に出さない法律(設定画面で有効にできる)。全員に同じように効くため、投票で利害が分かれにくい
-const LAW_OFF = ['strong', 'tsure', 'fav', 'joker', 'mawashi', 'agari', 'fate', 'gekokujo'];
-const LAW_VER = 3;
-const LAW_KEYS = Object.keys(LAWS);
+const LAW_OFF = ['strong', 'tsure', 'fav', 'joker', 'fate', 'gekokujo', 'kyuhin', 'genzei'];
+const LAW_VER = 5;
+// 並び順(設定画面と法律の一覧):初めから候補に入るものを先に、その中は 出し方 → 交換 → 得点 → 一回限り の順
+const LAW_KEYS = ['ban', 'rev3', 'agari', 'mawashi', 'jono', 'double', 'hosho', 'seiken', 'koukai', 'gyakuten',
+  'strong', 'fav', 'joker', 'tsure', 'fate', 'gekokujo', 'kyuhin', 'genzei'];
+if (LAW_KEYS.length !== Object.keys(LAWS).length || !Object.keys(LAWS).every(k => LAW_KEYS.includes(k))) throw new Error('LAW_KEYS と LAWS が食い違っています');
 const KANJI = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
 /* ---------- 札 ---------- */
@@ -1258,8 +1263,8 @@ function startRound(G, now) {
     };
     pair(o[0], o[n - 1], k0);
     if (k1) pair(o[1], o[n - 2], k1);
-    if (seiken) { say(G, '政権交代。今回は大富豪と富豪が、強い札を渡します。', 'law'); lawHit(G, 'seiken', o[0]); }
-    if (jono) { say(G, '上納令により、大貧民は大富豪に3枚を渡します。', 'law'); lawHit(G, 'jono', o[n - 1]); }
+    if (seiken) { say(G, '政権交代法により、今回は大富豪と富豪が強い札を渡します。', 'law'); lawHit(G, 'seiken', o[0]); }
+    if (jono) { say(G, '上納法により、大貧民は大富豪に3枚を渡します。', 'law'); lawHit(G, 'jono', o[n - 1]); }
     if (kyuhin) { say(G, '救貧法により、大貧民と大富豪の交換は1枚ずつです。', 'law'); lawHit(G, 'kyuhin', o[n - 1]); }
     G.phase = 'exchange';
     G.pending = { type: 'exchange', need, done: {} };
@@ -1279,7 +1284,7 @@ function beginPlay(G, now) {
     G.fate = all[Math.floor(R(G) * all.length)];
     say(G, `今回の当たり札は${label(G.fate)}です。`, 'law');
   }
-  if (lawParam(G.laws, 'gyakuten')) { G.rev = true; say(G, '逆転国会。今回は革命が起きた状態で始まります。', 'law'); lawHit(G, 'gyakuten'); }
+  if (lawParam(G.laws, 'gyakuten')) { G.rev = true; say(G, '逆転開会法により、今回は革命が起きた状態で始まります。', 'law'); lawHit(G, 'gyakuten'); }
   G.open = null;
   if (lawParam(G.laws, 'koukai') && G.order) { G.open = G.order[0]; say(G, `情報公開法により、${pName(G, G.open)}さんの手札が公開されました。`, 'law'); lawHit(G, 'koukai', G.open); }
   let lead;
@@ -1299,7 +1304,7 @@ function clearField(G, leader) {
       const old = {}; act.forEach(id => { old[id] = G.hands[id]; });
       act.forEach(id => { G.hands[nextActive(G, id, act)] = old[id]; });
       act.forEach(id => { G.hands[id] = cardSort(G.hands[id]); });
-      say(G, '手札まわし令。全員の手札が次の人へ移りました。', 'law'); lawHit(G, 'mawashi');
+      say(G, '手札回し法により、全員の手札が次の人へ移りました。', 'law'); lawHit(G, 'mawashi');
     }
   }
   G.turn = isActive(G, leader) ? leader : nextActive(G, leader);
@@ -1397,7 +1402,7 @@ function actInner(G, pid, a, now) {
       if (a.id) {
         if (!G.hands[pid].includes(a.id) || G.hands[pid].length < 2) return false;
         G.hands[pid].splice(G.hands[pid].indexOf(a.id), 1); G.pile.push(a.id);
-        say(G, `道連れ令。${pName(G, pid)}さんが札を一枚捨てました。`, 'law'); lawHit(G, 'tsure', pid);
+        say(G, `道連れ法。${pName(G, pid)}さんが札を一枚捨てました。`, 'law'); lawHit(G, 'tsure', pid);
       } else say(G, `${pName(G, pid)}さんは札を捨てませんでした。`);
       G.phase = 'play'; const ret = G.pending.ret; G.pending = null;
       afterMove(G, ret, now); return true;
@@ -1406,9 +1411,9 @@ function actInner(G, pid, a, now) {
       if (G.phase !== 'gekokujo' || G.pending.pid !== pid) return false;
       if (!G.pending.targets.includes(a.target)) return false;
       const t = a.target, h = G.hands[pid]; G.hands[pid] = G.hands[t]; G.hands[t] = h;
-      say(G, `下剋上革命。${pName(G, pid)}さんと${pName(G, t)}さんの手札が入れ替わりました。`, 'rev'); lawHit(G, 'gekokujo', pid);
+      say(G, `下剋上法。${pName(G, pid)}さんと${pName(G, t)}さんの手札が入れ替わりました。`, 'rev'); lawHit(G, 'gekokujo', pid);
       st(G, pid).gekokujo++; rl(G).geko = [pid, t];
-      moment(G, pid, 9, `第${G.round}回、下剋上革命で${pName(G, t)}さんと手札を入れ替えた`);
+      moment(G, pid, 9, `第${G.round}回、下剋上法で${pName(G, t)}さんと手札を入れ替えた`);
       abolish(G);
       G.phase = 'play'; G.pending = null;
       proceed(G, now); return true;
@@ -1478,10 +1483,10 @@ function doPlay(G, pid, ids, now) {
     say(G, !prevTop ? vary(G, [`${nm}さんが${d}を出しました。`, `${nm}さんが${d}から切り出します。`, `${nm}さんが${d}で口火を切りました。`, `${nm}さんの発言は${d}から。`])
       : strongN && !G.rev ? vary(G, [`${nm}さんが${d}を投入。強気の一手です。`, `${nm}さん、ここで${d}。`, `${nm}さんが${d}で押さえにかかります。`])
       : vary(G, [`${nm}さんが${d}を出しました。`, `${nm}さんは${d}で応じます。`, `${nm}さんが${d}を重ねました。`, `${nm}さんの答弁は${d}。`, `${nm}さんが${d}を出しました。`]));
-    hits.forEach(k => lawHit(G, k, pid, k === 'strong' ? `${nm}さんが最強の数字で場を押さえました。` : `${nm}さんが優遇マークで同じ強さの札を重ねました。`));
+    hits.forEach(k => lawHit(G, k, pid, k === 'strong' ? `${nm}さんが最強の数字で場を押さえました。` : `${nm}さんが優遇されたマークで、同じ強さの札を重ねました。`));
     if (hand.length === 1) say(G, vary(G, [`${nm}さん、残り一枚です。`, `${nm}さんの手札はあと一枚。`, `${nm}さん、上がりまであと一枚。議場がざわつきます。`]));
   }
-  // 運命の一枚
+  // 当たり札法
   if (G.fate && ids.includes(G.fate) && hand.length === 0) {
     G.fateWin = pid; st(G, pid).fate++; rl(G).fate = pid;
     say(G, `${pName(G, pid)}さんが当たり札で上がりました。次の回で階級が二つ上がります。`, 'law'); lawHit(G, 'fate', pid);
@@ -1609,7 +1614,7 @@ function doPass(G, pid, now) {
     }
   }
   if (!G.field.top) {
-    // 出せる札がない(禁止令などで手札が全部出せない)ときだけ、親でもパスできる
+    // 出せる札がない(禁止法などで手札が全部出せない)ときだけ、親でもパスできる
     if (candidates(G.hands[pid], makeCtx(G)).length) return false;
     G.leadPass = (G.leadPass || 0) + 1;
     say(G, `${pName(G, pid)}さんは出せる札がないためパス。`);
@@ -1633,8 +1638,8 @@ function doPass(G, pid, now) {
     G.hands[pid] = cardSort(G.hands[pid].concat(take));
     s.blocked++;
     if (take.length) {
-      say(G, `上がり阻止。${pName(G, pid)}さんは${take.length}枚引きました。`, 'law'); lawHit(G, 'agari', pid);
-      moment(G, pid, 4, `第${G.round}回、残り一枚で上がり阻止にかかり、札を引いた`);
+      say(G, `上がり阻止法。${pName(G, pid)}さんは${take.length}枚引きました。`, 'law'); lawHit(G, 'agari', pid);
+      moment(G, pid, 4, `第${G.round}回、残り一枚で上がり阻止法にかかり、札を引いた`);
     }
   }
   advance(G, pid, now);
@@ -1659,25 +1664,25 @@ function endRound(G, now) {
     }
   });
   G.points = G.points || {};
-  // 倍点令(次の一回限り)と最終回の二倍は重ねない。倍点令は使ったら失効する
+  // 倍点法(次の一回限り)と最終回の二倍は重ねない。倍点法は使ったら失効する
   const byLaw = G.laws.some(l => l.key === 'double'), byLast = isLast(G) && !!G.cfg.lastx2;
   const mul = byLaw || byLast ? 2 : 1;
   rl(G).dbl = byLaw;
-  if (byLaw) { lawHit(G, 'double', order[0]); G.laws = G.laws.filter(l => l.key !== 'double'); say(G, '倍点令は役目を終えて失効しました。'); }
+  if (byLaw) { lawHit(G, 'double', order[0]); G.laws = G.laws.filter(l => l.key !== 'double'); say(G, '倍点法は役目を終えて失効しました。'); }
   // 得点に効く法律(二倍にはせず、あとから足す)
   const genzei = !!lawParam(G.laws, 'genzei'), hosho = !!lawParam(G.laws, 'hosho');
   G.results = order.map((id, i) => {
     const t = TITLES[n][i];
     const adj = [];
-    if (genzei && t === '大富豪') adj.push({ key: 'genzei', name: '大富豪減税', d: 2 });
-    if (hosho && (t === '貧民' || t === '大貧民')) adj.push({ key: 'hosho', name: '最低保障', d: 1 });
+    if (genzei && t === '大富豪') adj.push({ key: 'genzei', name: '大富豪減税法', d: 2 });
+    if (hosho && (t === '貧民' || t === '大貧民')) adj.push({ key: 'hosho', name: '最低保障法', d: 1 });
     const pts = POINTS[t] * mul + adj.reduce((a, x) => a + x.d, 0);
     G.points[id] = (G.points[id] || 0) + pts;
     return { id, title: t, prev: prev ? TITLES[n][prev.indexOf(id)] : null, prevPos: prev ? prev.indexOf(id) : null, pts, total: G.points[id], x2: mul === 2 ? (byLaw ? 'law' : 'last') : null, adj };
   });
-  if (genzei) lawHit(G, 'genzei', order[0], `大富豪減税により、${pName(G, order[0])}さんに2点を上乗せします。`);
-  if (hosho) lawHit(G, 'hosho', order[n - 1], '最低保障により、貧民と大貧民に1点ずつ上乗せします。');
-  // 時限立法(倍点令のほか)はこの回で失効
+  if (genzei) lawHit(G, 'genzei', order[0], `大富豪減税法により、${pName(G, order[0])}さんに2点を上乗せします。`);
+  if (hosho) lawHit(G, 'hosho', order[n - 1], '最低保障法により、貧民と大貧民に1点ずつ上乗せします。');
+  // 時限立法(倍点法のほか)はこの回で失効
   const gone = G.laws.filter(l => LAWS[l.key].once && l.key !== 'double');
   if (gone.length) { G.laws = G.laws.filter(l => !gone.includes(l)); say(G, `${gone.map(l => `「${LAWS[l.key].name()}」`).join('')}は役目を終えて失効しました。`); }
   G.open = null;
@@ -1704,9 +1709,9 @@ function commentary(G, order, prev) {
   const c = [];
   const add = (key, score, arr) => c.push({ key, score, text: pick(G, arr) });
   if (L.geko) add('geko', 9, [
-    `${nm(L.geko[0])}の下剋上革命で、${nm(L.geko[1])}の手札がまるごと持っていかれました。議場騒然です。`,
+    `${nm(L.geko[0])}の下剋上法で、${nm(L.geko[1])}の手札がまるごと持っていかれました。議場騒然です。`,
     `手札の総入れ替え。${nm(L.geko[1])}はしばらく自分の手札が信じられないでしょう。`,
-    `下剋上革命が発動。${nm(L.geko[0])}が${nm(L.geko[1])}の手札を丸ごと手に入れました。`,
+    `下剋上法が発動。${nm(L.geko[0])}が${nm(L.geko[1])}の手札を丸ごと手に入れました。`,
     `${nm(L.geko[1])}、手札を差し押さえられる格好に。${nm(L.geko[0])}の大胆な一手でした。`]);
   if (L.ochi) add('ochi', 8, [
     `${nm(L.ochi)}、まさかの都落ち。王冠は思ったより重かったようです。`,
@@ -1770,12 +1775,12 @@ function commentary(G, order, prev) {
     `8切り${cm[1]}回。${nm(cm[0])}は議事進行を握っていました。`,
     `都合が悪くなると8切り。${nm(cm[0])}の強行採決が${cm[1]}回ありました。`]);
   if (L.dblLost) add('dblLost', 7, [
-    `${nm(L.dblLost)}の革命で倍点令も廃止。得点二倍の夢は消えました。`,
-    `倍点令は革命とともに失効。${nm(L.dblLost)}が二倍の得点を帳消しにしました。`]);
+    `${nm(L.dblLost)}の革命で倍点法も廃止。得点二倍の夢は消えました。`,
+    `倍点法は革命とともに失効。${nm(L.dblLost)}が二倍の得点を帳消しにしました。`]);
   if (L.dbl) add('dbl', 6, [
-    `倍点令のおかげで${nm(top)}は一気に${POINTS['大富豪'] * 2}点。点差が大きく動きました。`,
+    `倍点法のおかげで${nm(top)}は一気に${POINTS['大富豪'] * 2}点。点差が大きく動きました。`,
     `得点二倍の回を制したのは${nm(top)}。${nm(last)}は痛い0点です。`,
-    `倍点令の回で大富豪。${nm(top)}にとっては値千金の勝利です。`]);
+    `倍点法の回で大富豪。${nm(top)}にとっては値千金の勝利です。`]);
   const lh = Object.entries(L.hits || {}).sort((a, b) => b[1] - a[1])[0];
   if (lh && LAWS[lh[0]]) {
     const ln = LAWS[lh[0]].name((G.laws.find(l => l.key === lh[0]) || {}).param);
@@ -2078,7 +2083,7 @@ function diagnose(G) {
     if (s.strongEarly || s.strongLate) A.push(s.strongEarly >= s.strongLate ? `2とジョーカーは早めに使う派で、序盤に${s.strongEarly}枚を切りました。` : `2とジョーカーは最後まで温存する派で、残り3枚以下で${s.strongLate}枚を出しました。`);
     if (s.thinkN) { const sec = think[i] / 1000; const r = rankOf(think, true); A.push(`一手にかける時間は平均${sec.toFixed(1)}秒で、${r === 1 ? 'いちばんの長考派' : r === N ? 'いちばんの即決派' : r <= N / 2 ? 'じっくり考えるほう' : '決断が早いほう'}でした。`); }
     if (s.votes) A.push(`投票は${s.votes}回。大富豪と同じ側に${s.withTop}回、反対側に${s.againstTop}回入れ、可決した側に乗ったのは${s.withMaj}回です。`);
-    if (s.revs) A.push(`革命を${s.revs}回起こしました。${s.gekokujo ? `うち${s.gekokujo}回は下剋上革命です。` : ''}`);
+    if (s.revs) A.push(`革命を${s.revs}回起こしました。${s.gekokujo ? `うち${s.gekokujo}回は下剋上法で手札を入れ替えました。` : ''}`);
     if (s.ochi) A.push(`都落ちを${s.ochi}回経験しています。`);
     if (s.kiri >= 2) A.push(`8切りは${s.kiri}回。場を流して主導権を取り返すのが得意です。`);
     if (s.marks) A.push(`大富豪として重要法案を${s.marks}回指定し、${s.markWins ? `${s.markWins}回を通しました。` : '一度も通せませんでした。'}`);
@@ -2148,7 +2153,7 @@ function privView(G, pid) {
   return v;
 }
 
-const api = { ROUND_OPTS, AXES, TYPES16, POINTS, standings, LOCAL_RULES, RULES, defaultCfg, cleanCfg, lawUsable, SUITS, SUIT_CH, SUIT_NAME, RL, LAWS, LAW_KEYS, KANJI, TITLES, VOTE_MS, parse, label, cardSort, makeCtx, interpret, bestPlay, describe, candidates, strength,
+const api = { LAW_OFF, ROUND_OPTS, AXES, TYPES16, POINTS, standings, LOCAL_RULES, RULES, defaultCfg, cleanCfg, lawUsable, SUITS, SUIT_CH, SUIT_NAME, RL, LAWS, LAW_KEYS, KANJI, TITLES, VOTE_MS, parse, label, cardSort, makeCtx, interpret, bestPlay, describe, candidates, strength,
   newGame, addPlayer, addCpu, act, tick, pubView, privView, waitingFor, diagnose, paramOptions, cpuDecide };
 if (typeof module !== 'undefined') module.exports = api; else root.Engine = api;
 })(this);
@@ -2228,7 +2233,7 @@ const LAW = {
   agari: `<rect x="8" y="26" width="8" height="30" rx="1"/><path d="M4 56h16"/><rect x="14" y="22" width="44" height="8" rx="2"/><path class="as" d="M22 22l-5 8M32 22l-5 8M42 22l-5 8M52 22l-5 8"/><rect class="pp" x="40" y="36" width="12" height="17" rx="2"/>`,
   double: `<circle class="w" cx="26" cy="34" r="15"/><circle class="g" cx="38" cy="28" r="15"/><path d="M33 22l10 12M43 22L33 34"/><path class="as" d="M14 52h36"/>`,
   rev3: `<rect class="w" x="10" y="18" width="18" height="26" rx="2" transform="rotate(-14 19 31)"/><rect class="w" x="23" y="15" width="18" height="26" rx="2"/><rect class="w" x="36" y="18" width="18" height="26" rx="2" transform="rotate(14 45 31)"/><path d="M19 27v8M32 24v8M45 27v8"/><path class="as" d="M14 52c8 6 28 6 36 0M46 48l4 4-5 2"/>`,
-  // 上納令:札が王冠のほうへ上がっていく
+  // 上納法:札が王冠のほうへ上がっていく
   jono: `<rect x="8" y="30" width="16" height="24" rx="2"/><rect class="w" x="18" y="34" width="16" height="22" rx="2"/><path class="as" d="M44 52V22M37 29l7-7 7 7"/><path class="a" d="M36 16l2.6-8 3.2 4.2L44 6l2.2 6.2L49.4 8l2.6 8z"/>`,
   // 救貧法:傘の下に札一枚
   kyuhin: `<path class="a" d="M8 30a24 22 0 0 1 48 0z"/><path d="M8 30q6-5 12 0 6-5 12 0 6-5 12 0 6-5 12 0"/><path d="M32 8v-3"/><rect class="w" x="24" y="36" width="16" height="22" rx="2"/>`,
@@ -2985,8 +2990,8 @@ function statusLine(pub) {
   switch (pub.phase) {
     case 'exchange': return `カードを交換しています。${w.map(nm).join('、')}が返す札を選んでいます`;
     case 'param': return `大富豪の${nm(pub.pending.pid)}が、新しい法律の中身を決めています`;
-    case 'tsure': return `道連れ令。${nm(pub.pending.pid)}が捨てる札を選んでいます`;
-    case 'gekokujo': return `下剋上革命。${nm(pub.pending.pid)}が手札を入れ替える相手を選んでいます`;
+    case 'tsure': return `道連れ法。${nm(pub.pending.pid)}が捨てる札を選んでいます`;
+    case 'gekokujo': return `下剋上法。${nm(pub.pending.pid)}が手札を入れ替える相手を選んでいます`;
     case 'give7': return `7渡し。${nm(pub.pending.pid)}が渡す札を選んでいます`;
     case 'drop10': return `10捨て。${nm(pub.pending.pid)}が捨てる札を選んでいます`;
     case 'play': return pub.turn ? `${nm(pub.turn)}の番です` : '';
@@ -3096,7 +3101,7 @@ function vJoin(host) {
 }
 
 /* 会期の表示 */
-const x2Text = r => r && r.x2 === 'law' ? '倍点令により得点二倍' : r && r.x2 === 'last' ? '最終回のため得点二倍' : '';
+const x2Text = r => r && r.x2 === 'law' ? '倍点法により得点二倍' : r && r.x2 === 'last' ? '最終回のため得点二倍' : '';
 const roundsText = c => c.rounds ? `全${c.rounds}回${c.lastx2 ? '(最終回は得点二倍)' : ''}` : '回数は決めない';
 function roundLabel(pub) {
   const c = pub.cfg;
@@ -3148,7 +3153,7 @@ function briefPages(pub) {
     ${item(I.medal('<path class="w" d="M16 26h32v24H16z"/><path class="g" d="M24 10h16v20H24z"/><path d="M22 26h20"/>'), '三 全員で投票', `三つから一つを選びます。大富豪は2票、重要法案に入れると3票。同数のときは大貧民の票で決まります(開会前は全員1票、同数はくじ)。交渉は自由です。`)}
     ${item(I.medal('<path class="a" d="M14 18h36v28H14z" opacity=".15"/><path class="as" d="M14 18h36v28H14z" stroke-width="3"/><path d="M22 32h20"/>'), '四 可決', `決まった法律は次の回から有効です。法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`)}</div>` });
   P.push({ t: '得点と診断', h: `<p style="font-size:1.15em">回ごとに、階級で得点が入ります。</p><div class="ptable">${Object.entries(E.POINTS).map(([k, v]) => `<div>${rankTag(k)}<b>${v}点</b></div>`).join('')}</div>
-    <p style="font-size:1.15em;margin:.6em 0 1.4em">${c.rounds ? `会期は全${c.rounds}回です。最終回が終わるか、途中で「今夜はここまで」を押すと閉会します。` : '「今夜はここまで」を押すと閉会します。'}閉会すると、総合順位の発表のあと、ひとりずつ本性を診断します。${c.rounds && c.lastx2 ? '<br><b>最終回は得点が二倍です。</b>' : ''}${c.lawsOn && c.laws.double ? '<br>法律「倍点令」が通ると、次の一回だけ得点が二倍になります(最終回の二倍とは重なりません)。' : ''}</p>
+    <p style="font-size:1.15em;margin:.6em 0 1.4em">${c.rounds ? `会期は全${c.rounds}回です。最終回が終わるか、途中で「今夜はここまで」を押すと閉会します。` : '「今夜はここまで」を押すと閉会します。'}閉会すると、総合順位の発表のあと、ひとりずつ本性を診断します。${c.rounds && c.lastx2 ? '<br><b>最終回は得点が二倍です。</b>' : ''}${c.lawsOn && c.laws.double ? '<br>法律「倍点法」が通ると、次の一回だけ得点が二倍になります(最終回の二倍とは重なりません)。' : ''}</p>
     <div class="bgrid" style="--n:4">${E.AXES.map(ax => item('', `${ax.lc}・${ax.rc}`, `${ax.l}か、${ax.r}か。`)).join('')}</div>` });
   return P;
 }
@@ -3175,15 +3180,17 @@ function cfgHtml(pub) {
   const c = pub.cfg;
   const tg = (key, on, nm, tx, art, cls) => `<button class="tg ${on ? 'on' : 'off'}" data-cfg="${key}"><span>${art || ''}</span><span><span class="nm">${nm}</span>${tx ? `<span class="tx ${cls || ''}">${tx}</span>` : ''}</span><span class="sw"></span></button>`;
   const seg = (key, vals, cur, fmt) => `<span class="seg">${vals.map(v => `<button class="${v === cur ? 'on' : ''}" data-cfg="${key}:${v}">${fmt ? fmt(v) : v}</button>`).join('')}</span>`;
-  const why = k => !c.laws[k] ? '' : (k === 'gekokujo' && !c.rev) ? '革命が無効のため、候補に出ません' : (k === 'joker' && !c.jokers) ? 'ジョーカーがないため、候補に出ません' : ((k === 'jono' || k === 'kyuhin') && !c.exchange) ? 'カード交換が無効のため、候補に出ません' : '';
+  const why = k => !c.laws[k] ? '' : ((k === 'gekokujo' || k === 'rev3') && !c.rev) ? '革命が無効のため、候補に出ません' : (k === 'joker' && !c.jokers) ? 'ジョーカーがないため、候補に出ません' : (['jono', 'kyuhin', 'seiken'].includes(k) && !c.exchange) ? 'カード交換が無効のため、候補に出ません' : '';
   const rules = E.RULES.map(r => tg('rule:' + r.key, c[r.key], r.name, r.text)).join('')
     + `<div class="tg na"><span></span><span><span class="nm">ジョーカー</span><span class="tx">山札に入れる枚数</span></span>${seg('jokers', [0, 1, 2], c.jokers, v => v + '枚')}</div>`;
   const vote = c.lawsOn ? `<div class="tg na sess"><span><span class="nm">法律の上限</span><span class="tx">超えると古い順に失効</span></span>${seg('maxLaws', [1, 2, 3, 4, 5], c.maxLaws, v => v + 'つ')}</div>` : '';
-  const laws = tg('lawsOn', c.lawsOn, '法律を作る', '開会前と、回が終わるたびに投票で法律を一つ決める') + vote + (c.lawsOn ? E.LAW_KEYS.map(k => {
+  const laws = tg('lawsOn', c.lawsOn, '法律を作る', '開会前と、回が終わるたびに投票で法律を一つ決める') + vote + (c.lawsOn ? E.LAW_KEYS.map((k, i) => {
     const w = why(k);
-    return tg('law:' + k, c.laws[k] && !w, pub.lawInfo[k].name, w || pub.lawInfo[k].text, I.lawPlain(k), w ? 'why' : 'lt');
+    // 初期設定の候補と、あとから加える法律の境目に見出しを入れる
+    const head = i === 0 ? '<div class="lsub">初期設定の候補</div>' : E.LAW_OFF.includes(k) && !E.LAW_OFF.includes(E.LAW_KEYS[i - 1]) ? '<div class="lsub">必要なら加える法律</div>' : '';
+    return head + tg('law:' + k, c.laws[k] && !w, pub.lawInfo[k].name, w || pub.lawInfo[k].text, I.lawPlain(k), w ? 'why' : 'lt');
   }).join('') : '');
-  const session = `<h3>会期</h3><div class="tg na sess"><span><span class="nm">回数</span><span class="tx">最終回が終わると閉会。「なし」は回数を決めない</span></span>${seg('rounds', E.ROUND_OPTS, c.rounds, v => v ? v + '回' : 'なし')}</div>${c.rounds ? tg('lastx2', c.lastx2, '最終回は得点二倍', '倍点令とは重ならない') : ''}`;
+  const session = `<h3>会期</h3><div class="tg na sess"><span><span class="nm">回数</span><span class="tx">最終回が終わると閉会。「なし」は回数を決めない</span></span>${seg('rounds', E.ROUND_OPTS, c.rounds, v => v ? v + '回' : 'なし')}</div>${c.rounds ? tg('lastx2', c.lastx2, '最終回は得点二倍', '倍点法とは重ならない') : ''}`;
   const locals = E.LOCAL_RULES.map(r => tg('rule:' + r.key, c[r.key], r.name, r.text)).join('');
   return `<div class="cfg"><div><h3>基本ルール</h3>${rules}${session}</div><div><h3>ローカルルール</h3>${locals}</div><div class="lawcol"><h3>法律</h3>${laws}</div></div>`;
 }
@@ -3419,7 +3426,7 @@ function vPhone(pub, priv) {
     case 'roundEnd': case 'enacted': {
       const mine = pub.results ? pub.results.find(r => r.id === S.pid) : null;
       body = pub.phase === 'roundEnd'
-        ? `<div class="panel"><h2>${pub.last ? '最終回' : `第${pub.round}回`} 本会議の結果</h2>${mine ? `<p>あなたは${mine.title}。+${mine.pts}点${mine.x2 ? `(${mine.x2 === 'law' ? '倍点令' : '最終回'}で二倍)` : ''}${(mine.adj || []).map(a => `(${esc(a.name)}で+${a.d})`).join('')}、合計${mine.total}点です。</p>` : ''}<table class="mini-table">${pub.results.map((r, i) => `<tr><td>${i + 1}. ${esc(pname(pub, r.id))}</td><td>${rankTag(r.title)}　${r.total}点</td></tr>`).join('')}</table>${commentHtml(pub)}</div>`
+        ? `<div class="panel"><h2>${pub.last ? '最終回' : `第${pub.round}回`} 本会議の結果</h2>${mine ? `<p>あなたは${mine.title}。+${mine.pts}点${mine.x2 ? `(${mine.x2 === 'law' ? '倍点法' : '最終回'}で二倍)` : ''}${(mine.adj || []).map(a => `(${esc(a.name)}で+${a.d})`).join('')}、合計${mine.total}点です。</p>` : ''}<table class="mini-table">${pub.results.map((r, i) => `<tr><td>${i + 1}. ${esc(pname(pub, r.id))}</td><td>${rankTag(r.title)}　${r.total}点</td></tr>`).join('')}</table>${commentHtml(pub)}</div>`
         : phEnacted(pub);
       if (pub.cfg.lawsOn) body += `<div class="lawlist"><div class="doc">${lawsHtml(pub)}</div></div>`;
       if (isLeader) bar = `<div class="ph-bar col">${ctl}</div>`;
@@ -3533,10 +3540,10 @@ function phPlay(pub, priv, m) {
     note = sel.length > prompt.n ? `${prompt.n}枚までです` : '';
     bar = `<div class="ph-bar"><button class="btn" data-act="${prompt.type}-skip">${g ? '渡さない' : '捨てない'}</button><button class="btn main" data-act="${prompt.type}" ${ok ? '' : 'disabled'}>${sel.length}枚 ${g ? '渡す' : '捨てる'}</button></div>`;
   } else if (prompt && prompt.type === 'tsure') {
-    title = '道連れ令。捨てる札を一枚選べます';
+    title = '道連れ法。捨てる札を一枚選べます';
     bar = `<div class="ph-bar"><button class="btn" data-act="tsure-skip">捨てない</button><button class="btn main" data-act="tsure" ${sel.length === 1 ? '' : 'disabled'}>捨てる</button></div>`;
   } else if (prompt && prompt.type === 'gekokujo') {
-    return { body: `<div class="panel"><span class="opt-art big">${I.law('gekokujo')}</span><h2>下剋上革命。手札を入れ替える相手を選んでください</h2><p>入れ替えたあと、法律はすべて廃止されます。</p>
+    return { body: `<div class="panel"><span class="opt-art big">${I.law('gekokujo')}</span><h2>下剋上法。手札を入れ替える相手を選んでください</h2><p>入れ替えたあと、法律はすべて廃止されます。</p>
       <div class="opts">${prompt.targets.map(t => `<button class="opt doc ${S.choice === t.id ? 'on' : ''}" data-choice="${t.id}"><span class="opt-art">${I.rank(t.title)}</span><span><span class="nm">${esc(t.name)}さん</span><span class="tx">${esc(t.title)}・手札${pub.players.find(p => p.id === t.id).count}枚</span></span></button>`).join('')}</div></div>`,
       bar: `<div class="ph-bar one"><button class="btn main" data-act="gekokujo" ${S.choice && prompt.targets.some(t => t.id === S.choice) ? '' : 'disabled'}>この人と入れ替える</button></div>` };
   } else if (myTurn) {
@@ -3586,8 +3593,8 @@ function centerOrder() {
 function explain(sel, ctx) {
   const ip = E.interpret(sel, ctx);
   if (!ip.length) {
-    if (ctx.jokerSeal && sel.every(id => id[0] === 'X')) return 'ジョーカー封印のため、ジョーカーだけでは出せません';
-    if (ctx.ban && sel.some(id => E.parse(id).r === ctx.ban)) return `${E.RL[ctx.ban]}禁止令のため、${E.RL[ctx.ban]}は出せません`;
+    if (ctx.jokerSeal && sel.every(id => id[0] === 'X')) return 'ジョーカー封印法のため、ジョーカーだけでは出せません';
+    if (ctx.ban && sel.some(id => E.parse(id).r === ctx.ban)) return `${E.RL[ctx.ban]}禁止法のため、${E.RL[ctx.ban]}は出せません`;
     return '同じ数字か、同じマークの3枚以上の階段にしてください';
   }
   const t = ctx.top;
@@ -3627,7 +3634,7 @@ function render() {
   const pub = S.pub;
   // 法律が効いた:その条文と関係した人を数秒だけ光らせ、判を押す音を鳴らす
   if (pub && pub.lawHit && pub.lawHit.n !== S.lhN) {
-    // 音は鳴らさない(禁止令などは一回に何度も効くため。大きな出来事の法律は、それぞれの演出で音が鳴る)
+    // 音は鳴らさない(禁止法などは一回に何度も効くため。大きな出来事の法律は、それぞれの演出で音が鳴る)
     if (S.lhN != null) { S.lh = Object.assign({}, pub.lawHit, { until: Date.now() + 2800 }); setTimeout(render, 2900); }
     S.lhN = pub.lawHit.n;
   }
