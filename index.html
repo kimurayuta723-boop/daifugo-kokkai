@@ -733,7 +733,9 @@ const LAWS = {
   agari:    { w: 1, name: () => '上がり阻止',
     text: () => '残り一枚の者がパスしたときは、流れた札の中から二枚を引く。ただし一回につき一人一度までとする。' },
   double:   { w: 1, name: () => '倍点令',
-    text: () => '回が終わったときにこの法律があれば、その回の得点を二倍とする。' },
+    text: () => '次の回に限り、得点を二倍とする。回が終わると失効する。' },
+  rev3:     { w: 1, name: () => '三枚革命',
+    text: () => '同じ数字を三枚出したときも、革命が起きる。' },
 };
 const LAW_KEYS = Object.keys(LAWS);
 const KANJI = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
@@ -775,7 +777,7 @@ const LOCAL_RULES = [
 const ROUND_OPTS = [3, 4, 5, 6, 8, 10, 0];
 function isLast(G) { return !!G.cfg.rounds && G.round >= G.cfg.rounds; }
 function defaultCfg() {
-  const c = { jokers: 2, lawsOn: true, voteSec: 120, maxLaws: 3, rounds: 5, laws: {} };
+  const c = { jokers: 2, lawsOn: true, voteSec: 120, maxLaws: 3, rounds: 5, lastx2: true, laws: {} };
   RULES.forEach(r => { c[r.key] = true; });
   LOCAL_RULES.forEach(r => { c[r.key] = false; });
   LAW_KEYS.forEach(k => { c.laws[k] = true; });
@@ -790,13 +792,14 @@ function cleanCfg(x) {
   if ([60, 90, 120, 180].includes(x.voteSec)) c.voteSec = x.voteSec;
   if ([1, 2, 3, 4, 5].includes(x.maxLaws)) c.maxLaws = x.maxLaws;
   if (ROUND_OPTS.includes(x.rounds)) c.rounds = x.rounds;
+  if (typeof x.lastx2 === 'boolean') c.lastx2 = x.lastx2;
   if (x.laws) LAW_KEYS.forEach(k => { if (typeof x.laws[k] === 'boolean') c.laws[k] = x.laws[k]; });
   return c;
 }
 /* 他の設定と組み合わせて意味がなくなる法律 */
 function lawUsable(cfg, k) {
   if (!cfg.laws[k]) return false;
-  if (k === 'gekokujo' && !cfg.rev) return false;
+  if ((k === 'gekokujo' || k === 'rev3') && !cfg.rev) return false;
   if (k === 'joker' && !cfg.jokers) return false;
   return true;
 }
@@ -1259,7 +1262,8 @@ function doPlay(G, pid, ids, now) {
   if (G.cfg.drop10 && nOf(10)) queue.push({ type: 'drop10', pid, n: nOf(10) });
   G.after = { pid, ret, queue };
   // 革命
-  if (G.cfg.rev && ((p.type === 'set' && p.n >= 4) || (G.cfg.seqrev && p.type === 'seq' && p.n >= 4))) {
+  const revN = G.laws.some(l => l.key === 'rev3') ? 3 : 4;
+  if (G.cfg.rev && ((p.type === 'set' && p.n >= revN) || (G.cfg.seqrev && p.type === 'seq' && p.n >= 4))) {
     G.rev = !G.rev; s.revs++;
     const hadLaws = G.laws.length > 0;
     if (G.laws.some(l => l.key === 'double')) rl(G).dblLost = pid;
@@ -1399,12 +1403,15 @@ function endRound(G, now) {
     }
   });
   G.points = G.points || {};
-  const mul = G.laws.some(l => l.key === 'double') ? 2 : 1;
-  rl(G).dbl = mul === 2;
+  // 倍点令(次の一回限り)と最終回の二倍は重ねない。倍点令は使ったら失効する
+  const byLaw = G.laws.some(l => l.key === 'double'), byLast = isLast(G) && !!G.cfg.lastx2;
+  const mul = byLaw || byLast ? 2 : 1;
+  rl(G).dbl = byLaw;
+  if (byLaw) { G.laws = G.laws.filter(l => l.key !== 'double'); say(G, '倍点令は役目を終えて失効しました。'); }
   G.results = order.map((id, i) => {
     const pts = POINTS[TITLES[n][i]] * mul;
     G.points[id] = (G.points[id] || 0) + pts;
-    return { id, title: TITLES[n][i], prev: prev ? TITLES[n][prev.indexOf(id)] : null, prevPos: prev ? prev.indexOf(id) : null, pts, total: G.points[id], x2: mul === 2 };
+    return { id, title: TITLES[n][i], prev: prev ? TITLES[n][prev.indexOf(id)] : null, prevPos: prev ? prev.indexOf(id) : null, pts, total: G.points[id], x2: mul === 2 ? (byLaw ? 'law' : 'last') : null };
   });
   // 大富豪の連続記録
   G.streak = G.streak && G.streak.id === order[0] ? { id: order[0], n: G.streak.n + 1 } : { id: order[0], n: 1 };
@@ -1459,7 +1466,8 @@ function paramOptions(G, key) {
   return out;
 }
 function startLawSelection(G, now) {
-  const pool = LAW_KEYS.filter(k => lawUsable(G.cfg, k) && !G.laws.some(l => l.key === k));
+  const nextLast = !!G.cfg.rounds && G.round + 1 >= G.cfg.rounds && G.cfg.lastx2;
+  const pool = LAW_KEYS.filter(k => lawUsable(G.cfg, k) && !G.laws.some(l => l.key === k) && !(k === 'double' && nextLast));
   const cands = [];
   const p = pool.slice();
   while (cands.length < 3 && p.length) {
@@ -1479,12 +1487,13 @@ function startVote(G, options, vetoed, now) {
   G.cpuAt = now + 4000;
 }
 function tally(G, now) {
-  const v = G.vote, top = G.order[0];
+  const v = G.vote, top = G.order[0], bottom = G.order[G.order.length - 1];
   const cnt = {}; v.options.forEach(k => { cnt[k] = 0; });
   for (const id in v.votes) cnt[v.votes[id]] += id === top ? 2 : 1;
   let best = v.options.slice().sort((a, b) => cnt[b] - cnt[a]);
   let win = best[0];
-  if (cnt[best[0]] === cnt[best[1]]) win = v.votes[top] || best[Math.floor(R(G) * best.length)];
+  // 同数のときは大貧民の票で決める(大貧民が入れていなければくじ)
+  if (cnt[best[0]] === cnt[best[1]]) { win = v.votes[bottom] || best[Math.floor(R(G) * best.length)]; v.tieBy = v.votes[bottom] ? bottom : null; }
   const topVote = v.votes[top];
   for (const id in v.votes) {
     const s = st(G, id); s.votes++; s.voteFor[v.votes[id]] = (s.voteFor[v.votes[id]] || 0) + 1;
@@ -1528,7 +1537,7 @@ function tick(G, now, auto) {
   if (G.phase === 'vote' && w.length > 1) G.cpuAt = now + 400;
   return ok;
 }
-const HARM_TOP = ['gekokujo', 'agari', 'mawashi', 'fate', 'double', 'tsure'];
+const HARM_TOP = ['gekokujo', 'agari', 'mawashi', 'rev3', 'fate', 'double', 'tsure'];
 function cpuDecide(G, pid) {
   const ctx = makeCtx(G), hand = G.hands[pid];
   switch (G.phase) {
@@ -1713,7 +1722,7 @@ function pubView(G, now) {
     pending: G.pending ? { type: G.pending.type, pid: G.pending.pid || null, cands: G.pending.cands || null, key: G.pending.key || null } : null,
     vote: G.vote ? {
       options: G.vote.options, vetoed: G.vote.vetoed || null, deadline: G.vote.deadline, voted: Object.keys(G.vote.votes || {}),
-      result: G.vote.result, counts: G.vote.result ? G.vote.counts : null, tie: G.vote.tie, expired: G.vote.expired,
+      result: G.vote.result, counts: G.vote.result ? G.vote.counts : null, tie: G.vote.tie, tieBy: G.vote.tieBy || null, expired: G.vote.expired,
       votes: G.vote.result ? G.vote.votes : null,
     } : null,
     results: G.results, order: G.order, titles: TITLES[n] || [],
@@ -1820,6 +1829,7 @@ const LAW = {
   gekokujo: `<path class="a" d="M38 10v40"/><path class="a" d="M38 10h18l-5 7 5 7H38z"/><path d="M10 52l4-14 6 6 5-9 5 9 6-6 3 14z" transform="rotate(14 22 46)"/><path d="M6 58h52"/>`,
   agari: `<rect x="8" y="26" width="8" height="30" rx="1"/><path d="M4 56h16"/><rect x="14" y="22" width="44" height="8" rx="2"/><path class="as" d="M22 22l-5 8M32 22l-5 8M42 22l-5 8M52 22l-5 8"/><rect class="pp" x="40" y="36" width="12" height="17" rx="2"/>`,
   double: `<circle class="w" cx="26" cy="34" r="15"/><circle class="g" cx="38" cy="28" r="15"/><path d="M33 22l10 12M43 22L33 34"/><path class="as" d="M14 52h36"/>`,
+  rev3: `<rect class="w" x="10" y="18" width="18" height="26" rx="2" transform="rotate(-14 19 31)"/><rect class="w" x="23" y="15" width="18" height="26" rx="2"/><rect class="w" x="36" y="18" width="18" height="26" rx="2" transform="rotate(14 45 31)"/><path d="M19 27v8M32 24v8M45 27v8"/><path class="as" d="M14 52c8 6 28 6 36 0M46 48l4 4-5 2"/>`,
 };
 /* 法律は金の縁の紋章に収める */
 function beads(cx, cy, r, n, rr) { let h = ''; for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2; h += `<circle class="pp" cx="${(cx + r * Math.cos(a)).toFixed(2)}" cy="${(cy + r * Math.sin(a)).toFixed(2)}" r="${rr}" stroke="none"/>`; } return h; }
@@ -2508,10 +2518,11 @@ function vJoin(host) {
 }
 
 /* 会期の表示 */
-const roundsText = c => c.rounds ? `全${c.rounds}回` : '回数は決めない';
+const x2Text = r => r && r.x2 === 'law' ? '倍点令により得点二倍' : r && r.x2 === 'last' ? '最終回のため得点二倍' : '';
+const roundsText = c => c.rounds ? `全${c.rounds}回${c.lastx2 ? '(最終回は得点二倍)' : ''}` : '回数は決めない';
 function roundLabel(pub) {
   const c = pub.cfg;
-  if (pub.last) return `最終回<small>第${pub.round}回</small>`;
+  if (pub.last) return `最終回<small>第${pub.round}回${c.lastx2 ? '・得点二倍' : ''}</small>`;
   return `第${pub.round}回${c.rounds ? `<small>全${c.rounds}回</small>` : ''}`;
 }
 /* ---------- テレビ ---------- */
@@ -2556,10 +2567,10 @@ function briefPages(pub) {
   if (c.lawsOn) P.push({ t: '法律のつくり方', roomy: true, h: `<div class="bgrid" style="--n:4">
     ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24M20 38h16"/>'), '一 三つの法律案', '回が終わると、法律案がランダムに三つ出ます。')}
     ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24"/><path class="as" d="M16 46l32-32M16 14l32 32" stroke-width="3"/>'), '二 大富豪が廃案', '大富豪が、気に入らない一つを廃案にします。')}
-    ${item(I.medal('<path class="w" d="M16 26h32v24H16z"/><path class="g" d="M24 10h16v20H24z"/><path d="M22 26h20"/>'), '三 全員で投票', `残った二つから一つを選びます。大富豪だけ2票。全員が入れるか、主催者が締め切ったら開票です。交渉は自由です。`)}
+    ${item(I.medal('<path class="w" d="M16 26h32v24H16z"/><path class="g" d="M24 10h16v20H24z"/><path d="M22 26h20"/>'), '三 全員で投票', `残った二つから一つを選びます。大富豪だけ2票。同数のときは大貧民の票で決まります。全員が入れるか、主催者が締め切ったら開票です。交渉は自由です。`)}
     ${item(I.medal('<path class="a" d="M14 18h36v28H14z" opacity=".15"/><path class="as" d="M14 18h36v28H14z" stroke-width="3"/><path d="M22 32h20"/>'), '四 可決', `決まった法律は次の回から有効です。法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`)}</div>` });
   P.push({ t: '得点と診断', h: `<p style="font-size:1.15em">回ごとに、階級で得点が入ります。</p><div class="ptable">${Object.entries(E.POINTS).map(([k, v]) => `<div>${rankTag(k)}<b>${v}点</b></div>`).join('')}</div>
-    <p style="font-size:1.15em;margin-top:.6em">${c.rounds ? `会期は全${c.rounds}回です。最終回が終わるか、途中で「今夜はここまで」を押すと閉会します。` : '「今夜はここまで」を押すと閉会します。'}閉会すると、総合順位の発表のあと、ひとりずつ本性を診断します。${c.lawsOn && c.laws.double ? '<br>法律「倍点令」が通ると、その回の得点は二倍です。' : ''}</p>
+    <p style="font-size:1.15em;margin:.6em 0 1.4em">${c.rounds ? `会期は全${c.rounds}回です。最終回が終わるか、途中で「今夜はここまで」を押すと閉会します。` : '「今夜はここまで」を押すと閉会します。'}閉会すると、総合順位の発表のあと、ひとりずつ本性を診断します。${c.rounds && c.lastx2 ? '<br><b>最終回は得点が二倍です。</b>' : ''}${c.lawsOn && c.laws.double ? '<br>法律「倍点令」が通ると、次の一回だけ得点が二倍になります(最終回の二倍とは重なりません)。' : ''}</p>
     <div class="bgrid" style="--n:4">${E.AXES.map(ax => item('', `${ax.lc}・${ax.rc}`, `${ax.l}か、${ax.r}か。`)).join('')}</div>` });
   return P;
 }
@@ -2573,7 +2584,7 @@ function tvSide(pub) {
   const c = pub.cfg;
   if (pub.phase === 'lobby') {
     const steps = c.lawsOn
-      ? [`会期は${roundsText(c)}。ふつうの大富豪を一回ずつ遊びます。`, '回が終わると、法律案が三つ出ます。大富豪が一つを廃案にします。', '残った二つを全員で投票します。大富豪は2票です。', `法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`, '最後に、遊び方から今夜の本性を診断します。']
+      ? [`会期は${roundsText(c)}。ふつうの大富豪を一回ずつ遊びます。`, '回が終わると、法律案が三つ出ます。大富豪が一つを廃案にします。', '残った二つを全員で投票します。大富豪は2票、同数なら大貧民が決めます。', `法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`, '最後に、遊び方から今夜の本性を診断します。']
       : [`会期は${roundsText(c)}。ふつうの大富豪を遊びます。`, '今夜は法律を作りません(設定で切り替えられます)。', '最後に、遊び方から今夜の本性を診断します。'];
     return `<aside class="tv-side doc"><div class="laws-h">遊び方</div><div class="side-in"><ol class="howto">${steps.map(t => `<li>${t}</li>`).join('')}</ol></div></aside>`;
   }
@@ -2594,7 +2605,7 @@ function cfgHtml(pub) {
     const w = why(k);
     return tg('law:' + k, c.laws[k] && !w, pub.lawInfo[k].name, w || pub.lawInfo[k].text, I.lawPlain(k), w ? 'why' : 'lt');
   }).join('') : '');
-  const session = `<h3>会期</h3><div class="tg na sess"><span><span class="nm">回数</span><span class="tx">最終回が終わると閉会。「なし」は回数を決めない</span></span>${seg('rounds', E.ROUND_OPTS, c.rounds, v => v ? v + '回' : 'なし')}</div>`;
+  const session = `<h3>会期</h3><div class="tg na sess"><span><span class="nm">回数</span><span class="tx">最終回が終わると閉会。「なし」は回数を決めない</span></span>${seg('rounds', E.ROUND_OPTS, c.rounds, v => v ? v + '回' : 'なし')}</div>${c.rounds ? tg('lastx2', c.lastx2, '最終回は得点二倍', '倍点令とは重ならない') : ''}`;
   const locals = E.LOCAL_RULES.map(r => tg('rule:' + r.key, c[r.key], r.name, r.text)).join('');
   return `<div class="cfg"><div><h3>基本ルール</h3>${rules}${session}</div><div><h3>ローカルルール</h3>${locals}</div><div class="lawcol"><h3>法律</h3>${laws}</div></div>`;
 }
@@ -2608,7 +2619,7 @@ function vTv(pub) {
   if (S.showTypes) return vTypes(pub);
   if (pub.phase === 'lobby') return vTvLobby(pub);
   if (pub.phase === 'brief') return sheet(pub, vTvBrief(pub), true);
-  if (pub.phase === 'roundEnd') return sheet(pub, `<div class="eyebrow">${pub.last ? `最終回(第${pub.round}回)` : `第${pub.round}回${pub.cfg.rounds ? ` / 全${pub.cfg.rounds}回` : ''}`}の結果${pub.results[0] && pub.results[0].x2 ? '　倍点令により得点二倍' : ''}</div><div class="big">大富豪は${esc(pname(pub, pub.order[0]))}さん</div>${resultsTable(pub)}${standingHtml(pub)}${commentHtml(pub)}`);
+  if (pub.phase === 'roundEnd') return sheet(pub, `<div class="eyebrow">${pub.last ? `最終回(第${pub.round}回)` : `第${pub.round}回${pub.cfg.rounds ? ` / 全${pub.cfg.rounds}回` : ''}`}の結果${x2Text(pub.results[0]) ? '　' + x2Text(pub.results[0]) : ''}</div><div class="big">大富豪は${esc(pname(pub, pub.order[0]))}さん</div>${resultsTable(pub)}${standingHtml(pub)}${commentHtml(pub)}`);
   if (pub.phase === 'veto') return sheet(pub, vTvVeto(pub));
   if (pub.phase === 'vote') return sheet(pub, vTvVote(pub));
   if (pub.phase === 'enacted') return sheet(pub, vTvEnacted(pub));
@@ -2683,7 +2694,7 @@ function vTvVote(pub) {
   const wait = pub.players.filter(p => !v.voted.includes(p.id)).map(p => esc(p.name));
   return `<div class="vote-head">
       <div><div class="eyebrow">作戦時間 ― 投票は各自のスマホで</div><div class="big" style="margin-bottom:.2em">どちらを通しますか</div>
-      <p class="sub">${v.vetoed ? `「${esc(pub.lawInfo[v.vetoed].name)}」は大富豪が廃案にしました。` : ''}大富豪の${esc(pname(pub, top))}さんは2票。同数のときは大富豪の票で決まります。全員が入れるか、締め切ると開票です。</p></div>
+      <p class="sub">${v.vetoed ? `「${esc(pub.lawInfo[v.vetoed].name)}」は大富豪が廃案にしました。` : ''}大富豪の${esc(pname(pub, top))}さんは2票。同数のときは大貧民の${esc(pname(pub, pub.order[pub.order.length - 1]))}さんの票で決まります。全員が入れるか、締め切ると開票です。</p></div>
       <div class="timer">${voted.length}<small style="font-size:.4em">/${pub.players.length}票</small></div></div>
     <div class="bills" style="--n:${v.vetoed ? 3 : 2}">${v.options.map((k, i) => billHtml(pub, k, i)).join('')}${v.vetoed ? billHtml(pub, v.vetoed, v.options.length, { out: true, stamp: stamp('廃案', true) }) : ''}</div>
     <p class="voted">投票済み:${voted.join('、') || 'まだいません'}${wait.length ? `　/　まだ:${wait.join('、')}` : ''}</p>`;
@@ -2700,7 +2711,7 @@ function vTvEnacted(pub) {
   const law = pub.laws.find(l => l.key === v.result);
   return `<div class="eyebrow">投票の結果 ― 第${law ? E.KANJI[law.no - 1] : ''}条として定めます</div><div class="big">${esc(pub.lawInfo[v.result].name)}</div>
     <div class="bills" style="--n:2">${cards}</div>
-    <p class="sub" style="margin-top:1.4em">${v.tie ? '同数のため、大富豪の票で決まりました。' : ''}${v.expired ? `法律は三つまでのため、「${esc(v.expired)}」は失効しました。` : ''}${['strong', 'ban', 'fav'].includes(v.result) ? '数字やマークは、次の回のカード交換のあとに大富豪が決めます。' : ''}</p>`;
+    <p class="sub" style="margin-top:1.4em">${v.tie ? (v.tieBy ? `同数のため、大貧民の${esc(pname(pub, v.tieBy))}さんの票で決まりました。` : '同数のため、くじで決まりました。') : ''}${v.expired ? `法律は${E.KANJI[pub.cfg.maxLaws - 1]}つまでのため、「${esc(v.expired)}」は失効しました。` : ''}${['strong', 'ban', 'fav'].includes(v.result) ? '数字やマークは、次の回のカード交換のあとに大富豪が決めます。' : ''}</p>`;
 }
 function vTvDiag(pub) {
   const n = pub.players.length, step = S.diagStep;
@@ -2781,7 +2792,7 @@ function vPhone(pub, priv) {
     case 'roundEnd': case 'enacted': {
       const mine = pub.results ? pub.results.find(r => r.id === S.pid) : null;
       body = pub.phase === 'roundEnd'
-        ? `<div class="panel"><h2>${pub.last ? '最終回' : `第${pub.round}回`}の結果</h2>${mine ? `<p>あなたは${mine.title}。+${mine.pts}点${mine.x2 ? '(倍点令で二倍)' : ''}、合計${mine.total}点です。</p>` : ''}<table class="mini-table">${pub.results.map((r, i) => `<tr><td>${i + 1}. ${esc(pname(pub, r.id))}</td><td>${rankTag(r.title)}　${r.total}点</td></tr>`).join('')}</table>${commentHtml(pub)}</div>`
+        ? `<div class="panel"><h2>${pub.last ? '最終回' : `第${pub.round}回`}の結果</h2>${mine ? `<p>あなたは${mine.title}。+${mine.pts}点${mine.x2 ? `(${mine.x2 === 'law' ? '倍点令' : '最終回'}で二倍)` : ''}、合計${mine.total}点です。</p>` : ''}<table class="mini-table">${pub.results.map((r, i) => `<tr><td>${i + 1}. ${esc(pname(pub, r.id))}</td><td>${rankTag(r.title)}　${r.total}点</td></tr>`).join('')}</table>${commentHtml(pub)}</div>`
         : phEnacted(pub);
       if (pub.cfg.lawsOn) body += `<div class="lawlist"><div class="doc">${lawsHtml(pub)}</div></div>`;
       if (isLeader) bar = `<div class="ph-bar col">${ctl}</div>`;
@@ -2800,7 +2811,7 @@ function vPhone(pub, priv) {
       const mine = priv && priv.myVote;
       const top0 = pub.order[0] === S.pid;
       body = `<div class="panel"><div class="vote-row"><h2>投票</h2><span class="ph-timer">${pub.vote.voted.length}/${pub.players.length}票</span></div>
-        <p>${top0 ? 'あなたは大富豪なので2票です。' : '1票です。'}開票までなら入れ直せます。全員が入れるか、主催者が締め切ると開票です。</p>
+        <p>${top0 ? 'あなたは大富豪なので2票です。' : pub.order && pub.order[pub.order.length - 1] === S.pid ? '1票です。同数のときは、あなたの票で決まります。' : '1票です。'}開票までなら入れ直せます。全員が入れるか、主催者が締め切ると開票です。</p>
         <div class="opts">${pub.vote.options.map(k => optHtml(pub, k, (S.choice || mine) === k)).join('')}</div>
         <p class="ph-note" style="margin-top:12px">${mine ? `「${esc(pub.lawInfo[mine].name)}」に投票しました。` : ''}</p></div>`;
       bar = `<div class="ph-bar ${isLeader ? '' : 'one'}">${isLeader ? controls(pub, true).replace('btn main', 'btn') : ''}<button class="btn main" data-act="vote" ${S.choice ? '' : 'disabled'}>この法律に入れる</button></div>`;
@@ -2999,7 +3010,7 @@ function fxCheck(prev, pub) {
     else SFX.play('deal');
     S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
   } else if (pub.round > prev.round) {
-    if (pub.last && big) { fx('round', `<div class="fx-title"><small>第${pub.round}回</small><b>最終回</b></div>`, 3400); SFX.play('fanfare'); }
+    if (pub.last && big) { fx('round', `<div class="fx-title"><small>第${pub.round}回</small><b>最終回</b>${pub.cfg.lastx2 ? '<small style="margin-top:.8em">得点二倍</small>' : ''}</div>`, 3400); SFX.play('fanfare'); }
     else if (big) SFX.play('shuffle'); else SFX.play('deal');
     S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
   }
@@ -3075,6 +3086,7 @@ document.addEventListener('click', async ev => {
     if (k === 'rule') c[v] = !c[v];
     else if (k === 'law') c.laws[v] = !c.laws[v];
     else if (k === 'lawsOn') c.lawsOn = !c.lawsOn;
+    else if (k === 'lastx2') c.lastx2 = !c.lastx2;
     else if (v != null) c[k] = parseInt(v, 10);
     else return;
     SFX.play('select'); send({ t: 'cfg', cfg: c }); return;
