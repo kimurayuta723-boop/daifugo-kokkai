@@ -33,7 +33,9 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 /* 挿絵:線は大きさによらず同じ太さ。差し色は場所に応じて金か朱 */
 .ill{display:block;stroke-width:var(--sw,2px)}
 .ill *{vector-effect:non-scaling-stroke}
-.ill .a{fill:var(--acc)} .ill .as{stroke:var(--acc)} .ill .k{fill:currentColor;stroke:none} .ill .pp{fill:var(--pp)}
+.ill .a{fill:var(--acc)} .ill .as{stroke:var(--acc)} .ill .k{fill:#1f1a15;stroke:none} .ill .pp{fill:var(--pp)}
+.ill .g{fill:var(--gold)} .ill .w{fill:var(--cardface)} .ill .s{fill:currentColor} .ill .gs{stroke:var(--gold);stroke-width:3px} .ill .thin{stroke-width:.8px}
+.medal,.type-ic,.rank-ic{color:#1f1a15}
 .doc{--acc:var(--shu);--pp:var(--doc);background:var(--doc);color:var(--docink)}
 .doc .sub{color:var(--docsub)}
 .suit{display:block}
@@ -64,8 +66,9 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .card .ctr{position:absolute;inset:24% 20%;display:flex;align-items:center;justify-content:center}
 .card .ctr .suit{width:70%;height:auto}
 .card .ctr.ace .suit{width:96%}
-.card .ctr.pic{inset:15% 15% 13%;border:1px solid currentColor;border-radius:3px;overflow:hidden;--sw:1.3px}
-.card .ctr.pic .ill{width:100%;height:100%;margin-top:6%}
+.card .ctr.ace::after{content:"";position:absolute;width:150%;aspect-ratio:1;border:1px solid currentColor;border-radius:50%;opacity:.3}
+.card .ctr.pic{inset:15% 14% 13%;border:1px solid currentColor;border-radius:3px;overflow:hidden;--sw:1.2px;--gold:#c79a3c}
+.card .ctr.pic .ill{width:100%;height:100%}
 .card.joker .ctr.pic{border:0;inset:16% 12% 10%}
 .card .jx{writing-mode:vertical-rl;font-size:.52em;letter-spacing:.12em;font-weight:700;color:var(--shu)}
 .card.sel{border-color:var(--gold);outline:2px solid var(--gold);outline-offset:-1px}
@@ -212,7 +215,7 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 /* 本性診断 */
 .diag-one{display:grid;grid-template-columns:1fr 26vw;gap:3vw;align-items:center;flex:1;min-height:0}
 .diag-who{font-family:var(--serif);font-size:1.9em;margin-top:.6em}
-.diag-type{font-family:var(--serif);font-size:4.8em;font-weight:700;letter-spacing:.1em;line-height:1.25;color:var(--gold2)}
+.diag-type{font-family:var(--serif);font-size:4em;font-weight:700;letter-spacing:.1em;line-height:1.25;color:var(--gold2)}
 .diag-sub{font-size:1.45em;margin:.3em 0 1.2em;font-weight:700}
 .diag-desc{font-family:var(--serif);font-size:1.4em;line-height:2;max-width:30em}
 .diag-moment{margin-top:1.6em;padding-top:1em;border-top:1px solid var(--rule);font-size:1.25em}
@@ -400,7 +403,8 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 
 /* 音の入切(右上) */
 .sound-btn{position:fixed;right:12px;top:10px;z-index:60;font-size:12px;color:var(--sub);border:1px solid var(--rule);border-radius:99px;padding:3px 10px;background:var(--bg2)}
-.is-ph .sound-btn{top:11px;right:auto;left:50%;transform:translateX(-50%)}
+.is-tv .sound-btn{right:calc(29vw + 14px);top:14px}
+.ph-top .rd .iconbtn{padding:2px 10px;font-size:12px}
 
 /* 試用(1画面にテレビとスマホを並べる) */
 .demo{display:grid;grid-template-columns:1fr auto;gap:16px;padding:16px;height:100vh;background:#2a1a10}
@@ -415,6 +419,149 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .qrbox.ph{margin:4px 0 18px}.qrbox.ph .qr{width:180px;height:180px;border-width:5px;border-radius:8px}
 .fx-round .fx-title{animation:pop 1.8s forwards}
 .offline{position:fixed;left:0;right:0;bottom:0;z-index:90;background:#c9451f;color:#fff;text-align:center;font-weight:700;padding:10px 14px;font-size:14px}
+
+/* ---------- ホーム ---------- */
+.home{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;padding:5vh 24px 40px;max-width:520px;margin:0 auto;text-align:center}
+.hall{width:100%;max-width:440px;height:auto;display:block}
+.hall .ray{stroke:var(--gold);stroke-width:1;opacity:.22}.hall .body{fill:var(--bg2);stroke:var(--gold);stroke-width:1.6}.hall .col{fill:var(--bg);stroke:var(--gold);stroke-width:1.4}
+.hall .ped,.hall .dome{fill:var(--bg2);stroke:var(--gold);stroke-width:1.8}.hall .line{fill:none;stroke:var(--gold);stroke-width:1.1}.hall .win{fill:#2a0a10;stroke:var(--gold);stroke-width:1.1}
+.hall .base{fill:var(--bg2);stroke:var(--gold);stroke-width:1.4}.hall .tip{fill:var(--gold2)}
+.home .hall{animation:rise 1.2s cubic-bezier(.2,.85,.25,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(24px)}}
+.home .logo{font-size:44px;margin:-6px 0 0}
+.home .rule{display:flex;align-items:center;gap:12px;color:var(--gold);margin:16px 0 4px;font-family:var(--serif);letter-spacing:.4em;font-size:12px}
+.home .rule::before,.home .rule::after{content:"";height:1px;width:56px;background:var(--gold)}
+.home .lead{color:var(--sub);font-size:14.5px;line-height:1.95;margin:10px 0 30px}
+.home .stack{display:grid;gap:12px;width:100%}
+.home .links{display:flex;gap:18px;justify-content:center;margin-top:22px}
+.home .note{margin-top:28px;font-size:12.5px;color:var(--sub);line-height:1.9;text-align:left}
+
+/* ---------- タイプ一覧 ---------- */
+.zukan{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+.zukan-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:8px}
+.zukan-head h1{font-family:var(--serif);color:var(--gold2);font-size:30px;letter-spacing:.12em}
+.zukan-axes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0 24px;font-size:12.5px;color:var(--sub)}
+.zukan-axes div{border:1px solid var(--rule);border-radius:8px;padding:8px 10px}
+.zukan-axes b{color:var(--gold2);font-family:var(--serif)}
+.zgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.zc{border-radius:12px;padding:14px 12px 16px;text-align:center;border-top:5px solid var(--gold);position:relative}
+.zc .ill{width:96px;height:96px;margin:0 auto 6px;--sw:1.6px}
+.zc .cd{font-family:var(--serif);color:var(--shu);letter-spacing:.3em;font-size:12px}
+.zc .nm{font-family:var(--serif);font-weight:700;font-size:18px;margin:2px 0 4px}
+.zc .ct{font-size:12px;color:var(--docsub);line-height:1.7}
+.zc .who{margin-top:8px;font-size:12px;color:var(--shu);font-weight:700}
+.zc.open{grid-column:1/-1;text-align:left;display:grid;grid-template-columns:140px 1fr;gap:18px;align-items:start}
+.zc.open .ill{width:140px;height:140px}
+.zc .more{font-size:13.5px;line-height:1.9;color:var(--docink);margin-top:6px}
+.zc .more b{color:var(--shu)}
+@media (max-width:760px){.zgrid{grid-template-columns:repeat(2,1fr)}.zukan-axes{grid-template-columns:repeat(2,1fr)}.zc.open{grid-template-columns:1fr}}
+
+/* ---------- 開会前の説明 ---------- */
+.brief{display:grid;grid-template-columns:1fr;flex:1;min-height:0}
+.brief-steps{display:flex;gap:.6em;margin:.2em 0 1.2em}
+.brief-steps i{width:2.6em;height:4px;border-radius:2px;background:var(--rule)}
+.brief-steps i.on{background:var(--gold)}
+.bgrid{display:grid;grid-template-columns:repeat(var(--n,4),1fr);gap:1.2vw;margin-top:.4em;align-items:start;align-content:start}
+.bitem{border-radius:.8vw;padding:1.1vw 1.3vw;border-top:5px solid var(--gold)}
+.bitem .ill{width:5vw;height:5vw;margin-bottom:.8vw;--sw:1.8px}
+.bitem h4{font-family:var(--serif);font-size:1.35em;margin-bottom:.2em}
+.bitem p{font-size:.98em;line-height:1.75;color:var(--docink)}
+.bitem .num{font-family:var(--num);color:var(--shu);font-weight:700;font-size:1.2em}
+.strength{display:flex;align-items:flex-end;gap:.5vw;margin:.8vw 0 .2vw;--cw:3.6vw}
+.strength .arrow{font-size:2em;color:var(--gold2);align-self:center;margin:0 .4vw}
+.ptable{display:flex;flex-wrap:wrap;gap:.6em 2.6em;font-size:1.25em;margin:.6em 0 1em}.ptable div{display:flex;align-items:center;gap:.6em}
+.ptable b{font-family:var(--num);color:var(--shu);font-size:1.3em}
+.ph .bgrid{grid-template-columns:1fr;gap:10px}
+.ph .bitem{padding:14px;border-radius:10px}.ph .bitem .ill{width:44px;height:44px;margin-bottom:6px}.ph .bitem h4{font-size:17px}.ph .bitem p{font-size:13.5px}
+.ph .strength{--cw:34px;gap:3px;flex-wrap:wrap}.ph .ptable{font-size:14px;gap:6px 16px}
+
+/* ---------- テレビの実況 ---------- */
+.tv-log{display:grid;gap:.15em;font-size:1.02em;color:var(--sub);margin-top:.6em;min-height:4.8em}
+.tv-log div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv-log div:last-child{color:var(--fg);font-weight:700}
+.tv-p .lp{display:inline-block;font-size:.8em;color:#2a1a10;background:var(--gold);border-radius:99px;padding:0 .7em;margin-left:.5em;font-weight:700;vertical-align:.1em}
+
+/* 結果:得点と解説 */
+.comment{display:grid;grid-template-columns:4.4vw 1fr;gap:1.2vw;align-items:center;border-radius:.8vw;padding:1.1vw 1.4vw;margin-top:1.2em;border-left:6px solid var(--gold)}
+.comment .ill{width:4.4vw;height:4.4vw}
+.comment p{font-family:var(--serif);font-size:1.3em;line-height:1.75;color:var(--docink)}
+.comment small{display:block;font-family:var(--sans);font-size:.78em;color:var(--docsub);letter-spacing:.2em}
+.rtable .pt{font-family:var(--num);text-align:right;width:5em;color:var(--gold2);font-weight:700}
+.rtable .tot{font-family:var(--num);text-align:right;width:6em}
+.ph .comment{grid-template-columns:40px 1fr;gap:12px;padding:12px 14px;border-radius:10px}.ph .comment .ill{width:40px;height:40px}.ph .comment p{font-size:14.5px}
+
+/* 診断(詳しく) */
+.dx{display:grid;grid-template-columns:1fr 24vw;gap:3vw;flex:1;min-height:0}
+.dx .left{min-width:0;display:flex;flex-direction:column;overflow:hidden}
+.dx .diag-who{font-size:1.5em;margin-top:.2em}.dx .diag-sub{margin:.2em 0 .2em;font-size:1.25em}.dx .dx-sub{margin-top:.6em}
+.dx-code{display:flex;gap:.4em;margin:.4em 0 .2em}
+.dx-code span{width:2.2em;height:2.2em;display:grid;place-items:center;border:1.5px solid var(--gold);border-radius:6px;font-family:var(--serif);font-weight:700;color:var(--gold2);font-size:1.2em}
+.axes{display:grid;gap:.45em;margin:.6em 0 .6em;max-width:34em}
+.axis{display:grid;grid-template-columns:5em 1fr 5em;gap:.8em;align-items:center;font-size:.98em}
+.axis .bar{position:relative;height:.7em;border-radius:99px;background:var(--rule)}
+.axis .bar i{position:absolute;top:0;bottom:0;border-radius:99px;background:var(--gold)}
+.axis .bar i.l{left:0}.axis .bar i.r{right:0}
+.axis .on{color:var(--gold2);font-weight:700}
+.axis span:last-child{text-align:right}
+.dx-desc{font-family:var(--serif);font-size:1.1em;line-height:1.85;max-width:44em}
+.dx-an{margin-top:.5em;display:grid;gap:.1em;font-size:.98em;line-height:1.7;max-width:48em}
+.dx-an div::before{content:"―";color:var(--gold);margin-right:.5em}
+.dx-sub{display:flex;gap:2.4em;margin-top:.9em;font-size:1em}
+.dx-sub b{color:var(--gold2);font-family:var(--serif)}
+.final{width:100%;border-collapse:collapse;font-size:1.4em;margin-top:.6em}
+.final td{padding:.6em .3em;border-bottom:1px solid var(--rule)}
+.final tr:first-child td{color:var(--gold2);font-size:1.15em}
+.final .pt{font-family:var(--num);text-align:right;font-weight:700}
+.final .crown .ill{width:1.6em;height:1.6em;display:inline-block;vertical-align:-.3em;--acc:var(--shu)}
+.ph .axes{font-size:13px}.ph .axis{grid-template-columns:4.2em 1fr 4.2em}.ph .dx-code span{font-size:15px}
+.ph-diag h3{font-family:var(--serif);color:var(--gold2);font-size:16px;margin:18px 0 6px;letter-spacing:.12em}
+.ph-diag .dx-an{font-size:13.5px}
+
+/* ローカルルールの演出 */
+.fx-rule{display:grid;place-items:center}
+.fx-rule .big{font-family:var(--serif);font-weight:900;font-size:10vw;color:var(--gold2);letter-spacing:.06em;animation:pop 1.6s forwards;margin:0;text-shadow:none}
+.is-ph .fx-rule .big{font-size:20vw}
+.fx-rule small{display:block;font-size:.2em;letter-spacing:.3em;color:var(--fg);margin-top:.4em}
+.fx-skip .chev{position:absolute;top:50%;font-size:14vw;color:var(--gold);opacity:0;animation:hop 1.2s forwards;font-family:var(--serif)}
+@keyframes hop{0%{transform:translate(-40vw,-50%);opacity:0}30%{opacity:1}100%{transform:translate(40vw,-50%);opacity:0}}
+.fx-rev9 .ring{position:absolute;width:34vw;height:34vw;border:1.2vw solid var(--gold);border-right-color:transparent;border-radius:50%;animation:spin 1.4s cubic-bezier(.5,0,.3,1) forwards;opacity:.9}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(-540deg);opacity:0}}
+.fx-back11{animation:inv 1.4s forwards}
+@keyframes inv{0%{backdrop-filter:invert(0)}20%{backdrop-filter:invert(1)}100%{backdrop-filter:invert(0)}}
+.fx-give .flycard{position:absolute;top:45%;left:30%;width:7vw;animation:fly 1.2s cubic-bezier(.5,0,.3,1) forwards}
+@keyframes fly{to{transform:translate(32vw,-6vh) rotate(380deg);opacity:0}}
+.fx-drop .fallcard{position:absolute;top:30%;width:6vw;animation:drop 1.4s cubic-bezier(.5,0,.8,.4) forwards}
+@keyframes drop{to{transform:translateY(80vh) rotate(var(--rot,120deg));opacity:.3}}
+.fx-storm i{position:absolute;width:6px;height:2px;background:#d9c08a;border-radius:2px;animation:sand var(--t) var(--d) linear forwards;opacity:.9}
+@keyframes sand{from{transform:translateX(-10vw)}to{transform:translateX(120vw)}}
+.fx-foul .stampbig{font-family:var(--serif);font-weight:900;font-size:12vw;color:#e2542b;border:1vw solid #e2542b;padding:0 3vw;border-radius:1vw;transform:rotate(-10deg);animation:stampbig .45s cubic-bezier(.3,1.6,.5,1) both,fadeout .5s 1.6s forwards}
+@keyframes stampbig{from{transform:rotate(-10deg) scale(2.4);opacity:0}}
+.fx-spade .bigsuit{width:22vw;height:22vw;color:#1f1a15;animation:slam .5s cubic-bezier(.3,1.6,.5,1) both,fadeout .5s 1.3s forwards}
+.fx-spade .bigsuit path{fill:#f3ead6}
+@keyframes slam{from{transform:scale(3) rotate(-20deg);opacity:0}}
+
+.type-card .tc-code{font-family:var(--serif);color:var(--shu);letter-spacing:.4em;font-size:1em;margin-top:-.6vw}
+.ph-diag .type-card .tc-code{font-size:11px;margin-top:-4px}
+.zukan .btn{min-height:42px}
+.is-tv .zukan{max-width:none;padding:2.4vw 3vw;font-size:1vw}
+.is-tv .zgrid{gap:1vw}.is-tv .zc{padding:1vw}.is-tv .zc .ill{width:6.4vw;height:6.4vw}.is-tv .zc .nm{font-size:1.5em}.is-tv .zc .ct,.is-tv .zc .cd,.is-tv .zc .who{font-size:1em}
+.is-tv .zukan-head h1{font-size:2.4em}.is-tv .zukan-axes{font-size:1.05em;margin:1vw 0 1.4vw}
+.is-tv .zc.open{grid-template-columns:9vw 1fr}.is-tv .zc.open .ill{width:9vw;height:9vw}.is-tv .zc .more{font-size:1.15em}
+
+.brief{overflow:hidden}
+
+.ph-bar.three{grid-template-columns:1.1fr .8fr 1.5fr;font-size:13px}.ph-bar.three .btn{padding:0 .6em;min-height:46px}
+.rank .ill .k{fill:var(--gold2)} .rank .ill .w{fill:var(--fg)} .rank .ill{color:var(--gold2)}
+.doc .rank .ill .k{fill:#1f1a15} .doc .rank .ill .w{fill:#fffdf7} .doc .rank .ill{color:#1f1a15}
+
+/* ローカルルールの演出は議場を少し暗くして読みやすく */
+.fx-rule{background:rgba(26,8,12,.6);animation:dim 1.8s forwards}
+.fx-rule.fx-back11{background:none}
+@keyframes dim{0%{opacity:0}12%{opacity:1}78%{opacity:1}100%{opacity:0}}
+
+.type-card .tc-nm{padding:0 1.4vw;text-align:center;line-height:1.3}
+.ph-diag .type-card .tc-nm{font-size:13px;letter-spacing:.08em;padding:0 14px}
+.ph-diag .ph-bar,.ph-bar.even{grid-template-columns:1fr 1fr}
 
 </style>
 <script>
@@ -720,9 +867,10 @@ function titleOf(G, pid) {
   const i = G.order.indexOf(pid); return i < 0 ? '' : TITLES[G.players.length][i];
 }
 function st(G, pid) {
-  return G.stats[pid] || (G.stats[pid] = { plays: 0, passes: 0, passOpt: 0, strongEarly: 0, strongLate: 0, revs: 0, kiri: 0, tops: 0, bottoms: 0, vetoes: 0, votes: 0, withTop: 0, againstTop: 0, gekokujo: 0, blocked: 0, ochi: 0, climb: 0, fate: 0, voteFor: {}, rounds: 0, rankSum: 0 });
+  return G.stats[pid] || (G.stats[pid] = { think: 0, thinkN: 0, withMaj: 0, leads: 0, multi: 0, plays: 0, passes: 0, passOpt: 0, strongEarly: 0, strongLate: 0, revs: 0, kiri: 0, tops: 0, bottoms: 0, vetoes: 0, votes: 0, withTop: 0, againstTop: 0, gekokujo: 0, blocked: 0, ochi: 0, climb: 0, fate: 0, voteFor: {}, rounds: 0, rankSum: 0 });
 }
 function moment(G, pid, score, text) { (G.moments[pid] = G.moments[pid] || []).push({ score, text, round: G.round }); }
+function rl(G) { return G.rlog || (G.rlog = { revs: [], fouls: [], locals: [], passes: {}, cuts: {}, ochi: null, geko: null, fate: null }); }
 function say(G, text, kind) {
   G.log.push(text); if (G.log.length > 8) G.log.shift();
   if (kind) G.flash = { text, kind, t: Date.now(), n: (G.flash ? G.flash.n : 0) + 1 };
@@ -754,6 +902,7 @@ function removeCpu(G) {
 function startRound(G, now) {
   G.round++; G._rnd = null;
   G.rev = false; G.field = emptyField(); G.passed = []; G.finished = []; G.ochi = null;
+  G.rlog = { revs: [], fouls: [], locals: [], passes: {}, cuts: {}, ochi: null, geko: null, fate: null };
   G.pile = []; G.clears = 0; G.blockedOnce = {}; G.dir = 1; G.jback = false; G.fouls = []; G.after = null; G.fate = null; G.fateWin = null; G.pending = null; G.results = null; G.vote = null;
   G.hands = {};
   const ids = G.players.map(p => p.id);
@@ -823,8 +972,13 @@ function abolish(G) {
 /* 行動:{t:'play',ids} {t:'pass'} {t:'exchange',ids} {t:'param',v} {t:'tsure',id|null} {t:'gekokujo',target} {t:'veto',key} {t:'vote',key} */
 function act(G, pid, a, now) {
   now = now ?? Date.now();
+  const before = G.phase === 'play' ? G.turn : null;
+  if ((a.t === 'play' || a.t === 'pass') && G.phase === 'play' && G.turn === pid && G.turnAt) {
+    const s = st(G, pid); s.think += Math.min(60000, now - G.turnAt); s.thinkN++;
+  }
   const ok = actInner(G, pid, a, now);
   if (ok) G.ver++;
+  if (G.phase === 'play' && G.turn !== before) G.turnAt = now;
   return ok;
 }
 function actInner(G, pid, a, now) {
@@ -833,7 +987,16 @@ function actInner(G, pid, a, now) {
     case 'cpu-': removeCpu(G); return true;
     case 'start':
       if (G.phase !== 'lobby' || G.players.length < 4) return false;
+      G.phase = 'brief'; G.brief = 0; return true;
+    case 'brief':
+      if (G.phase !== 'brief') return false;
+      G.brief = Math.max(0, Math.min(9, a.step | 0)); return true;
+    case 'begin':
+      if (G.phase !== 'brief') return false;
       startRound(G, now); return true;
+    case 'close-vote':
+      if (G.phase !== 'vote') return false;
+      tally(G, now); return true;
     case 'cfg':
       if (G.phase !== 'lobby') return false;
       G.cfg = cleanCfg(a.cfg); return true;
@@ -842,11 +1005,11 @@ function actInner(G, pid, a, now) {
       if (G.phase === 'enacted') { startRound(G, now); return true; }
       return false;
     case 'finish':
-      if (G.phase === 'roundEnd' || G.phase === 'enacted') { G.diag = diagnose(G); G.phase = 'diag'; return true; }
+      if (G.phase === 'roundEnd' || G.phase === 'enacted') { G.diag = diagnose(G); G.final = standings(G); G.phase = 'diag'; return true; }
       return false;
     case 'again':
       if (G.phase !== 'diag') return false;
-      Object.assign(G, { phase: 'lobby', round: 0, order: null, laws: [], stats: {}, moments: {}, diag: null, results: null, history: [] });
+      Object.assign(G, { phase: 'lobby', round: 0, order: null, laws: [], stats: {}, moments: {}, diag: null, final: null, results: null, history: [], points: {}, streak: null });
       return true;
     case 'exchange': {
       if (G.phase !== 'exchange') return false;
@@ -885,7 +1048,7 @@ function actInner(G, pid, a, now) {
       if (!G.pending.targets.includes(a.target)) return false;
       const t = a.target, h = G.hands[pid]; G.hands[pid] = G.hands[t]; G.hands[t] = h;
       say(G, `下剋上革命。${pName(G, pid)}さんと${pName(G, t)}さんの手札が入れ替わりました。`, 'rev');
-      st(G, pid).gekokujo++;
+      st(G, pid).gekokujo++; rl(G).geko = [pid, t];
       moment(G, pid, 9, `第${G.round}回、下剋上革命で${pName(G, t)}さんと手札を入れ替えた`);
       abolish(G);
       G.phase = 'play'; G.pending = null;
@@ -898,10 +1061,10 @@ function actInner(G, pid, a, now) {
       ids.forEach(c => G.hands[pid].splice(G.hands[pid].indexOf(c), 1));
       if (a.t === 'give7') {
         const to = G.pending.to; G.hands[to] = cardSort(G.hands[to].concat(ids));
-        if (ids.length) say(G, `7渡し。${pName(G, pid)}さんが${pName(G, to)}さんに${ids.length}枚渡しました。`, 'rule');
+        if (ids.length) say(G, `7渡し。${pName(G, pid)}さんが${pName(G, to)}さんに${ids.length}枚渡しました。`, 'r-give7');
       } else {
         G.pile.push(...ids);
-        if (ids.length) say(G, `10捨て。${pName(G, pid)}さんが${ids.length}枚捨てました。`, 'rule');
+        if (ids.length) say(G, `10捨て。${pName(G, pid)}さんが${ids.length}枚捨てました。`, 'r-drop10');
       }
       if (G.hands[pid].length === 0) G.lastFoulish = false;
       G.phase = 'play'; G.pending = null;
@@ -945,14 +1108,14 @@ function doPlay(G, pid, ids, now) {
   G.field.top = p; G.field.topIds = cardSort(ids); G.field.topPid = pid; G.field.plays++;
   G.field.stack = (G.field.stack || []).concat([{ ids: G.field.topIds, pid, k: G.ver }]).slice(-4);
   G.lastPid = pid; G.leadPass = 0;
-  const s = st(G, pid); s.plays++;
+  const s = st(G, pid); s.plays++; if (!prevTop) s.leads++; if (ids.length >= 2) s.multi++;
   const strongN = ids.filter(c => { const r = parse(c).r; return r === 15 || r === JOKER_V; }).length;
   if (strongN) { if (hand.length >= 6) s.strongEarly += strongN; if (hand.length <= 2) s.strongLate += strongN; }
   G.history.push({ r: G.round, pid, ids: G.field.topIds, d: describe(p) }); if (G.history.length > 60) G.history.shift();
   say(G, `${pName(G, pid)}さんが${describe(p)}を出しました。`);
   // 運命の一枚
   if (G.fate && ids.includes(G.fate) && hand.length === 0) {
-    G.fateWin = pid; st(G, pid).fate++;
+    G.fateWin = pid; st(G, pid).fate++; rl(G).fate = pid;
     say(G, `${pName(G, pid)}さんが当たり札で上がりました。次の回で階級が二つ上がります。`, 'law');
     moment(G, pid, 8, `第${G.round}回、当たり札の${label(G.fate)}で上がった`);
   }
@@ -961,15 +1124,15 @@ function doPlay(G, pid, ids, now) {
   const special = G.cfg.spade3 && p.s3 && prevTop && prevTop.r === JOKER_V ? 'spade3' : (G.cfg.storm && p.type === 'set' && p.n === 3 && p.r === 3) ? 'storm' : null;
   const cut = (p.has8 && G.cfg.eight) || !!special;
   if (cut) ret.kind = 'cut';
-  if (special === 'spade3') say(G, 'スペ3返し。ジョーカーを破り、場が流れます。', 'cut');
-  if (special === 'storm') say(G, '砂嵐。3の3枚で場が流れます。', 'cut');
+  if (special === 'spade3') { say(G, 'スペ3返し。ジョーカーを破り、場が流れます。', 'r-spade3'); rl(G).locals.push('spade3'); }
+  if (special === 'storm') { say(G, '砂嵐。3の3枚で場が流れます。', 'r-storm'); rl(G).locals.push('storm'); }
   // 反則上がりの判定に使う
   G.lastFoulish = hand.length === 0 && G.cfg.foul && (ids.some(c => { const r = parse(c).r; return r === 15 || r === JOKER_V; }) || (p.has8 && G.cfg.eight) || special === 'spade3');
   const queue = [];
   if (!cut) {
-    if (G.cfg.skip5 && nOf(5)) { ret.skip = nOf(5); say(G, `5飛ばし。${ret.skip}人飛ばします。`, 'rule'); }
-    if (G.cfg.rev9 && nOf(9)) { G.dir = -(G.dir || 1); say(G, `9リバース。順番が${G.dir === 1 ? '元の向き' : '逆回り'}になりました。`, 'rule'); }
-    if (G.cfg.back11 && nOf(11)) { G.jback = !G.jback; say(G, G.jback ? '11バック。場が流れるまで強さが逆になります。' : '11バックが打ち消されました。', 'rule'); }
+    if (G.cfg.skip5 && nOf(5)) { ret.skip = nOf(5); say(G, `5飛ばし。${ret.skip}人飛ばします。`, 'r-skip5'); rl(G).locals.push('skip5'); }
+    if (G.cfg.rev9 && nOf(9)) { G.dir = -(G.dir || 1); say(G, `9リバース。順番が${G.dir === 1 ? '元の向き' : '逆回り'}になりました。`, 'r-rev9'); rl(G).locals.push('rev9'); }
+    if (G.cfg.back11 && nOf(11)) { G.jback = !G.jback; say(G, G.jback ? '11バック。場が流れるまで強さが逆になります。' : '11バックが打ち消されました。', 'r-back11'); rl(G).locals.push('back11'); }
   }
   if (G.cfg.give7 && nOf(7)) queue.push({ type: 'give7', pid, n: nOf(7) });
   if (G.cfg.drop10 && nOf(10)) queue.push({ type: 'drop10', pid, n: nOf(10) });
@@ -978,7 +1141,8 @@ function doPlay(G, pid, ids, now) {
   if (G.cfg.rev && ((p.type === 'set' && p.n >= 4) || (G.cfg.seqrev && p.type === 'seq' && p.n >= 4))) {
     G.rev = !G.rev; s.revs++;
     const hadLaws = G.laws.length > 0;
-    say(G, `${pName(G, pid)}さんが革命を起こしました。`, 'rev');
+    say(G, p.type === 'seq' ? `${pName(G, pid)}さんが階段で革命を起こしました。` : `${pName(G, pid)}さんが革命を起こしました。`, 'rev');
+    rl(G).revs.push(pid);
     moment(G, pid, hadLaws ? 6 : 5, hadLaws ? `第${G.round}回、革命を起こして法律をすべて廃止した` : `第${G.round}回、革命を起こした`);
     if (lawParam(G.laws, 'gekokujo') && G.order) {
       const mine = G.order.indexOf(pid);
@@ -990,7 +1154,7 @@ function doPlay(G, pid, ids, now) {
     }
     abolish(G);
   }
-  if (cut && !special) { s.kiri++; say(G, '8切りで場が流れます。', 'cut'); }
+  if (cut && !special) { s.kiri++; say(G, '8切りで場が流れます。', 'cut'); rl(G).cuts[pid] = (rl(G).cuts[pid] || 0) + 1; }
   proceed(G, now);
   return true;
 }
@@ -1015,7 +1179,7 @@ function finishCheck(G, pid, now, ret) {
   if (G.hands[pid].length === 0 && G.lastFoulish) {
     G.lastFoulish = false;
     G.fouls.push(pid);
-    say(G, `反則上がり。${pName(G, pid)}さんは最下位になります。`, 'out');
+    say(G, `反則上がり。${pName(G, pid)}さんは最下位になります。`, 'r-foul'); rl(G).fouls.push(pid);
     moment(G, pid, 6, `第${G.round}回、反則上がりで最下位になった`);
   } else if (G.hands[pid].length === 0) {
     G.finished.push(pid);
@@ -1025,6 +1189,7 @@ function finishCheck(G, pid, now, ret) {
     if (place === 1 && G.cfg.ochi && G.order && G.order[0] !== pid && isActive(G, G.order[0])) {
       G.ochi = G.order[0]; st(G, G.ochi).ochi++;
       say(G, `都落ち。${pName(G, G.ochi)}さんは大貧民になります。`, 'out');
+      rl(G).ochi = G.ochi;
       moment(G, G.ochi, 6, `第${G.round}回、都落ちで大富豪から大貧民になった`);
     }
     if (lawParam(G.laws, 'tsure') && active(G).length >= 2) {
@@ -1073,6 +1238,7 @@ function doPass(G, pid, now) {
   const ctx = makeCtx(G);
   if (candidates(G.hands[pid], ctx).length) s.passOpt++;
   G.passed.push(pid);
+  rl(G).passes[pid] = (rl(G).passes[pid] || 0) + 1;
   say(G, `${pName(G, pid)}さんはパス。`);
   G.blockedOnce = G.blockedOnce || {};
   if (lawParam(G.laws, 'agari') && G.hands[pid].length === 1 && !G.blockedOnce[pid]) {
@@ -1110,10 +1276,50 @@ function endRound(G, now) {
       if (i === 0 && pi === n - 1) moment(G, id, 7, `第${G.round}回、大貧民から大富豪になった`);
     }
   });
-  G.results = order.map((id, i) => ({ id, title: TITLES[n][i], prev: prev ? TITLES[n][prev.indexOf(id)] : null }));
+  G.points = G.points || {};
+  G.results = order.map((id, i) => {
+    const pts = POINTS[TITLES[n][i]];
+    G.points[id] = (G.points[id] || 0) + pts;
+    return { id, title: TITLES[n][i], prev: prev ? TITLES[n][prev.indexOf(id)] : null, pts, total: G.points[id] };
+  });
+  // 大富豪の連続記録
+  G.streak = G.streak && G.streak.id === order[0] ? { id: order[0], n: G.streak.n + 1 } : { id: order[0], n: 1 };
+  G.comment = commentary(G, order, prev);
   G.order = order;
   G.phase = 'roundEnd'; G.pending = null; G.turn = null;
   say(G, `第${G.round}回が終わりました。大富豪は${pName(G, order[0])}さんです。`);
+}
+
+/* ---------- 得点と解説 ---------- */
+const POINTS = { '大富豪': 5, '富豪': 3, '平民': 2, '貧民': 1, '大貧民': 0 };
+function standings(G) {
+  const pts = G.points || {};
+  return G.players.map(p => ({ id: p.id, pts: pts[p.id] || 0, tops: st(G, p.id).tops, avg: st(G, p.id).rounds ? st(G, p.id).rankSum / st(G, p.id).rounds : 9 }))
+    .sort((a, b) => b.pts - a.pts || b.tops - a.tops || a.avg - b.avg);
+}
+function pick(G, arr) { return arr[Math.floor(R(G) * arr.length)]; }
+function commentary(G, order, prev) {
+  const L = rl(G), n = order.length, nm = id => pName(G, id) + 'さん';
+  const top = order[0], last = order[n - 1];
+  const c = [];
+  if (L.geko) c.push([9, pick(G, [`${nm(L.geko[0])}の下剋上革命で、${nm(L.geko[1])}の手札がまるごと持っていかれました。議場騒然です。`, `手札の総入れ替え。${nm(L.geko[1])}はしばらく自分の手札が信じられないでしょう。`])]);
+  if (L.ochi) c.push([8, pick(G, [`${nm(L.ochi)}、まさかの都落ち。王冠は思ったより重かったようです。`, `${nm(L.ochi)}は大富豪から一気に大貧民へ。政権交代の瞬間でした。`])]);
+  if (L.fouls.length) c.push([8, pick(G, [`${nm(L.fouls[0])}、最後の一枚で反則。勝ち方にも作法があります。`, `強い札で決めたつもりが反則上がり。${nm(L.fouls[0])}には次回に期待しましょう。`])]);
+  if (L.fate) c.push([7, `当たり札で上がった${nm(L.fate)}。運も実力のうち、と本人は言っています。`]);
+  if (prev && prev[prev.length - 1] === top) c.push([8, pick(G, [`大貧民から大富豪へ。${nm(top)}の大逆転劇でした。`, `前回の大貧民が今回の大富豪。${nm(top)}、これぞ下剋上です。`])]);
+  if (L.revs.length >= 2) c.push([7, `革命が${L.revs.length}回。強さが行ったり来たりの、落ち着かない回でした。`]);
+  else if (L.revs.length === 1) c.push([5, pick(G, [`${nm(L.revs[0])}の革命で流れが変わりました。強い札を温存していた人ほど痛い回です。`, `革命を起こしたのは${nm(L.revs[0])}。議場の空気が一変しました。`])]);
+  if (G.streak && G.streak.n >= 3) c.push([7, `${nm(top)}、${G.streak.n}期連続の大富豪。もはや長期政権です。`]);
+  else if (G.streak && G.streak.n === 2) c.push([4, `${nm(top)}が大富豪を守りました。この政権、なかなか崩れません。`]);
+  const pm = Object.entries(L.passes).sort((a, b) => b[1] - a[1])[0];
+  if (pm && pm[1] >= 6) c.push([4, `${nm(pm[0])}のパスは${pm[1]}回。沈黙は金、とは限りません。`]);
+  const cm = Object.entries(L.cuts).sort((a, b) => b[1] - a[1])[0];
+  if (cm && cm[1] >= 2) c.push([4, `${nm(cm[0])}の8切りが${cm[1]}回。場を流す名人です。`]);
+  if (L.locals.length >= 4) c.push([5, `ローカルルールが${L.locals.length}回も発動。もはや誰も強さを覚えていません。`]);
+  if (prev && prev[0] === last) c.push([6, `前回の大富豪、${nm(last)}が今回は大貧民。栄枯盛衰です。`]);
+  c.push([1, pick(G, [`${nm(top)}が手堅く大富豪に。次の法律は${nm(top)}の思うまま、とはいかないかもしれません。`, `${nm(top)}の安定した答弁で決着。${nm(last)}は次の回で巻き返せるでしょうか。`, `大富豪は${nm(top)}、大貧民は${nm(last)}。カード交換が楽しみです。`])]);
+  c.sort((a, b) => b[0] - a[0]);
+  return c[0][1];
 }
 
 /* ---------- 法律の選定 ---------- */
@@ -1142,7 +1348,7 @@ function startLawSelection(G, now) {
 }
 function startVote(G, options, vetoed, now) {
   G.phase = 'vote'; G.pending = null;
-  G.vote = { options, vetoed, votes: {}, deadline: now + G.cfg.voteSec * 1000, result: null };
+  G.vote = { options, vetoed, votes: {}, result: null };
   G.cpuAt = now + 4000;
 }
 function tally(G, now) {
@@ -1158,6 +1364,7 @@ function tally(G, now) {
     if (id !== top && topVote) { if (v.votes[id] === topVote) s.withTop++; else s.againstTop++; }
   }
   v.counts = cnt; v.tie = cnt[best[0]] === cnt[best[1]];
+  for (const id in v.votes) { const s = st(G, id); if (v.votes[id] === win) s.withMaj++; }
   enact(G, win);
 }
 function enact(G, win) {
@@ -1184,7 +1391,6 @@ function waitingFor(G) {
 function isCpu(G, pid) { const p = G.players.find(x => x.id === pid); return !!(p && p.cpu); }
 function tick(G, now, auto) {
   now = now ?? Date.now();
-  if (G.phase === 'vote' && now >= G.vote.deadline) { tally(G, now); G.ver++; return true; }
   if (now < G.cpuAt) return false;
   const w = waitingFor(G).filter(id => isCpu(G, id) || (auto && auto(id)));
   if (!w.length) return false;
@@ -1250,46 +1456,111 @@ function cpuDecide(G, pid) {
 function harm(k) { const i = HARM_TOP.indexOf(k); return i < 0 ? 0 : HARM_TOP.length - i; }
 
 /* ---------- 本性診断 ---------- */
-const TYPES = {
-  dictator: { name: '独裁型', sub: '法律を握って離さない人', desc: '大富豪の座に座ると、廃案の札を迷わず切ります。勝つための手段を選ばない、筋の通った権力者です。' },
-  rebel:    { name: '革命家', sub: 'ひっくり返すことに燃える人', desc: '強い者がいると、つい倒したくなります。場の空気を一度で塗り替えるのはたいていこの人です。' },
-  watcher:  { name: '様子見の名人', sub: '出せるのに出さない人', desc: '手札に余裕があっても、まず周りを見ます。最後に笑うための我慢ができる人です。' },
-  charger:  { name: '切り込み隊長', sub: '強い札から行く人', desc: '2もジョーカーも、使いどきは今だと考えます。場を動かすのはいつもこの人の一手です。' },
-  hoarder:  { name: '温存の鬼', sub: '最後の一枚まで隠す人', desc: '強い札は最後の最後まで手放しません。終盤の一撃のために序盤の負けを受け入れられます。' },
-  follower: { name: '長いものに巻かれる型', sub: '権力者の隣にいる人', desc: '投票ではたいてい大富豪と同じ側に立ちます。逆らわないことで生き残る、現実的な人です。' },
-  contrarian: { name: '天邪鬼', sub: '大富豪の反対に入れる人', desc: '大富豪が右と言えば左に入れます。交渉の時間がいちばん楽しいのはこの人です。' },
-  phoenix:  { name: '不死鳥', sub: '落ちても戻ってくる人', desc: '大きく沈んでも、次の回には上に戻ってきます。順位の上がり下がりがこの夜の見どころでした。' },
+/* 4つの軸で立ち回りを測り、16タイプに分ける */
+const AXES = [
+  { k: 'A', l: '攻め', r: '守り', lc: '攻', rc: '守', lk: 'A', rk: 'D' },
+  { k: 'P', l: '体制派', r: '反骨派', lc: '権', rc: '反', lk: 'P', rk: 'R' },
+  { k: 'C', l: '熟考', r: '直感', lc: '計', rc: '直', lk: 'C', rk: 'I' },
+  { k: 'G', l: '協調', r: '独立', lc: '群', rc: '孤', lk: 'G', rk: 'S' },
+];
+const TYPES16 = {
+  APCG: { name: '敏腕幹事長', catch: '勝ち筋を読んで、みんなをまとめる人',
+    desc: '強い札を早めに切って場を握りつつ、投票では大勢と足並みをそろえます。先を読んで動き、権力の側に立つことをためらいません。飲み会でも幹事を任されがちな、頼れる仕切り役です。',
+    strong: '場の流れを作るのが早く、交渉でも味方を集めやすい。', weak: '主導権を握りたがるぶん、革命ひとつで足元が崩れやすい。', match: 'DPIG', rival: 'ARIS' },
+  APCS: { name: '冷徹な宰相', catch: '誰にも相談せず、勝つ手だけを選ぶ人',
+    desc: '攻めの手を計算ずくで打ち、大富豪の側に立ちますが、投票では多数派に流されません。自分の答えを信じて黙々と勝ちを積み上げる、静かな実力者です。',
+    strong: '判断がぶれず、終盤の詰めが正確。', weak: '周りへの関心が薄く、気づけば孤立していることも。', match: 'DPCS', rival: 'ARCG' },
+  APIG: { name: '人気の大臣', catch: '勢いと愛嬌で票を集める人',
+    desc: '考えるより先に札が出る、テンポのいい攻め手です。権力の側にいながら投票では皆と同じ側に立つので、敵を作りにくいタイプ。この人がいると場が明るくなります。',
+    strong: '判断が速く、場が止まらない。周りを巻き込む力がある。', weak: '勢い任せで、強い札を早く使い切りがち。', match: 'APCG', rival: 'DRCS' },
+  APIS: { name: '独走する首相', catch: '思いついたら即実行の、王様気質',
+    desc: '強い札をためらわずに切り、権力をつかんだら離しません。投票でも人に合わせず自分の道を行く、いちばん分かりやすい王様タイプです。勝つときは圧勝します。',
+    strong: '迷わないので押しが強く、場を一気に持っていける。', weak: '引き際を知らず、都落ちの危険といつも隣り合わせ。', match: 'DRIG', rival: 'ARCS' },
+  ARCG: { name: '革命の参謀', catch: '仲間を集めて、計画的に政権を倒す人',
+    desc: '攻めの姿勢で大富豪に挑みつつ、投票では多数派をまとめて味方につけます。革命の時機を読み、ひっくり返すための準備を重ねる策略家です。',
+    strong: '下剋上の筋書きを描け、交渉で票を動かせる。', weak: '計画どおりに進まないと、急に手が止まる。', match: 'DRCG', rival: 'APCS' },
+  ARCS: { name: '孤高の革命家', catch: 'ひとりで機をうかがい、一撃でひっくり返す人',
+    desc: '大富豪の座には興味がなく、それを倒すことに燃えるタイプです。仲間は作らず、強い札と革命の機会を静かに数えています。決めどころでは誰よりも大胆です。',
+    strong: '勝負どころを外さない。一手で流れを変えられる。', weak: '味方がいないので、失敗したときに挽回しにくい。', match: 'APIG', rival: 'APIS' },
+  ARIG: { name: '民衆の旗手', catch: '勢いで先頭に立ち、皆を引っ張る人',
+    desc: '権力に逆らうときも明るく、真っ先に声を上げます。考え込むより行動が早く、投票では仲間と同じ側に立つので、気づけば一大勢力の中心にいます。',
+    strong: '場の空気を変える力がある。仲間が自然と集まる。', weak: '勢いが空回りすると、仲間ごと沈むことも。', match: 'ARCG', rival: 'DPCS' },
+  ARIS: { name: '一匹狼の反逆児', catch: '権力が嫌いで、自分の勘だけを信じる人',
+    desc: '大富豪が右と言えば左に行き、強い札も気分で切ります。誰の味方にもならない代わりに、誰にも読まれません。この人が動くと場がざわつきます。',
+    strong: '予想できない一手で、強者の計算を狂わせる。', weak: '気分の波が大きく、順位も大きく上下しがち。', match: 'DRIS', rival: 'APCG' },
+  DPCG: { name: '老練な官僚', catch: '波風を立てず、確実に勝ちを拾う人',
+    desc: '無理な勝負はせず、強い札を手元に残しながら、大勢と同じ側に静かに立ちます。目立たないのに、終わってみると上位にいる。経験に裏打ちされた安定感があります。',
+    strong: '大崩れしない。最後まで手札に余裕がある。', weak: '慎重すぎて、勝てる場面を見送ることがある。', match: 'APCG', rival: 'ARIS' },
+  DPCS: { name: '沈黙の書記官', catch: '黙って全部見ている人',
+    desc: '口数は少なく、出された札をすべて覚えているかのような落ち着きぶりです。権力の側に立ちつつ、投票では自分の判断を通します。最後に一番得をしているのはたいていこの人です。',
+    strong: '状況把握が正確で、ミスが少ない。', weak: '自分から場を動かすことが少なく、流れに置いていかれることも。', match: 'APCS', rival: 'ARIG' },
+  DPIG: { name: '空気を読む陣笠', catch: 'みんなと同じ側にいると落ち着く人',
+    desc: '強い人の側について、投票でも多数派に乗る、平和を愛するタイプです。深く考え込まずに場に合わせられるので、誰とでも遊びやすい。いつの間にか中堅の座に収まっています。',
+    strong: '敵を作らず、どんな顔ぶれでもなじめる。', weak: '流されやすく、自分の勝ち筋を見失いがち。', match: 'APCG', rival: 'ARCS' },
+  DPIS: { name: '気まぐれな傍聴人', catch: '眺めているだけのようで、たまに鋭い人',
+    desc: '大きな勝負には加わらず、権力の側からのんびり場を眺めています。ところが投票では急に独自の一票を投じるなど、気まぐれに存在感を出します。',
+    strong: '肩の力が抜けていて、プレッシャーに強い。', weak: '本気を出すのが遅く、気づくと手遅れのことも。', match: 'DRIS', rival: 'ARCG' },
+  DRCG: { name: '裏で糸を引く黒幕', catch: '表に出ずに、票と流れを操る人',
+    desc: '自分では強い札を切らず、守りを固めながら反体制の側で多数派を作ります。誰かが革命を起こすとき、その裏にはたいていこの人の根回しがあります。',
+    strong: '自分は傷つかずに、大富豪を引きずり下ろせる。', weak: '自分が大富豪になると、急に守るものが増えて動きが鈍る。', match: 'ARCG', rival: 'APIG' },
+  DRCS: { name: '機をうかがう隠者', catch: '最後の最後に動く人',
+    desc: '序盤はひたすら見送り、強い札を抱えて終盤を待ちます。権力にもなびかず、投票でも群れません。静かに力をためて、ここぞという一手で場をさらいます。',
+    strong: '終盤の逆転力は随一。', weak: 'ためすぎて、出しどころを逃すことがある。', match: 'DPCS', rival: 'APIG' },
+  DRIG: { name: '声なき多数派', catch: '目立たないけれど、いつも勝ち馬に乗っている人',
+    desc: '自分からは攻めず、反体制の空気が強まるとさっとそちらに乗ります。考え込まずに大勢と同じ側を選ぶので、投票ではいつも勝つ側にいます。',
+    strong: '流れを読む嗅覚があり、負け側に立たない。', weak: '自分の手で勝ちをつかむ場面が少ない。', match: 'APIS', rival: 'DPCS' },
+  DRIS: { name: '天邪鬼な風来坊', catch: 'つかみどころがなく、気分で逆張りする人',
+    desc: '守りに入ったかと思えば反対票を投じ、皆が右を向けば左を向きます。理由を聞いても「なんとなく」。それでも場をかき回して、思わぬ結果を連れてきます。',
+    strong: '誰にも読まれず、場を混ぜ返せる。', weak: '一貫性がないので、味方になってもらいにくい。', match: 'ARIS', rival: 'DPCG' },
 };
+function zs(arr) { const m = arr.reduce((a, b) => a + b, 0) / arr.length; const sd = Math.sqrt(arr.reduce((a, b) => a + (b - m) * (b - m), 0) / arr.length); return arr.map(x => sd < 1e-9 ? 0 : (x - m) / sd); }
 function diagnose(G) {
+  const ids = G.players.map(p => p.id), N = ids.length;
+  const S = ids.map(id => st(G, id));
+  const rounds = S.map(s => Math.max(1, s.rounds));
+  const turns = S.map(s => Math.max(1, s.plays + s.passes));
+  const f = fn => zs(S.map((s, i) => fn(s, i)));
+  const passOptRate = S.map((s, i) => s.passOpt / turns[i]);
+  const think = S.map(s => s.thinkN ? s.think / s.thinkN : 0);
+  const anyVotes = S.some(s => s.votes > 0);
+  const raw = {
+    A: f((s, i) => s.strongEarly / rounds[i]).map((v, i, a) => v + zs(passOptRate.map(x => -x))[i] + 0.5 * f((s, k) => s.kiri / rounds[k])[i] + 0.5 * f(s => s.plays ? s.multi / s.plays : 0)[i]),
+    P: f(s => (s.withTop + 1) / (s.withTop + s.againstTop + 2)).map((v, i) => v + 0.5 * f((s, k) => s.tops / rounds[k])[i] + 0.3 * f(s => s.vetoes)[i] - f(s => s.revs + s.gekokujo * 2)[i]),
+    C: zs(think).map((v, i) => v + f((s, k) => s.strongLate / rounds[k])[i]),
+    G: anyVotes ? f(s => (s.withMaj + 1) / (s.votes + 2)) : zs(passOptRate.map(x => -Math.abs(x - passOptRate.reduce((a, b) => a + b, 0) / N))),
+  };
+  const fin = standings(G);
   const res = {};
-  const rounds = Math.max(1, G.round);
-  G.players.forEach(p => {
-    const s = st(G, p.id);
-    const turns = s.plays + s.passes || 1;
-    const sc = {
-      dictator: s.tops / rounds * 3 + s.vetoes * 0.6,
-      rebel: s.revs * 1.6 + s.gekokujo * 2.5,
-      watcher: (s.passOpt / turns) * 6,
-      charger: (s.strongEarly * 1.2 + s.kiri * 0.6) / rounds,
-      hoarder: s.strongLate * 1.6 / rounds,
-      follower: (s.withTop + s.againstTop) >= 2 ? (s.withTop / (s.withTop + s.againstTop)) * 3 : 0,
-      contrarian: (s.withTop + s.againstTop) >= 2 ? (s.againstTop / (s.withTop + s.againstTop)) * 3.2 : 0,
-      phoenix: (s.climb * 1.0 + s.ochi * 0.5 + s.fate) / rounds * 1.5,
-    };
-    const ty = Object.keys(sc).sort((a, b) => sc[b] - sc[a])[0];
-    const ms = (G.moments[p.id] || []).slice().sort((a, b) => b.score - a.score || b.round - a.round);
-    const favLaw = Object.keys(s.voteFor).sort((a, b) => s.voteFor[b] - s.voteFor[a])[0];
-    res[p.id] = {
-      type: ty, ...TYPES[ty],
-      moment: ms[0] ? ms[0].text : null,
+  ids.forEach((id, i) => {
+    const s = S[i];
+    const axes = AXES.map(ax => { const v = Math.tanh(raw[ax.k][i] / 2); const left = v >= 0; return { l: ax.l, r: ax.r, left, pct: Math.round(50 + 50 * Math.abs(v)), code: left ? ax.lk : ax.rk, ch: left ? ax.lc : ax.rc }; });
+    const code = axes.map(a => a.code).join('');
+    const T = TYPES16[code];
+    // 今夜の立ち回りを文章にする
+    const rankOf = (vals, hi) => { const sorted = vals.slice().sort((a, b) => hi ? b - a : a - b); return sorted.indexOf(vals[i]) + 1; };
+    const where = (vals) => { const r = rankOf(vals, true); return r === 1 ? 'いちばん多い' : r === N ? 'いちばん少ない' : r <= N / 2 ? '多いほう' : '少ないほう'; };
+    const A = [];
+    A.push(`出せるのに見送ったのは${s.passOpt}回で、全員の中で${where(S.map(x => x.passOpt))}です。`);
+    if (s.strongEarly || s.strongLate) A.push(s.strongEarly >= s.strongLate ? `2とジョーカーは早めに使う派で、序盤に${s.strongEarly}枚を切りました。` : `2とジョーカーは最後まで温存する派で、残り3枚以下で${s.strongLate}枚を出しました。`);
+    if (s.thinkN) { const sec = think[i] / 1000; const r = rankOf(think, true); A.push(`一手にかける時間は平均${sec.toFixed(1)}秒で、${r === 1 ? 'いちばんの長考派' : r === N ? 'いちばんの即決派' : r <= N / 2 ? 'じっくり考えるほう' : '決断が早いほう'}でした。`); }
+    if (s.votes) A.push(`投票は${s.votes}回。大富豪と同じ側に${s.withTop}回、反対側に${s.againstTop}回入れ、可決した側に乗ったのは${s.withMaj}回です。`);
+    if (s.revs) A.push(`革命を${s.revs}回起こしました。${s.gekokujo ? `うち${s.gekokujo}回は下剋上革命です。` : ''}`);
+    if (s.ochi) A.push(`都落ちを${s.ochi}回経験しています。`);
+    if (s.kiri >= 2) A.push(`8切りは${s.kiri}回。場を流して主導権を取り返すのが得意です。`);
+    if (s.vetoes) A.push(`大富豪として法律案を${s.vetoes}回、廃案にしました。`);
+    const place = fin.findIndex(x => x.id === id) + 1;
+    A.push(`得点は${fin[place - 1].pts}点で、総合${place}位でした。`);
+    const ms = (G.moments[id] || []).slice().sort((a, b) => b.score - a.score || b.round - a.round);
+    res[id] = {
+      type: code, code, chars: axes.map(a => a.ch), axes, name: T.name, sub: T.catch, catch: T.catch, desc: T.desc, strong: T.strong, weak: T.weak,
+      match: { code: T.match, name: TYPES16[T.match].name }, rival: { code: T.rival, name: TYPES16[T.rival].name },
+      analysis: A, moment: ms[0] ? ms[0].text : null, pts: fin[place - 1].pts, place,
       nums: [
-        { k: 'パスした回数', v: `${s.passes}回` },
+        { k: '得点', v: `${fin[place - 1].pts}点` },
+        { k: '大富豪', v: `${s.tops}回` },
         { k: '革命', v: `${s.revs}回` },
-        { k: '大富豪になった回数', v: `${s.tops}回` },
-        { k: '大富豪と同じ側への投票', v: (s.withTop + s.againstTop) ? `${s.withTop}/${s.withTop + s.againstTop}票` : 'なし' },
+        { k: 'パス', v: `${s.passes}回` },
       ],
-      favLaw: favLaw ? LAWS[favLaw].name() : null,
-      avg: s.rounds ? s.rankSum / s.rounds : null,
     };
   });
   return res;
@@ -1319,7 +1590,7 @@ function pubView(G, now) {
       votes: G.vote.result ? G.vote.votes : null,
     } : null,
     results: G.results, order: G.order, titles: TITLES[n] || [],
-    diag: G.diag, clears: G.clears, leader: (G.players.find(p => !p.cpu) || {}).id || null,
+    diag: G.diag, final: G.final || null, points: G.points || {}, comment: G.comment || null, brief: G.brief || 0, streak: G.streak || null, clears: G.clears, leader: (G.players.find(p => !p.cpu) || {}).id || null,
     lawInfo: Object.fromEntries(LAW_KEYS.map(k => [k, { name: LAWS[k].name(), text: LAWS[k].text() }])),
   };
 }
@@ -1343,7 +1614,7 @@ function privView(G, pid) {
   return v;
 }
 
-const api = { LOCAL_RULES, RULES, defaultCfg, cleanCfg, lawUsable, SUITS, SUIT_CH, SUIT_NAME, RL, LAWS, LAW_KEYS, KANJI, TITLES, VOTE_MS, parse, label, cardSort, makeCtx, interpret, bestPlay, describe, candidates, strength,
+const api = { AXES, TYPES16, POINTS, standings, LOCAL_RULES, RULES, defaultCfg, cleanCfg, lawUsable, SUITS, SUIT_CH, SUIT_NAME, RL, LAWS, LAW_KEYS, KANJI, TITLES, VOTE_MS, parse, label, cardSort, makeCtx, interpret, bestPlay, describe, candidates, strength,
   newGame, addPlayer, addCpu, act, tick, pubView, privView, waitingFor, diagnose, paramOptions, cpuDecide };
 if (typeof module !== 'undefined') module.exports = api; else root.Engine = api;
 })(this);
@@ -1364,50 +1635,50 @@ const SUIT_PATH = {
 };
 function suit(s, cls) { return `<svg class="suit ${cls || ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="${SUIT_PATH[s]}" fill="currentColor"/></svg>`; }
 
-/* 絵札の肖像(60×80)。cは差し色(マークの色) */
+/* 絵札:上下対称の肖像。墨の線に、金・朱・マークの色を差す */
+const HALF = {
+  13: `<path class="g" d="M17 15L16 5l5.5 4.5L25 2.5l5 5 5-5 3.5 7L44 5l-1 10z"/><circle class="a" cx="25" cy="3" r="1.4"/><circle class="a" cx="35" cy="3" r="1.4"/><circle class="a" cx="30" cy="11" r="1.6"/>
+    <path class="s" d="M3 40c1-5 6-8 14-9l13 6 13-6c8 1 13 4 14 9z"/><path class="w" d="M17 31l13 6 13-6v4l-13 5-13-5z"/>
+    <path class="w" d="M20 15h20v6c0 5.5-4.5 9-10 9s-10-3.5-10-9z"/><path class="s" d="M20 22c0 7 4.5 10 10 10s10-3 10-10c-2 3-5 4-10 4s-8-1-10-4z"/>
+    <path d="M24.5 20h2.6M32.9 20h2.6M30 20.5v3M26.5 25.5c2-1 5-1 7 0"/><path class="gs" d="M51 15v25"/><circle class="g" cx="51" cy="13" r="2.6"/>`,
+  12: `<path class="s" d="M15 34c-2-9 0-22 15-22s17 13 15 22c-3-3-4-8-4-12H19c0 4-1 9-4 12z"/><path class="g" d="M21 12l2.2-5.5 3.2 3 3.6-5.5 3.6 5.5 3.2-3L39 12z"/><circle class="a" cx="30" cy="6.5" r="1.4"/>
+    <path class="s" d="M4 40c2-6 8-8 15-8.5l11 5 11-5c7 .5 13 2.5 15 8.5z"/><path class="w" d="M19 31.5l11 5 11-5 1 3-12 5-12-5z"/>
+    <path class="w" d="M20 14h20v8c0 5-4.5 8.5-10 8.5S20 27 20 22z"/><path d="M23.6 20q1.6-1.1 3.2 0M33.2 20q1.6-1.1 3.2 0M30 21v2.6"/><path class="a" d="M27.8 25.4q2.2 1.4 4.4 0q-2.2 1.9-4.4 0z"/>
+    <circle class="a" cx="49" cy="29" r="3"/><path d="M49 32v8M46 36l3-1.2"/>`,
+  11: `<path class="s" d="M15 17c1-8 7-13 15-13s13 4 15 10l-3 3H18z"/><path class="g" d="M16 14.5h28V18H16z"/><path class="g" d="M40 9c5-6 12-7 15-5-5 1-9 4-12 8z"/>
+    <path class="s" d="M5 40c1-5 6-8 14-9l11 4 11-4c8 1 13 4 14 9z"/><path class="g" d="M19 31l11 4 11-4 1 3-12 4-12-4z"/>
+    <path class="w" d="M20 18h20v4.5c0 5.5-4.5 8.5-10 8.5S20 28 20 22.5z"/><path class="s" d="M20 18c2 3 5 3 7 1 2 2 4 2 6 0 2 2 5 2 7-1z"/>
+    <path d="M24.5 22.5h2.6M32.9 22.5h2.6M30 23v2.4M28 27.2h4"/><path d="M9 13v27"/><path class="g" d="M6 13l3-6 3 6-3 3z"/>`,
+};
 function portrait(r, s) {
-  const mark = `<g transform="translate(24 58) scale(.5)"><path d="${SUIT_PATH[s]}" fill="currentColor" stroke="none"/></g>`;
-  if (r === 13) return sv('0 0 60 80', `
-    <path class="a" d="M15 24L18 9L25 17L30 6L35 17L42 9L45 24Z"/>
-    <path d="M17 26h26v10a13 13 0 0 1-26 0z"/>
-    <circle class="k" cx="24.5" cy="33" r="1.4"/><circle class="k" cx="35.5" cy="33" r="1.4"/>
-    <path d="M20 40c3 9 17 9 20 0"/><path d="M24 44c2 3 10 3 12 0"/>
-    <path d="M8 79c1-15 9-21 22-21s21 6 22 21"/>${mark}`, 'face');
-  if (r === 12) return sv('0 0 60 80', `
-    <path class="a" d="M20 16l4-6 6 5 6-5 4 6z"/>
-    <path d="M14 46c-2-14 2-30 16-30s18 16 16 30"/>
-    <path d="M19 26h22v9a11 11 0 0 1-22 0z"/>
-    <circle class="k" cx="25" cy="32" r="1.3"/><circle class="k" cx="35" cy="32" r="1.3"/>
-    <path d="M27 40c2 1.4 4 1.4 6 0"/>
-    <path d="M10 79c1-14 8-20 20-20s19 6 20 20"/>${mark}`, 'face');
-  return sv('0 0 60 80', `
-    <path d="M15 24c2-10 8-14 15-14s13 4 15 14z"/><path class="a" d="M42 14c6-6 12-6 14-3c-5 0-9 3-12 7z"/>
-    <path d="M18 24h24v10a12 12 0 0 1-24 0z"/>
-    <path d="M18 27c4 3 8 3 12 0c4 3 8 3 12 0"/>
-    <circle class="k" cx="25" cy="33" r="1.3"/><circle class="k" cx="35" cy="33" r="1.3"/>
-    <path d="M26 40h8"/>
-    <path d="M9 79c1-15 9-21 21-21s20 6 21 21"/>${mark}`, 'face');
+  const h = HALF[r] + `<g transform="translate(3 3) scale(.34)"><path d="${SUIT_PATH[s]}" class="s" stroke="none"/></g>`;
+  return sv('0 0 60 80', `<g>${h}</g><g transform="rotate(180 30 40)">${h}</g><path d="M2 40h56" class="thin"/>`, 'face');
 }
 function jester() {
   return sv('0 0 60 80', `
-    <path class="a" d="M14 34c-2-10-8-16-12-16c6 8 6 14 8 18z"/><path class="a" d="M46 34c2-10 8-16 12-16c-6 8-6 14-8 18z"/>
-    <path d="M14 34c2-14 8-24 16-26c8 2 14 12 16 26z"/>
-    <circle class="a" cx="30" cy="7" r="3"/><circle cx="2.5" cy="18" r="2.2"/><circle cx="57.5" cy="18" r="2.2"/>
-    <path d="M17 36h26v6a13 13 0 0 1-26 0z"/>
-    <path d="M23 42q2-2 4 0M33 42q2-2 4 0"/><path d="M23 49c4 5 10 5 14 0"/>
-    <path d="M12 79l6-16l12 6l12-6l6 16"/>`, 'face');
+    <path class="a" d="M15 31c-4-8-9-12-13-12 5 5 6 10 7 15z"/><path class="g" d="M22 29c0-10 4-20 8-26 4 6 8 16 8 26z"/><path class="a" d="M45 31c4-8 9-12 13-12-5 5-6 10-7 15z"/>
+    <circle class="g" cx="2.6" cy="18.6" r="2.4"/><circle class="g" cx="30" cy="3" r="2.4"/><circle class="g" cx="57.4" cy="18.6" r="2.4"/>
+    <path class="k" d="M11 29h38v4.4H11z"/><path class="w" d="M18 30.2l1.2 1-1.2 1-1.2-1zM30 30.2l1.2 1-1.2 1-1.2-1zM42 30.2l1.2 1-1.2 1-1.2-1z"/>
+    <path class="w" d="M17 33.4h26V41c0 7-6 11-13 11s-13-4-13-11z"/>
+    <path d="M22 39q2.5-2 5 0M33 39q2.5-2 5 0M24 45c3 4 9 4 12 0"/><circle class="a" cx="20.6" cy="44" r="1.6"/><circle class="a" cx="39.4" cy="44" r="1.6"/>
+    <path class="a" d="M8 80l4-18h36l4 18z"/><path class="g" d="M30 63.5l4 6.5-4 6.5-4-6.5zM18 66l3 4.5-3 4.5-3-4.5zM42 66l3 4.5-3 4.5-3-4.5z"/>
+    <path class="w" d="M9 54l5.25 4.5 5.25-4.5 5.25 4.5L30 54l5.25 4.5L40.5 54l5.25 4.5L51 54v7H9z"/>`, 'face');
 }
 
-/* 札の裏の柄(七宝)。一度だけ文書に置き、裏面から参照する */
+/* 札の裏:縁取りと角の飾り、中央に国の角印 */
 const DEFS = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
-  <pattern id="shippo" width="10" height="10" patternUnits="userSpaceOnUse">
-    <circle cx="0" cy="0" r="5" fill="none" stroke="#c9451f" stroke-width=".9"/><circle cx="10" cy="0" r="5" fill="none" stroke="#c9451f" stroke-width=".9"/>
-    <circle cx="0" cy="10" r="5" fill="none" stroke="#c9451f" stroke-width=".9"/><circle cx="10" cy="10" r="5" fill="none" stroke="#c9451f" stroke-width=".9"/>
-    <circle cx="5" cy="5" r="5" fill="none" stroke="#c9451f" stroke-width=".9"/></pattern></defs></svg>`;
+  <pattern id="shippo" width="8" height="8" patternUnits="userSpaceOnUse">
+    <circle cx="0" cy="0" r="4" fill="none" stroke="#c9451f" stroke-width=".7"/><circle cx="8" cy="0" r="4" fill="none" stroke="#c9451f" stroke-width=".7"/>
+    <circle cx="0" cy="8" r="4" fill="none" stroke="#c9451f" stroke-width=".7"/><circle cx="8" cy="8" r="4" fill="none" stroke="#c9451f" stroke-width=".7"/>
+    <circle cx="4" cy="4" r="4" fill="none" stroke="#c9451f" stroke-width=".7"/></pattern></defs></svg>`;
 function back() {
+  const corner = (x, y, r) => `<path d="M${x} ${y}m0 7v-7h7" transform="rotate(${r} ${x} ${y})" fill="none" stroke="#b88a2e" stroke-width="1.2"/>`;
   return `<svg class="back" viewBox="0 0 50 70" aria-hidden="true"><rect x=".6" y=".6" width="48.8" height="68.8" rx="5" fill="#fdfcf8" stroke="#2b2a27" stroke-width="1.2"/>
-    <rect x="5" y="5" width="40" height="60" rx="2" fill="url(#shippo)" stroke="#c9451f" stroke-width="1"/>
-    <circle cx="25" cy="35" r="7.5" fill="#fdfcf8" stroke="#c9451f" stroke-width="1"/><circle cx="25" cy="35" r="3" fill="#c9451f"/></svg>`;
+    <rect x="3.6" y="3.6" width="42.8" height="62.8" rx="3" fill="#7a1a26"/>
+    <rect x="6" y="6" width="38" height="58" rx="2" fill="url(#shippo)" stroke="#b88a2e" stroke-width=".8"/>
+    ${corner(8, 8, 0)}${corner(42, 8, 90)}${corner(42, 62, 180)}${corner(8, 62, 270)}
+    <circle cx="25" cy="35" r="10" fill="#7a1a26" stroke="#b88a2e" stroke-width="1.2"/><rect x="19.5" y="29.5" width="11" height="11" rx="1.5" fill="none" stroke="#e8d39b" stroke-width="1"/>
+    <text x="25" y="38.6" text-anchor="middle" font-size="9" fill="#e8d39b" font-family="Hiragino Mincho ProN,Yu Mincho,Noto Serif JP,Noto Serif CJK JP,serif" font-weight="700">国</text></svg>`;
 }
 
 /* 法律(64×64) */
@@ -1422,37 +1693,80 @@ const LAW = {
   gekokujo: `<path class="a" d="M38 10v40"/><path class="a" d="M38 10h18l-5 7 5 7H38z"/><path d="M10 52l4-14 6 6 5-9 5 9 6-6 3 14z" transform="rotate(14 22 46)"/><path d="M6 58h52"/>`,
   agari: `<rect x="8" y="26" width="8" height="30" rx="1"/><path d="M4 56h16"/><rect x="14" y="22" width="44" height="8" rx="2"/><path class="as" d="M22 22l-5 8M32 22l-5 8M42 22l-5 8M52 22l-5 8"/><rect class="pp" x="40" y="36" width="12" height="17" rx="2"/>`,
 };
-function law(key, cls) { return sv('0 0 64 64', LAW[key] || '', 'law-ic ' + (cls || '')); }
+/* 法律は金の縁の紋章に収める */
+function beads(cx, cy, r, n, rr) { let h = ''; for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2; h += `<circle class="pp" cx="${(cx + r * Math.cos(a)).toFixed(2)}" cy="${(cy + r * Math.sin(a)).toFixed(2)}" r="${rr}" stroke="none"/>`; } return h; }
+function medal(inner, vb) {
+  return sv('0 0 64 64', `<circle class="g" cx="32" cy="32" r="31"/>${beads(32, 32, 28.6, 24, 0.9)}<circle class="pp" cx="32" cy="32" r="26"/><g transform="translate(9 9) scale(.72)">${inner}</g>`, 'medal ' + (vb || ''));
+}
+function law(key, cls) { return medal(LAW[key] || '', 'law-ic ' + (cls || '')); }
+function lawPlain(key, cls) { return sv('0 0 64 64', LAW[key] || '', 'law-ic ' + (cls || '')); }
 
-/* 階級(64×64) */
+/* 階級:金の徽章 */
 const RANK = {
-  '大富豪': `<path class="a" d="M8 48l4-30 12 14 8-20 8 20 12-14 4 30z"/><path d="M8 54h48"/>`,
-  '富豪': `<path d="M18 46V14h28v32"/><path class="a" d="M18 38h28v8H18z"/><path d="M8 50c8-4 40-4 48 0"/>`,
-  '平民': `<path d="M14 40c0-14 8-22 18-22s18 8 18 22"/><path d="M6 42c10 4 42 4 52 0"/><path class="a" d="M24 22c4-2 12-2 16 0"/>`,
-  '貧民': `<path d="M14 40c0-14 8-22 18-22s18 8 18 22"/><path d="M6 42c10 4 42 4 52 0"/><rect class="a" x="34" y="26" width="9" height="8" transform="rotate(12 38 30)"/><path d="M22 24l3 5"/>`,
-  '大貧民': `<path d="M12 28h40l-4 26H16z"/><path d="M12 28c0-8 8-14 20-14s20 6 20 14"/><circle class="a" cx="23" cy="14" r="3.5"/><circle class="a" cx="41" cy="14" r="3.5"/><path d="M48 8c4 0 6 2 6 5M52 4c-2 4-6 4-8 2"/>`,
+  '大富豪': `<path class="g" d="M8 46l4-28 12 13 8-19 8 19 12-13 4 28z"/><circle class="a" cx="32" cy="14" r="3"/><circle class="a" cx="12" cy="18" r="2.4"/><circle class="a" cx="52" cy="18" r="2.4"/><path class="k" d="M8 46h48v6H8z"/>`,
+  '富豪': `<path class="k" d="M19 44V12h26v32"/><path class="g" d="M19 34h26v7H19z"/><path class="k" d="M7 46c8-4 42-4 50 0v4c-8-3-42-3-50 0z"/>`,
+  '平民': `<path class="g" d="M14 40c0-14 8-22 18-22s18 8 18 22z"/><path class="k" d="M5 40c10 5 44 5 54 0v5c-10 4-44 4-54 0z"/><path d="M22 26c4-3 16-3 20 0"/>`,
+  '貧民': `<path class="w" d="M14 40c0-14 8-22 18-22s18 8 18 22z"/><path class="k" d="M5 40c10 5 44 5 54 0v5c-10 4-44 4-54 0z"/><rect class="a" x="34" y="25" width="10" height="9" transform="rotate(12 39 29)"/><path d="M36 27l6 5M42 27l-6 5"/>`,
+  '大貧民': `<path class="w" d="M12 26h40l-4 28H16z"/><path d="M12 26c0-8 8-14 20-14s20 6 20 14"/><circle class="g" cx="22" cy="13" r="3.6"/><circle class="g" cx="42" cy="13" r="3.6"/><path d="M28 40h8"/><path d="M50 6c4 0 6 2 6 5M54 2c-2 4-6 4-8 2"/>`,
 };
 function rank(t) { return RANK[t] ? sv('0 0 64 64', RANK[t], 'rank-ic') : ''; }
 
-/* 本性診断(120×120) */
-const TYPE = {
-  dictator: `<path class="a" d="M38 42l4-22 11 11 7-17 7 17 11-11 4 22z"/><path d="M36 48h48"/><rect x="30" y="66" width="36" height="16" rx="3" transform="rotate(-30 48 74)"/><path d="M58 84l26 22"/><path d="M14 108h92"/>`,
-  rebel: `<path d="M34 108V14"/><path class="a" d="M34 16c14-6 24 6 38 0s20-2 26 2v34c-6-4-12-6-26 0s-24-6-38 0z"/><path d="M20 108h30"/><path d="M62 70l14 14M86 64l8 18M98 80l-10 6"/>`,
-  watcher: `<path d="M8 82h104"/><path d="M14 82V58h92v24"/><circle cx="44" cy="44" r="12"/><circle cx="76" cy="44" r="12"/><path d="M56 42h8"/><circle class="a" cx="44" cy="44" r="4"/><circle class="a" cx="76" cy="44" r="4"/><path d="M34 96h52"/>`,
-  charger: `<path d="M22 98L92 28"/><path class="a" d="M92 28l14-8-8 14z"/><path d="M28 80l12 12M18 100l6-6"/><path class="as" d="M20 40c20-6 42 0 58 16M30 22c26-2 48 8 62 28" />`,
-  hoarder: `<rect x="18" y="50" width="84" height="50" rx="4"/><path d="M18 50c0-16 14-26 42-26s42 10 42 26"/><path d="M18 64h84"/><rect class="a" x="52" y="58" width="16" height="18" rx="2"/><path d="M60 64v6"/><path d="M100 22l6-6M106 34h8M92 14v-8"/>`,
-  follower: `<circle class="a" cx="60" cy="26" r="11"/><path d="M40 106V62c0-10 8-18 20-18s20 8 20 18v44"/><path d="M28 60c22 9 42 9 64 0M28 78c22 9 42 9 64 0M28 96c22 9 42 9 64 0"/><path d="M92 60c9 1 10 8 4 11M28 96c-9 1-10 8-4 11"/>`,
-  contrarian: `<path d="M12 34h60M60 24l12 10-12 10"/><path d="M12 60h60M60 50l12 10-12 10"/><path class="as" d="M108 86H48M60 76l-12 10 12 10"/><circle class="a" cx="100" cy="86" r="4"/>`,
-  phoenix: `<path d="M60 96c-14-10-18-26-8-40 2 10 8 14 8 14s-2-16 10-30c0 14 8 20 8 30 0 12-6 20-18 26z"/><path class="a" d="M60 96c-6-6-6-16 0-24 4 8 8 10 8 16s-4 8-8 8z"/><path d="M38 56C22 50 14 36 16 22c10 12 22 14 30 22M82 56c16-6 24-20 22-34-10 12-22 14-30 22"/><path d="M50 108h20"/>`,
+/* 16タイプの紋章:前半2文字で中心の図、3文字目で下の飾り、4文字目で月桂樹か星 */
+function laurel() {
+  let h = '';
+  for (const side of [-1, 1]) for (let k = 0; k < 9; k++) {
+    const th = (side < 0 ? 128 + k * 14 : 52 - k * 14) * Math.PI / 180;
+    const x = 60 + 46 * Math.cos(th), y = 62 + 46 * Math.sin(th);
+    const rot = th * 180 / Math.PI + 90 + (side < 0 ? -28 : 28);
+    h += `<ellipse class="g" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" rx="6.2" ry="2.6" transform="rotate(${rot.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})"/>`;
+  }
+  return h;
+}
+const CORE = {
+  AP: `<path class="g" d="M43 34l-2-15 9 7 10-13 10 13 9-7-2 15z"/><circle class="a" cx="60" cy="16" r="2.6"/><path class="w" d="M57 46h6v34l-3 6-3-6z"/><path class="g" d="M46 40h28v5.5H46z"/><path class="k" d="M57.8 34h4.4v6h-4.4z"/>`,
+  AR: `<path d="M42 22v66"/><path class="a" d="M42 24c12-6 20 4 32-2s12-2 16 2v24c-4-4-8-6-16-2s-20-4-32 2z"/><path d="M34 88h16"/><path class="as" d="M80 60l8 6M84 52l9 1M76 68l2 9"/>`,
+  DP: `<path class="w" d="M60 24l26 8v20c0 20-12 30-26 38-14-8-26-18-26-38V32z"/><path class="g" d="M60 32l18 6v13c0 14-8 22-18 28-10-6-18-14-18-28V38z"/><path class="k" d="M50 50l-2-9 6 4 6-8 6 8 6-4-2 9z"/>`,
+  DR: `<path d="M60 18v8"/><path class="k" d="M48 26h24v5H48z"/><path class="w" d="M46 31h28c5 9 5 33 0 42H46c-5-9-5-33 0-42z"/><path d="M45 40h30M44 52h32M45 64h30"/><path class="a" d="M54 46h12v14H54z" opacity=".85"/><path class="k" d="M48 73h24v5H48z"/>`,
 };
-function type(k) { return TYPE[k] ? sv('0 0 120 120', TYPE[k], 'type-ic') : ''; }
+const CHARM = {
+  C: `<path d="M48 100h24M60 93v13M52 100l-4 6.5h8zM68 100l-4 6.5h8z"/><circle class="g" cx="60" cy="92" r="2"/>`,
+  I: `<path class="g" d="M63 91l-9 10h6.5l-4.5 10 11-12h-6.5l4-8z"/>`,
+};
+function type(code) {
+  if (code === 'rebel') return sv('0 0 120 120', CORE.AR, 'type-ic');
+  if (!code || code.length !== 4) return '';
+  const core = CORE[code.slice(0, 2)] || '', charm = CHARM[code[2]] || '';
+  const ring = `<circle class="g" cx="60" cy="60" r="58"/>${beads(60, 60, 54.5, 36, 1.3)}<circle class="pp" cx="60" cy="60" r="51"/>`;
+  const deco = code[3] === 'G' ? laurel() : `<path class="g" d="M60 4.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z"/>`;
+  return sv('0 0 120 120', ring + (code[3] === 'G' ? deco : '') + `<g transform="translate(-3 -5) scale(1.05)">${core}</g>` + charm + (code[3] === 'S' ? deco : ''), 'type-ic');
+}
+function flag() { return sv('0 0 120 120', CORE.AR, 'type-ic'); }
+
+/* ホームの挿絵:丸屋根の議場(特定の建物ではない) */
+function hall() {
+  let rays = '';
+  for (let k = 0; k < 19; k++) { const a = Math.PI + k * Math.PI / 18; rays += `<path d="M200 92L${(200 + 230 * Math.cos(a)).toFixed(1)} ${(92 + 230 * Math.sin(a)).toFixed(1)}" class="ray"/>`; }
+  let cols = '';
+  for (let k = 0; k < 8; k++) { const x = 122 + k * 21; cols += `<path class="col" d="M${x} 160h9v66h-9z"/>`; }
+  let wins = '';
+  for (const x of [72, 96, 286, 310]) wins += `<path class="win" d="M${x} 176h14v22c0-5-3-8-7-8s-7 3-7 8z"/>`;
+  return `<svg class="hall" viewBox="0 0 400 270" aria-hidden="true">${rays}
+    <path class="body" d="M56 156h288v72H56z"/>${wins}
+    <path class="body" d="M112 150h176v78H112z"/>${cols}
+    <path class="ped" d="M104 152l96-36 96 36z"/><path class="line" d="M128 146l72-26 72 26"/>
+    <path class="body" d="M160 92h80v26h-80z"/><path class="line" d="M166 98h68M166 112h68"/>
+    <path class="dome" d="M150 92c0-34 22-56 50-56s50 22 50 56z"/><path class="line" d="M175 92c0-30 11-50 25-56M225 92c0-30-11-50-25-56M200 36v56"/>
+    <path class="body" d="M192 22h16v14h-16z"/><path class="line" d="M200 6v16"/><circle class="tip" cx="200" cy="6" r="3"/>
+    <path class="base" d="M40 228h320v10H40zM28 238h344v10H28zM16 248h368v10H16z"/></svg>`;
+}
+function mic() { return sv('0 0 64 64', `<rect class="g" x="23" y="6" width="18" height="30" rx="9"/><path d="M28 14h8M28 20h8M28 26h8"/><path d="M15 30c0 10 8 17 17 17s17-7 17-17"/><path d="M32 47v9M22 58h20"/>`, 'mic'); }
 
 /* ロゴの判(朱の角印) */
 function seal(ch) { return `<svg class="seal" viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="2" width="36" height="36" rx="4" fill="none" stroke="#c9451f" stroke-width="2.6"/><text x="20" y="28" text-anchor="middle" font-size="22" fill="#c9451f" font-family="Hiragino Mincho ProN,Yu Mincho,Noto Serif JP,Noto Serif CJK JP,serif" font-weight="700">${ch}</text></svg>`; }
 /* 木槌 */
 function gavel() { return sv('0 0 64 64', `<rect x="14" y="10" width="26" height="14" rx="3" transform="rotate(-35 27 17)"/><path d="M32 26l22 22"/><path d="M6 56h30"/><rect class="pp" x="10" y="50" width="22" height="6" rx="1.5"/>`, 'gavel'); }
 
-root.Illus = { suit, portrait, jester, back, law, rank, type, seal, gavel, DEFS, SUIT_PATH };
+root.Illus = { suit, portrait, jester, back, law, lawPlain, medal, rank, type, flag, hall, mic, laurel, seal, gavel, DEFS, SUIT_PATH };
 })(this);
 
 </script>
@@ -1617,6 +1931,10 @@ const S = {
     timp(s + 0.84, N.A2, 0.8);
   },
   crown(t) { [N.C5, N.E5, N.G5].forEach((f, i) => brass(t + i * 0.12, f, 0.12, 0.12)); [N.C5, N.E5, N.G5, N.C6].forEach(f => brass(t + 0.38, f, 1, 0.08)); cymbal(t + 0.38, 0.14); },
+  reverse(t) { noise(t, 0.45, { f: 5000, f2: 300, q: 1.2, v: 0.45, rev: 0.5, a: 0.05 }); tone(t + 0.1, 880, 0.35, { to: 330, v: 0.12, rev: 0.6, type: 'triangle' }); },
+  drop(t) { card(t, 0.4); card(t + 0.12, 0.35); tone(t + 0.25, 300, 0.4, { to: 80, v: 0.25, rev: 0.6 }); },
+  storm(t) { noise(t, 1.6, { f: 1200, f2: 3000, q: 0.5, v: 0.32, rev: 0.6, a: 0.3 }); noise(t + 0.2, 1.2, { type: 'highpass', f: 5000, v: 0.12, rev: 0.4, a: 0.2 }); },
+  foul(t) { S.stamp(t); [N.Bb2 * 2, N.F3, N.Bb3].forEach(f => brass(t + 0.15, f, 0.7, 0.1)); timp(t + 0.15, N.Bb2, 0.7); },
   drumroll(t) { for (let i = 0; i < 34; i++) noise(t + i * 0.04, 0.05, { f: 1900, q: 0.9, v: 0.06 + i * 0.008, rev: 0.4 }); cymbal(t + 1.38, 0.2); [N.C4, N.G4, N.C5, N.E5].forEach(f => brass(t + 1.38, f, 0.9, 0.08)); },
 };
 
@@ -1955,7 +2273,7 @@ function statusLine(pub) {
   const w = pub.waiting || [];
   const nm = id => pname(pub, id) + 'さん';
   switch (pub.phase) {
-    case 'exchange': return `カードを交換しています(${w.map(nm).join('、')})`;
+    case 'exchange': return `カードを交換しています。${w.map(nm).join('、')}が返す札を選んでいます`;
     case 'param': return `大富豪の${nm(pub.pending.pid)}が、新しい法律の中身を決めています`;
     case 'tsure': return `道連れ令。${nm(pub.pending.pid)}が捨てる札を選んでいます`;
     case 'gekokujo': return `下剋上革命。${nm(pub.pending.pid)}が手札を入れ替える相手を選んでいます`;
@@ -1989,7 +2307,7 @@ function flashCheck(pub) {
   if (!f || f.n === lastFlash) return;
   const first = lastFlash === 0; lastFlash = f.n;
   if (first || !['play', 'exchange', 'param', 'tsure', 'gekokujo', 'give7', 'drop10'].includes(pub.phase)) return;
-  if (f.kind === 'rev' || f.kind === 'cut') return;
+  if (f.kind === 'rev' || f.kind === 'cut' || (f.kind || '').startsWith('r-')) return;
   let el = document.querySelector('.flash');
   if (!el) { el = document.createElement('div'); el.className = 'flash'; document.body.appendChild(el); }
   const art = f.kind === 'rev' ? I.type('rebel') : f.kind === 'law' ? I.gavel() : '';
@@ -2002,18 +2320,21 @@ function flashCheck(pub) {
 
 /* ---------- 入口 ---------- */
 function vEntry() {
-  return `<div class="entry">
-    ${heroFan()}
+  return `<div class="home">
+    ${I.hall()}
     <h1>${logo('lg')}</h1>
-    <p class="lead">回が終わるたびに、みんなの投票で法律が一つ増えます。<br>革命が起きると、法律はすべて廃止です。</p>
+    <div class="rule">法をつくる大富豪</div>
+    <p class="lead">回が終わるたびに、みんなの投票で法律が一つ増えます。<br>革命が起きると、法律はすべて廃止。<br>最後に、立ち回りから今夜の本性を診断します。</p>
     <div class="stack">
       <button class="btn main" data-act="go-tv">テレビで部屋を作る</button>
       <button class="btn" data-act="go-host">スマホだけで部屋を作る</button>
       <button class="btn" data-act="go-join">部屋に入る</button>
     </div>
-    <p class="note">テレビで部屋を作ると、場と法律はテレビに、手札は各自のスマホに出ます。スマホだけで遊ぶときは、部屋を作った人のスマホが親になります。親のスマホは最後まで画面を開いたままにしてください。${LOCAL ? '<br><br>いまは試用モードです(同じブラウザのタブ同士でだけつながります)。' : ''}</p>
+    <div class="links"><button class="link" data-act="types-open">診断の16タイプを見る</button></div>
+    <p class="note">テレビで部屋を作ると、場と法律はテレビに、手札は各自のスマホに出ます。スマホだけで遊ぶときは、部屋を作った人のスマホが親になります。親の画面は最後まで開いたままにしてください。${LOCAL ? '<br>いまは試用モードです(同じブラウザのタブ同士でだけつながります)。' : ''}</p>
   </div>`;
 }
+
 function vJoin(host) {
   return `<div class="entry">
     <div class="entry-head">${logo()}</div>
@@ -2033,17 +2354,59 @@ function controls(pub, compact) {
   const b = (act, label, main, dis) => `<button class="btn ${main ? 'main' : ''}" data-act="${act}" ${dis ? 'disabled' : ''}>${label}</button>`;
   switch (pub.phase) {
     case 'lobby': return b('start', n < 4 ? `あと${4 - n}人で始められます` : '始める', true, n < 4) + b('cpu+', 'CPUを足す', false, n >= 6) + b('cpu-', 'CPUを減らす', false, !pub.players.some(p => p.cpu));
-    case 'roundEnd': return b('next', pub.cfg.lawsOn ? '法律を決める' : '次の回を始める', true) + b('finish', '今夜はここまで(診断へ)');
-    case 'enacted': return b('next', '次の回を始める', true) + b('finish', '今夜はここまで(診断へ)');
-    case 'diag': return compact ? b('again', '同じ顔ぶれでもう一度') : b('diag-next', S.diagStep < n ? '次の人' : '最初から', true) + b('again', '同じ顔ぶれでもう一度');
+    case 'brief': {
+      const last = briefPages(pub).length - 1, st = Math.min(pub.brief, last);
+      return (st < last ? b('brief-next', '次へ', true) : b('begin', '開会する', true)) + b('brief-back', '戻る', false, st === 0) + (st < last ? b('begin', '説明を飛ばして開会') : '');
+    }
+    case 'vote': return b('close-vote', '投票を締め切る', true, !pub.vote.voted.length);
+    case 'roundEnd': return b('next', pub.cfg.lawsOn ? '法律を決める' : '次の回を始める', true) + b('finish', '今夜はここまで(結果と診断へ)');
+    case 'enacted': return b('next', '次の回を始める', true) + b('finish', '今夜はここまで(結果と診断へ)');
+    case 'diag': return compact ? b('types-open', '16タイプの一覧') + b('again', '同じ顔ぶれでもう一度') : b('diag-next', S.diagStep === 0 ? '診断の発表へ' : S.diagStep <= n ? (S.diagStep < n ? '次の人' : '全員の結果') : '最初から', true) + b('types-open', '16タイプの一覧') + b('again', '同じ顔ぶれでもう一度');
   }
   return '';
 }
+/* 開会前の説明:設定に合わせて頁を組む */
+function briefPages(pub) {
+  const c = pub.cfg, P = [];
+  const item = (art, h, p) => `<div class="bitem doc">${art}<h4>${h}</h4><p>${p}</p></div>`;
+  P.push({ t: '本日の議事次第', h: `<div class="bgrid" style="--n:4">
+    ${item(I.medal(`<rect class="w" x="14" y="10" width="22" height="32" rx="3"/><rect class="w" x="28" y="20" width="22" height="32" rx="3"/><path class="s" d="M39 30l3.5 4.5L39 39l-3.5-4.5z" style="color:#ad2a20"/>`), '一 大富豪を遊ぶ', 'ふつうの大富豪です。手札をなくした順に、大富豪・富豪…と階級が決まります。')}
+    ${c.lawsOn ? item(I.law('strong'), '二 法律をつくる', '回が終わるたびに、大富豪の廃案と全員の投票で、新しい法律が一つ決まります。') : item(I.gavel(), '二 法律はなし', '今夜は法律をつくりません。ルールどおりの大富豪で競います。')}
+    ${item(I.rank('大富豪'), '三 得点を競う', '回ごとに階級で得点が入ります。最後に合計点で総合順位を決めます。')}
+    ${item(I.type('APCG'), '四 本性を診断', 'パスの仕方、強い札の使いどき、考える時間、投票先から、16タイプのどれかに分けます。')}</div>` });
+  const strength = `<div class="strength">${['C3', 'H7', 'S11', 'D14', 'C15', 'X1'].map((id, i) => (i ? '<span class="arrow">‹</span>' : '') + cardHtml(id)).join('')}</div>`;
+  const basics = [
+    item('', '出し方', `場の札と同じ枚数で、より強い札を出します。同じ数字をまとめて出せます${c.seq ? '。同じマークの連番3枚以上は「階段」として出せます' : ''}。出せないとき、出したくないときはパス。全員がパスすると場が流れ、最後に出した人から再開です。`),
+    c.rev ? item('', '革命', `同じ数字を4枚以上出すと、強さが逆になります${c.seqrev ? '(4枚以上の階段でも起きます)' : ''}。${c.lawsOn ? '<b>法律もすべて廃止されます。</b>' : ''}`) : '',
+    c.eight ? item('', '8切り', '8を含む出し方をすると、その場で場が流れ、出した人から再開します。') : '',
+    c.lock ? item('', '縛り', '同じマークの札が続くと、場が流れるまでそのマークしか出せなくなります。') : '',
+    c.exchange ? item('', 'カード交換', '2回目からは、大貧民が強い札2枚を大富豪へ、貧民が1枚を富豪へ渡し、受け取った側は好きな札を返します。') : '',
+    c.ochi ? item('', '都落ち', '大富豪が1番に上がれなかったら、その場で大貧民になります。') : '',
+  ].filter(Boolean);
+  P.push({ t: '大富豪の基本', h: `<p class="sub" style="font-size:1.1em">弱い札から順に、3・4・5…K・A・2・ジョーカー。${c.jokers ? `ジョーカーは${c.jokers}枚入っています。` : 'ジョーカーは入っていません。'}</p>${strength}<div class="bgrid" style="--n:${basics.length > 4 ? 4 : 3}">${basics.join('')}</div>` });
+  const locs = E.LOCAL_RULES.filter(r => c[r.key]);
+  if (locs.length) P.push({ t: '今夜のローカルルール', h: `<div class="bgrid" style="--n:3">${locs.map(r => item('', r.name, r.text + '。')).join('')}</div>` });
+  if (c.lawsOn) P.push({ t: '法律のつくり方', h: `<div class="bgrid" style="--n:4">
+    ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24M20 38h16"/>'), '一 三つの法律案', '回が終わると、法律案がランダムに三つ出ます。')}
+    ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24"/><path class="as" d="M16 46l32-32M16 14l32 32" stroke-width="3"/>'), '二 大富豪が廃案', '大富豪が、気に入らない一つを廃案にします。')}
+    ${item(I.medal('<path class="w" d="M16 26h32v24H16z"/><path class="g" d="M24 10h16v20H24z"/><path d="M22 26h20"/>'), '三 全員で投票', `残った二つから一つを選びます。大富豪だけ2票。全員が入れるか、主催者が締め切ったら開票です。交渉は自由です。`)}
+    ${item(I.medal('<path class="a" d="M14 18h36v28H14z" opacity=".15"/><path class="as" d="M14 18h36v28H14z" stroke-width="3"/><path d="M22 32h20"/>'), '四 可決', `決まった法律は次の回から有効です。法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`)}</div>` });
+  P.push({ t: '得点と診断', h: `<p style="font-size:1.15em">回ごとに、階級で得点が入ります。</p><div class="ptable">${Object.entries(E.POINTS).map(([k, v]) => `<div>${rankTag(k)}<b>${v}点</b></div>`).join('')}</div>
+    <p style="font-size:1.15em;margin-top:.6em">「今夜はここまで」を押すと、総合順位の発表のあと、ひとりずつ本性を診断します。</p>
+    <div class="bgrid" style="--n:4">${E.AXES.map(ax => item('', `${ax.lc}・${ax.rc}`, `${ax.l}か、${ax.r}か。`)).join('')}</div>` });
+  return P;
+}
+function vTvBrief(pub) {
+  const P = briefPages(pub), st = Math.min(pub.brief, P.length - 1), pg = P[st];
+  return `<div class="eyebrow">開会前の説明 ${st + 1}/${P.length}</div><div class="brief-steps">${P.map((_, i) => `<i class="${i <= st ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="big" style="font-size:2.6em;margin:0 0 .3em">${pg.t}</div><div class="brief">${pg.h}</div>`;
+}
+
 function tvSide(pub) {
   const c = pub.cfg;
   if (pub.phase === 'lobby') {
     const steps = c.lawsOn
-      ? ['ふつうの大富豪を一回遊びます。', '回が終わると、法律案が三つ出ます。大富豪が一つを廃案にします。', `残った二つを、${voteLabel(c.voteSec)}の作戦時間のあと全員で投票します。大富豪は2票です。`, `法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`, '最後に、遊び方から今夜の本性を診断します。']
+      ? ['ふつうの大富豪を一回遊びます。', '回が終わると、法律案が三つ出ます。大富豪が一つを廃案にします。', '残った二つを全員で投票します。大富豪は2票です。', `法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`, '最後に、遊び方から今夜の本性を診断します。']
       : ['ふつうの大富豪を遊びます。', '今夜は法律を作りません(設定で切り替えられます)。', '最後に、遊び方から今夜の本性を診断します。'];
     return `<aside class="tv-side doc"><div class="laws-h">遊び方</div><div class="side-in"><ol class="howto">${steps.map(t => `<li>${t}</li>`).join('')}</ol></div></aside>`;
   }
@@ -2063,8 +2426,7 @@ function cfgHtml(pub) {
     const w = why(k);
     return tg('law:' + k, c.laws[k] && !w, pub.lawInfo[k].name, w || pub.lawInfo[k].text, I.law(k), w ? 'why' : 'lt');
   }).join('') : '');
-  const vote = c.lawsOn ? `<h3>投票</h3><div class="tg na"><span></span><span><span class="nm">作戦時間</span></span>${seg('voteSec', [60, 90, 120, 180], c.voteSec, voteLabel)}</div>`
-    + `<div class="tg na"><span></span><span><span class="nm">法律の上限</span></span>${seg('maxLaws', [1, 2, 3, 4, 5], c.maxLaws, v => v + 'つ')}</div>` : '';
+  const vote = c.lawsOn ? `<h3>投票</h3><div class="tg na"><span></span><span><span class="nm">法律の上限</span></span>${seg('maxLaws', [1, 2, 3, 4, 5], c.maxLaws, v => v + 'つ')}</div>` : '';
   const locals = E.LOCAL_RULES.map(r => tg('rule:' + r.key, c[r.key], r.name, r.text)).join('');
   return `<div class="cfg"><div><h3>基本ルール</h3>${rules}${vote}</div><div><h3>ローカルルール</h3>${locals}</div><div><h3>法律</h3>${laws}</div></div>`;
 }
@@ -2072,11 +2434,13 @@ function cfgSummary(c) {
   const off = E.RULES.filter(r => !c[r.key]).map(r => r.name);
   const loc = E.LOCAL_RULES.filter(r => c[r.key]).map(r => r.name);
   const lawN = E.LAW_KEYS.filter(k => E.lawUsable(c, k)).length;
-  return `${off.length ? `基本ルールのうち${off.join('・')}はなし。` : '基本ルールはすべてあり。'}${loc.length ? `ローカルルールは${loc.join('・')}。` : ''}${c.lawsOn ? `法律の候補は${lawN}つ、作戦時間は${voteLabel(c.voteSec)}。` : '法律は作りません。'}`;
+  return `${off.length ? `基本ルールのうち${off.join('・')}はなし。` : '基本ルールはすべてあり。'}${loc.length ? `ローカルルールは${loc.join('・')}。` : ''}${c.lawsOn ? `法律の候補は${lawN}つ、上限は${c.maxLaws}つ。` : '法律は作りません。'}`;
 }
 function vTv(pub) {
+  if (S.showTypes) return vTypes(pub);
   if (pub.phase === 'lobby') return vTvLobby(pub);
-  if (pub.phase === 'roundEnd') return sheet(pub, `<div class="eyebrow">第${pub.round}回の結果</div><div class="big">大富豪は${esc(pname(pub, pub.order[0]))}さん</div>${resultsTable(pub)}`);
+  if (pub.phase === 'brief') return sheet(pub, vTvBrief(pub), true);
+  if (pub.phase === 'roundEnd') return sheet(pub, `<div class="eyebrow">第${pub.round}回の結果</div><div class="big">大富豪は${esc(pname(pub, pub.order[0]))}さん</div>${resultsTable(pub)}${commentHtml(pub)}`);
   if (pub.phase === 'veto') return sheet(pub, vTvVeto(pub));
   if (pub.phase === 'vote') return sheet(pub, vTvVote(pub));
   if (pub.phase === 'enacted') return sheet(pub, vTvEnacted(pub));
@@ -2084,18 +2448,22 @@ function vTv(pub) {
   const f = pub.field;
   const who = f.topIds.length ? `<div class="who">${esc(pname(pub, f.topPid))}さん　${esc(E.describe(f.top))}</div>` : '<div class="who">&nbsp;</div>';
   const players = pub.players.map(p => {
-    const st = p.out > 0 ? `${p.out}番目に上がり` : p.out === -1 ? '都落ち' : p.out === -2 ? '反則上がり' : p.passed ? 'パス' : '';
+    const st = p.out > 0 ? `${p.out}番目に上がり` : p.out === -1 ? '都落ち' : p.out === -2 ? '反則上がり' : p.passed ? 'パス' : pub.turn === p.id ? '考え中' : '';
     return `<div class="tv-p ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''}">
-      <div class="nm">${esc(p.name)}</div><div class="tt">${rankTag(p.title) || '&nbsp;'}</div>
+      <div class="nm">${esc(p.name)}${f.topPid === p.id && f.topIds.length ? '<span class="lp">場の札</span>' : ''}</div><div class="tt">${rankTag(p.title) || '&nbsp;'}</div>
       <div class="hold">${p.out ? '' : backsHtml(p.count, 11)}<span class="ct">${p.count}<small>枚</small></span></div><div class="st">${st}</div></div>`;
   }).join('');
   return `<div class="tv"><main class="tv-main">
     <div class="tv-head"><span class="round">第${pub.round}回</span><span class="chips">${fieldInfo(pub)}</span></div>
-    <div class="table">${pileHtml(pub, '7.6vw')}${who}</div>
-    <div class="tv-say">${esc(statusLine(pub))}</div>
+    <div class="table">${pileHtml(pub, '7.2vw')}${who}</div>
+    <div><div class="tv-say">${esc(statusLine(pub))}</div><div class="tv-log">${(pub.log || []).slice(-3).map(t => `<div>${esc(t)}</div>`).join('')}</div></div>
     <div class="tv-players" style="--n:${pub.players.length}">${players}</div>
   </main>${tvSide(pub)}</div>`;
 }
+function commentHtml(pub) {
+  return pub.comment ? `<div class="comment doc">${I.mic()}<p><small>解説のひとこと</small>${esc(pub.comment)}</p></div>` : '';
+}
+
 function sheet(pub, inner, noSide) {
   return `<div class="sheet ${noSide ? 'full' : ''}"><main class="sheet-main">${inner}<div class="actions">${controls(pub)}</div></main>${noSide ? '' : tvSide(pub)}</div>`;
 }
@@ -2113,7 +2481,7 @@ function vTvLobby(pub) {
   </main>${tvSide(pub)}</div>`;
 }
 function resultsTable(pub) {
-  return `<table class="rtable">${pub.results.map((r, i) => `<tr><td class="pos">${i + 1}</td><td class="ttl">${rankTag(r.title)}</td><td>${esc(pname(pub, r.id))}</td><td class="chg">${r.prev ? `前回は${r.prev}` : ''}</td></tr>`).join('')}</table>`;
+  return `<table class="rtable">${pub.results.map((r, i) => `<tr style="animation-delay:${i * 0.12}s"><td class="pos">${i + 1}</td><td class="ttl">${rankTag(r.title)}</td><td>${esc(pname(pub, r.id))}</td><td class="chg">${r.prev ? `前回は${r.prev}` : ''}</td><td class="pt">+${r.pts}点</td><td class="tot">計 ${r.total}点</td></tr>`).join('')}</table>`;
 }
 function billHtml(pub, key, i, extra) {
   const L = pub.lawInfo[key];
@@ -2130,13 +2498,15 @@ function vTvVote(pub) {
   const v = pub.vote;
   const top = pub.order[0];
   const voted = pub.players.filter(p => v.voted.includes(p.id)).map(p => esc(p.name));
+  const wait = pub.players.filter(p => !v.voted.includes(p.id)).map(p => esc(p.name));
   return `<div class="vote-head">
       <div><div class="eyebrow">作戦時間 ― 投票は各自のスマホで</div><div class="big" style="margin-bottom:.2em">どちらを通しますか</div>
-      <p class="sub">${v.vetoed ? `「${esc(pub.lawInfo[v.vetoed].name)}」は廃案になりました。` : ''}大富豪の${esc(pname(pub, top))}さんは2票。同数のときは大富豪の票で決まります。</p></div>
-      <div class="timer" data-timer>${mmss(remainMs(pub))}</div></div>
+      <p class="sub">${v.vetoed ? `「${esc(pub.lawInfo[v.vetoed].name)}」は大富豪が廃案にしました。` : ''}大富豪の${esc(pname(pub, top))}さんは2票。同数のときは大富豪の票で決まります。全員が入れるか、締め切ると開票です。</p></div>
+      <div class="timer">${voted.length}<small style="font-size:.4em">/${pub.players.length}票</small></div></div>
     <div class="bills" style="--n:${v.vetoed ? 3 : 2}">${v.options.map((k, i) => billHtml(pub, k, i)).join('')}${v.vetoed ? billHtml(pub, v.vetoed, v.options.length, { out: true, stamp: stamp('廃案', true) }) : ''}</div>
-    <p class="voted">投票済み ${voted.length}/${pub.players.length}　${voted.join('、')}</p>`;
+    <p class="voted">投票済み:${voted.join('、') || 'まだいません'}${wait.length ? `　/　まだ:${wait.join('、')}` : ''}</p>`;
 }
+
 function vTvEnacted(pub) {
   const v = pub.vote;
   if (!v || !v.result) return `<div class="big">新しい法律案はありません</div>`;
@@ -2151,35 +2521,61 @@ function vTvEnacted(pub) {
     <p class="sub" style="margin-top:1.4em">${v.tie ? '同数のため、大富豪の票で決まりました。' : ''}${v.expired ? `法律は三つまでのため、「${esc(v.expired)}」は失効しました。` : ''}${['strong', 'ban', 'fav'].includes(v.result) ? '数字やマークは、次の回のカード交換のあとに大富豪が決めます。' : ''}</p>`;
 }
 function vTvDiag(pub) {
-  const n = pub.players.length;
-  if (S.diagStep >= n) {
+  const n = pub.players.length, step = S.diagStep;
+  if (step === 0) {
+    const fin = pub.final || [];
+    return `<div class="eyebrow">閉会 ― 総合成績</div><div class="big">総合優勝は${esc(pname(pub, fin[0] && fin[0].id))}さん</div>
+      <table class="final">${fin.map((r, i) => `<tr style="animation:rowin .5s ${i * 0.15}s both"><td class="crown">${i === 0 ? I.rank('大富豪') : ''}</td><td>${i + 1}位</td><td>${esc(pname(pub, r.id))}</td><td class="sub">大富豪 ${r.tops}回</td><td class="pt">${r.pts}点</td></tr>`).join('')}</table>`;
+  }
+  if (step > n) {
     return `<div class="eyebrow">今夜の本性診断</div><div class="big">全員の結果</div><div class="diag-grid">${pub.players.map(p => {
-      const d = pub.diag[p.id]; return `<div class="dg">${I.type(d.type)}<div><div class="nm">${esc(p.name)}さん</div><div class="ty">${esc(d.name)}</div><div class="sub">${esc(d.sub)}</div></div></div>`;
+      const d = pub.diag[p.id]; return `<div class="dg">${I.type(d.code)}<div><div class="nm">${esc(p.name)}さん　${d.chars.join('')}</div><div class="ty">${esc(d.name)}</div><div class="sub">${esc(d.catch)}</div></div></div>`;
     }).join('')}</div>`;
   }
-  const p = pub.players[S.diagStep], d = pub.diag[p.id];
-  return `<div class="diag-one"><div>
-    <div class="eyebrow">今夜の本性診断 ${S.diagStep + 1}/${n}</div>
+  const p = pub.players[step - 1], d = pub.diag[p.id];
+  return `<div class="dx"><div class="left">
+    <div class="eyebrow">今夜の本性診断 ${step}/${n}</div>
     <div class="diag-who">${esc(p.name)}さんは</div>
-    <div class="diag-type">${esc(d.name)}</div><div class="diag-sub">${esc(d.sub)}</div>
-    <p class="diag-desc">${esc(d.desc)}</p>
-    ${d.moment ? `<div class="diag-moment"><span class="k">決め手になった場面</span>${esc(d.moment)}</div>` : ''}
-    <div class="nums">${d.nums.map(x => `<div><div class="k">${esc(x.k)}</div><div class="v">${esc(x.v)}</div></div>`).join('')}</div>
+    <div class="diag-type">${esc(d.name)}</div>
+    <div class="dx-code">${d.chars.map(c => `<span>${c}</span>`).join('')}</div>
+    <div class="diag-sub">${esc(d.catch)}</div>
+    ${axesHtml(d)}
+    <p class="dx-desc">${esc(d.desc)}</p>
+    <div class="dx-an">${d.analysis.slice(0, 3).map(t => `<div>${esc(t)}</div>`).join('')}</div>
+    <div class="dx-sub"><span>相性のいいタイプ <b>${esc(d.match.name)}</b></span><span>手ごわい相手 <b>${esc(d.rival.name)}</b></span></div>
     </div>${typeCard(d)}</div>`;
 }
-
-/* 診断の結果を一枚の札に見立てる */
-function typeCard(d) {
-  const ch = d.name[0];
-  return `<div class="type-card"><span class="tc-ix tl">${esc(ch)}</span>${I.type(d.type)}<span class="tc-nm">${esc(d.name)}</span><span class="tc-ix br">${esc(ch)}</span></div>`;
+function axesHtml(d) {
+  return `<div class="axes">${d.axes.map(a => `<div class="axis"><span class="${a.left ? 'on' : ''}">${a.l}</span><span class="bar"><i class="${a.left ? 'l' : 'r'}" style="width:${a.pct}%"></i></span><span class="${a.left ? '' : 'on'}">${a.r}</span></div>`).join('')}</div>`;
 }
 
-/* ---------- スマホ ---------- */
+function typeCard(d) {
+  const ch = d.chars ? d.chars.join('') : d.name[0];
+  return `<div class="type-card"><span class="tc-ix tl">${esc(ch[0])}</span>${I.type(d.code || d.type)}<span class="tc-nm">${esc(d.name)}</span><span class="tc-code">${esc(ch)}</span><span class="tc-ix br">${esc(ch[0])}</span></div>`;
+}
+/* 16タイプの一覧 */
+function vTypes(pub) {
+  const who = {};
+  if (pub && pub.diag) pub.players.forEach(p => { const d = pub.diag[p.id]; if (d) (who[d.code] = who[d.code] || []).push(p.name); });
+  const codes = Object.keys(E.TYPES16);
+  const cards = codes.map(code => {
+    const T = E.TYPES16[code], open = S.openType === code;
+    const chars = code.split('').map((c, i) => c === E.AXES[i].lk ? E.AXES[i].lc : E.AXES[i].rc).join('');
+    return `<button class="zc doc ${open ? 'open' : ''}" data-type="${code}">${I.type(code)}<div><div class="cd">${chars}</div><div class="nm">${esc(T.name)}</div><div class="ct">${esc(T.catch)}</div>
+      ${who[code] ? `<div class="who">今夜:${who[code].map(esc).join('、')}さん</div>` : ''}
+      ${open ? `<div class="more">${esc(T.desc)}<br><b>強み</b> ${esc(T.strong)}<br><b>気をつけたい点</b> ${esc(T.weak)}<br><b>相性のいいタイプ</b> ${esc(E.TYPES16[T.match].name)}　<b>手ごわい相手</b> ${esc(E.TYPES16[T.rival].name)}</div>` : ''}</div></button>`;
+  }).join('');
+  return `<div class="zukan"><div class="zukan-head"><div><div class="eyebrow">本性診断</div><h1>16タイプの一覧</h1></div><button class="btn" data-act="types-close">戻る</button></div>
+    <div class="zukan-axes">${E.AXES.map(ax => `<div><b>${ax.lc}・${ax.rc}</b>　${ax.l}か、${ax.r}か</div>`).join('')}</div>
+    <div class="zgrid">${cards}</div></div>`;
+}
+
 function me(pub) { return pub.players.find(p => p.id === S.pid); }
 function vPhone(pub, priv) {
   const m = me(pub);
   if (!m) return `<div class="entry"><div class="entry-head">${logo()}</div><h2 class="entry-h">部屋 ${esc(pub.code)}</h2><p class="lead">${pub.phase === 'lobby' ? '参加の受付を待っています…' : 'この部屋はもう始まっています。'}</p></div>`;
-  const top = `<div class="ph-top"><span class="me">${esc(m.name)}${m.title ? rankTag(m.title) : ''}</span><span class="rd">${pub.round ? `第${pub.round}回` : `部屋 ${esc(pub.code)}`}</span></div>`;
+  if (S.showTypes) return vTypes(pub);
+  const top = `<div class="ph-top"><span class="me">${esc(m.name)}${m.title ? rankTag(m.title) : ''}</span><span class="rd"><button class="iconbtn" data-act="sound">${SFX.isMuted() ? '音 切' : '音 入'}</button>${pub.round ? `第${pub.round}回` : `部屋 ${esc(pub.code)}`}</span></div>`;
   let body = '', bar = '';
   const isLeader = pub.leader === S.pid;
   const ctl = isLeader ? controls(pub, true) : '';
@@ -2194,9 +2590,16 @@ function vPhone(pub, priv) {
       if (isLeader) bar = `<div class="ph-bar col">${ctl}<button class="btn" data-act="cfg-open">ルールと法律の設定</button></div>`;
       break;
     }
+    case 'brief': {
+      const P = briefPages(pub), st = Math.min(pub.brief, P.length - 1);
+      body = `<div class="panel"><p class="small" style="color:var(--gold)">開会前の説明 ${st + 1}/${P.length}</p><h2>${P[st].t}</h2>${P[st].h}</div>`;
+      if (isLeader) bar = `<div class="ph-bar three">${ctl}</div>`;
+      break;
+    }
     case 'roundEnd': case 'enacted': {
+      const mine = pub.results ? pub.results.find(r => r.id === S.pid) : null;
       body = pub.phase === 'roundEnd'
-        ? `<div class="panel"><h2>第${pub.round}回の結果</h2><table class="mini-table">${pub.results.map((r, i) => `<tr><td>${i + 1}. ${esc(pname(pub, r.id))}</td><td>${rankTag(r.title)}</td></tr>`).join('')}</table></div>`
+        ? `<div class="panel"><h2>第${pub.round}回の結果</h2>${mine ? `<p>あなたは${mine.title}。+${mine.pts}点、合計${mine.total}点です。</p>` : ''}<table class="mini-table">${pub.results.map((r, i) => `<tr><td>${i + 1}. ${esc(pname(pub, r.id))}</td><td>${rankTag(r.title)}　${r.total}点</td></tr>`).join('')}</table>${commentHtml(pub)}</div>`
         : phEnacted(pub);
       if (pub.cfg.lawsOn) body += `<div class="lawlist"><div class="doc">${lawsHtml(pub)}</div></div>`;
       if (isLeader) bar = `<div class="ph-bar col">${ctl}</div>`;
@@ -2214,19 +2617,23 @@ function vPhone(pub, priv) {
     case 'vote': {
       const mine = priv && priv.myVote;
       const top0 = pub.order[0] === S.pid;
-      body = `<div class="panel"><div class="vote-row"><h2>投票</h2><span class="ph-timer" data-timer>${mmss(remainMs(pub))}</span></div>
-        <p>${top0 ? 'あなたは大富豪なので2票です。' : '1票です。'}締め切りまでなら入れ直せます。全員が入れると締め切ります。</p>
+      body = `<div class="panel"><div class="vote-row"><h2>投票</h2><span class="ph-timer">${pub.vote.voted.length}/${pub.players.length}票</span></div>
+        <p>${top0 ? 'あなたは大富豪なので2票です。' : '1票です。'}開票までなら入れ直せます。全員が入れるか、主催者が締め切ると開票です。</p>
         <div class="opts">${pub.vote.options.map(k => optHtml(pub, k, (S.choice || mine) === k)).join('')}</div>
         <p class="ph-note" style="margin-top:12px">${mine ? `「${esc(pub.lawInfo[mine].name)}」に投票しました。` : ''}</p></div>`;
-      bar = `<div class="ph-bar one"><button class="btn main" data-act="vote" ${S.choice ? '' : 'disabled'}>この法律に入れる</button></div>`;
+      bar = `<div class="ph-bar ${isLeader ? '' : 'one'}">${isLeader ? controls(pub, true).replace('btn main', 'btn') : ''}<button class="btn main" data-act="vote" ${S.choice ? '' : 'disabled'}>この法律に入れる</button></div>`;
       break;
     }
     case 'diag': {
       const d = pub.diag[S.pid];
-      body = `<div class="panel ph-diag">${typeCard(d)}<p class="small">今夜のあなたは</p><div class="ty">${esc(d.name)}</div><div class="sb">${esc(d.sub)}</div><p class="ds">${esc(d.desc)}</p>
+      body = `<div class="panel ph-diag">${typeCard(d)}<p class="small">今夜のあなたは(総合${d.place}位・${d.pts}点)</p><div class="ty">${esc(d.name)}</div>
+        <div class="dx-code">${d.chars.map(c => `<span>${c}</span>`).join('')}</div><div class="sb">${esc(d.catch)}</div>
+        ${axesHtml(d)}<p class="ds">${esc(d.desc)}</p>
+        <h3>今夜の立ち回り</h3><div class="dx-an">${d.analysis.map(t => `<div>${esc(t)}</div>`).join('')}</div>
         ${d.moment ? `<div class="mo"><span class="k">決め手になった場面</span>${esc(d.moment)}</div>` : ''}
-        <table class="mini-table">${d.nums.map(x => `<tr><td>${esc(x.k)}</td><td>${esc(x.v)}</td></tr>`).join('')}</table></div>`;
-      if (isLeader) bar = `<div class="ph-bar one">${ctl}</div>`;
+        <h3>強みと気をつけたい点</h3><p class="ds">${esc(d.strong)}<br>${esc(d.weak)}</p>
+        <h3>相性</h3><p class="ds">相性のいいタイプは「${esc(d.match.name)}」、手ごわい相手は「${esc(d.rival.name)}」です。</p></div>`;
+      bar = `<div class="ph-bar ${isLeader ? 'even' : 'one'}"><button class="btn" data-act="types-open">タイプ一覧</button>${isLeader ? '<button class="btn main" data-act="again">もう一度</button>' : ''}</div>`;
       break;
     }
     default: { const r = phPlay(pub, priv, m); body = r.body; bar = r.bar; }
@@ -2363,7 +2770,7 @@ function render() {
   let html = '';
   const pub = S.pub;
   document.body.className = (S.view === 'tv' ? 'is-tv' : 'is-ph') + (pub && pub.rev ? ' rev' : '');
-  if (S.view === 'entry') html = vEntry();
+  if (S.view === 'entry') html = S.showTypes ? vTypes(null) : vEntry();
   else if (S.view === 'join') html = vJoin(false);
   else if (S.view === 'hostform') html = vJoin(true);
   else if (!pub) html = `<div class="entry"><h1>接続しています</h1><p class="lead">${S.err ? esc(S.err) : 'しばらくお待ちください。'}</p></div>`;
@@ -2384,18 +2791,6 @@ function render() {
   if (!S.offline && ob) ob.remove();
   if (S.restored && pub) { S.restored = false; fx('round', `<div class="fx-title"><small>${APP_NAME}</small><b style="font-size:3.4vw">続きから再開</b></div>`, 1800); }
 }
-let lastTickSec = -1;
-setInterval(() => {
-  const t = document.querySelector('[data-timer]');
-  if (t && S.pub) {
-    const ms = remainMs(S.pub), sec = Math.ceil(ms / 1000);
-    t.textContent = mmss(ms);
-    t.classList.toggle('hurry', sec <= 10 && sec > 0);
-    if (sec <= 10 && sec > 0 && sec !== lastTickSec && bigSound(S.pub)) SFX.play('tick');
-    lastTickSec = sec;
-  }
-}, 200);
-
 /* ---------- 演出と効果音 ---------- */
 const bigSound = pub => S.view === 'tv' || pub.mode === 'phone';
 function fx(kind, html, ms) {
@@ -2413,7 +2808,8 @@ function fxCheck(prev, pub) {
   const big = bigSound(pub), tv = S.view === 'tv';
   const ph = (p, q) => prev.phase === p && pub.phase !== p;
   // 開会
-  if (prev.phase === 'lobby' && pub.phase !== 'lobby') {
+  if (prev.phase === 'lobby' && pub.phase === 'brief') { if (big) SFX.play('knock3'); }
+  else if (prev.phase === 'brief' && pub.phase !== 'brief') {
     if (big) { fx('curtain', `<div class="fx-title">${I.gavel()}<small>${APP_NAME}</small><b>開会</b></div>`, 3000); SFX.play('opening'); }
     else SFX.play('deal');
     S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
@@ -2441,17 +2837,31 @@ function fxCheck(prev, pub) {
   // 革命・8切り・法律・上がり
   const f = pub.flash, pf = prev.flash;
   if (f && (!pf || f.n !== pf.n)) {
-    if (f.kind === 'rev') { fx('rev', `<div class="fx-big">革命<small>${esc(f.text)}</small></div><div class="fx-flag">${I.type('rebel')}</div>`, 2700); SFX.play(big ? 'revolution' : 'whoosh'); if (navigator.vibrate) try { navigator.vibrate([80, 50, 80, 50, 160]); } catch (e) { /* 振動できない端末 */ } }
+    if (f.kind === 'rev') { fx('rev', `<div class="fx-big">革命<small>${esc(f.text)}</small></div><div class="fx-flag">${I.flag()}</div>`, 2700); SFX.play(big ? 'revolution' : 'whoosh'); if (navigator.vibrate) try { navigator.vibrate([80, 50, 80, 50, 160]); } catch (e) { /* 振動できない端末 */ } }
     else if (f.kind === 'cut') { fx('cut', '<b>八切り</b>', 1300); SFX.play('whoosh'); }
     else if (f.kind === 'law' && big) SFX.play('gavel');
-    else if (f.kind === 'rule' && big) SFX.play('whoosh');
+    else if (f.kind && f.kind.startsWith('r-')) ruleFx(f.kind.slice(2), big);
     else if (f.kind === 'out' && big) SFX.play('out');
   }
   // 自分の番
   if (S.view !== 'tv' && pub.turn === S.pid && prev.turn !== S.pid) { SFX.play('turn'); if (navigator.vibrate) try { navigator.vibrate(30); } catch (e) { /* 振動できない端末 */ } }
 }
+function ruleFx(k, big) {
+  const fl = document.querySelector('.flash'); if (fl) fl.classList.remove('on');
+  const B = (t, sub) => `<div class="big">${t}${sub ? `<small>${sub}</small>` : ''}</div>`;
+  switch (k) {
+    case 'skip5': fx('rule fx-skip', `<span class="chev">»</span><span class="chev" style="animation-delay:.15s">»</span>${B('5飛ばし', '次の人を飛ばします')}`, 1700); SFX.play('whoosh'); break;
+    case 'rev9': fx('rule fx-rev9', `<span class="ring"></span>${B('9リバース', '順番が逆回りに')}`, 1700); SFX.play('reverse'); break;
+    case 'back11': fx('rule fx-back11', B('11バック', '場が流れるまで強さが逆'), 1700); SFX.play('reverse'); break;
+    case 'give7': fx('rule fx-give', `<span class="flycard">${I.back()}</span>${B('7渡し')}`, 1600); SFX.play('deal'); break;
+    case 'drop10': fx('rule fx-drop', `<span class="fallcard" style="left:42%">${I.back()}</span><span class="fallcard" style="left:52%;--rot:-140deg;animation-delay:.12s">${I.back()}</span>${B('10捨て')}`, 1700); SFX.play('drop'); break;
+    case 'spade3': fx('rule fx-spade', `${I.suit('S', 'bigsuit')}${B('スペ3返し', 'ジョーカー撃破')}`, 1900); SFX.play('stamp'); setTimeout(shake, 120); break;
+    case 'storm': { let h = ''; for (let i = 0; i < 90; i++) h += `<i style="top:${Math.random() * 100}%;--t:${0.6 + Math.random() * 0.8}s;--d:${Math.random() * 0.6}s"></i>`; fx('rule fx-storm', h + B('砂嵐', '3の3枚で場が流れます'), 2000); SFX.play('storm'); break; }
+    case 'foul': fx('rule fx-foul', '<div class="stampbig">反則</div>', 2200); SFX.play('foul'); setTimeout(shake, 150); break;
+  }
+}
 function soundButton() {
-  if (S.view === 'entry' || S.view === 'join' || S.view === 'hostform') { const b = document.querySelector('.sound-btn'); if (b) b.remove(); return; }
+  if (S.view !== 'tv') { const b = document.querySelector('.sound-btn'); if (b) b.remove(); return; }
   let b = document.querySelector('.sound-btn');
   if (!b) { b = document.createElement('button'); b.className = 'sound-btn'; b.dataset.act = 'sound'; document.body.appendChild(b); }
   b.textContent = SFX.isMuted() ? '音 切' : '音 入';
@@ -2468,6 +2878,8 @@ document.addEventListener('click', async ev => {
   const c = ev.target.closest('[data-card]');
   if (c && c.closest('.fan.live')) return;
   if (c) { const id = c.dataset.card; if (S.sel.has(id)) S.sel.delete(id); else S.sel.add(id); render(); return; }
+  const ty = ev.target.closest('[data-type]');
+  if (ty) { S.openType = S.openType === ty.dataset.type ? null : ty.dataset.type; render(); return; }
   const ch = ev.target.closest('[data-choice]');
   if (ch) { S.choice = ch.dataset.choice; render(); return; }
   const cf = ev.target.closest('[data-cfg]');
@@ -2508,6 +2920,12 @@ document.addEventListener('click', async ev => {
     case 'laws': S.showLaws = !S.showLaws; render(); break;
     case 'sound': SFX.setMuted(!SFX.isMuted()); if (!SFX.isMuted()) SFX.play('gavel'); render(); break;
     case 'cfg-open': S.showCfg = true; render(); break;
+    case 'types-open': S.showTypes = true; S.openType = null; lastHtml = ''; render(); window.scrollTo(0, 0); break;
+    case 'types-close': S.showTypes = false; lastHtml = ''; render(); break;
+    case 'brief-next': send({ t: 'brief', step: (S.pub.brief || 0) + 1 }); break;
+    case 'brief-back': send({ t: 'brief', step: Math.max(0, (S.pub.brief || 0) - 1) }); break;
+    case 'begin': send({ t: 'begin' }); break;
+    case 'close-vote': send({ t: 'close-vote' }); break;
     case 'cfg-close': S.showCfg = false; render(); break;
     case 'cfg-reset': send({ t: 'cfg', cfg: E.defaultCfg() }); break;
     case 'play': send({ t: 'play', ids: [...S.sel] }); S.sel.clear(); break;
@@ -2521,7 +2939,7 @@ document.addEventListener('click', async ev => {
     case 'veto': send({ t: 'veto', key: S.choice }); S.choice = null; break;
     case 'vote': send({ t: 'vote', key: S.choice }); S.choice = null; break;
     case 'param': { const v = pr.key === 'fav' ? S.choice : parseInt(S.choice, 10); send({ t: 'param', v }); S.choice = null; break; }
-    case 'diag-next': S.diagStep = S.diagStep >= S.pub.players.length ? 0 : S.diagStep + 1; if (S.diagStep < S.pub.players.length) SFX.play('drumroll'); render(); break;
+    case 'diag-next': S.diagStep = S.diagStep > S.pub.players.length ? 0 : S.diagStep + 1; if (S.diagStep >= 1 && S.diagStep <= S.pub.players.length) SFX.play('drumroll'); render(); break;
     case 'again': S.diagStep = 0; send({ t: 'again' }); break;
     case 'start': case 'cpu+': case 'cpu-': case 'next': case 'finish': S.diagStep = 0; send({ t: a }); break;
   }
