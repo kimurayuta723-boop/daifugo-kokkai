@@ -695,6 +695,35 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .ph-top .me{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .ph-top .rd{flex:none;white-space:nowrap}
 .ph-top .rd .iconbtn{padding:2px 8px}
+/* ---------- 16タイプの一覧:全カードを同じ枠組み・同じ高さにそろえる ---------- */
+.zgrid{align-items:stretch;grid-auto-rows:auto}
+.zc{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;height:100%}
+.zc-art{display:block;flex:none}
+.zc .zc-body{display:flex;flex-direction:column;align-items:center;width:100%}
+.zc .cd{line-height:1.6;margin-top:2px}
+.zc .nm{line-height:1.45;white-space:nowrap}
+.zc .ct{line-height:1.7;min-height:3.4em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-wrap:pretty}
+.zc .who{min-height:1.7em;line-height:1.7;margin-top:6px}
+.zc.open{display:grid;align-items:start}
+.zc.open .zc-body{align-items:flex-start}
+.zc.open .ct{-webkit-line-clamp:unset;min-height:0}
+.zc.open .who:empty{display:none}
+@media (max-width:760px){.zc .nm{font-size:16px;white-space:normal}.zc .ill{width:84px;height:84px}}
+/* ---------- テレビ:説明・診断・一覧など、右の欄がない画面では右上のボタンを画面の右端へ ---------- */
+.is-tv:has(.sheet.full) .sound-btn,.is-tv:has(.zukan) .sound-btn{right:14px}
+.is-tv:has(.sheet.full) .bgm-btn,.is-tv:has(.zukan) .bgm-btn{right:76px}
+.is-tv:has(.sheet.full) .home-btn,.is-tv:has(.zukan) .home-btn{right:150px}
+/* 一覧の見出しはボタンと重ならないよう少し下げる */
+.is-tv .zukan{padding-top:3.6vw}
+/* 16タイプの軸の説明:見出しと本文を分けて、4つとも同じ形に */
+.zukan-axes div{display:flex;align-items:baseline;gap:.8em}
+.zukan-axes b{flex:none}
+@media (max-width:760px){.zukan-axes div{flex-direction:column;gap:2px}}
+/* 全員の結果:どの人も同じ高さ・同じ並びに */
+.diag-grid{align-items:start}
+.dg{align-items:start;min-height:6vw}
+.dg .nm{font-size:.92em;line-height:1.6}
+.dg .sub{line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
 </style>
 <script>
@@ -2931,12 +2960,13 @@ function vTypes(pub) {
   const cards = codes.map(code => {
     const T = E.TYPES16[code], open = S.openType === code;
     const chars = code.split('').map((c, i) => c === E.AXES[i].lk ? E.AXES[i].lc : E.AXES[i].rc).join('');
-    return `<button class="zc doc ${open ? 'open' : ''}" data-type="${code}">${I.type(code)}<div><div class="cd">${chars}</div><div class="nm">${esc(T.name)}</div><div class="ct">${esc(T.catch)}</div>
-      ${who[code] ? `<div class="who">今夜:${who[code].map(esc).join('、')}さん</div>` : ''}
+    // どのカードも同じ枠組み:紋章・4文字・名前・ひとこと(2行分)・今夜の該当者(1行分)。空いていても場所はとっておく
+    return `<button class="zc doc ${open ? 'open' : ''}" data-type="${code}"><span class="zc-art">${I.type(code)}</span><div class="zc-body"><div class="cd">${chars}</div><div class="nm">${esc(T.name)}</div><div class="ct">${esc(T.catch)}</div>
+      ${pub && pub.diag ? `<div class="who">${who[code] ? `今夜:${who[code].map(esc).join('、')}さん` : ''}</div>` : ''}
       ${open ? `<div class="more">${esc(T.desc)}<br><b>強み</b> ${esc(T.strong)}<br><b>気をつけたい点</b> ${esc(T.weak)}<br><b>相性のいいタイプ</b> ${esc(E.TYPES16[T.match].name)}　<b>手ごわい相手</b> ${esc(E.TYPES16[T.rival].name)}</div>` : ''}</div></button>`;
   }).join('');
   return `<div class="zukan"><div class="zukan-head"><div><div class="eyebrow">本性診断</div><h1>16タイプの一覧</h1></div><button class="btn" data-act="types-close">戻る</button></div>
-    <div class="zukan-axes">${E.AXES.map(ax => `<div><b>${ax.lc}・${ax.rc}</b>　${ax.l}か、${ax.r}か</div>`).join('')}</div>
+    <div class="zukan-axes">${E.AXES.map(ax => `<div><b>${ax.lc}・${ax.rc}</b><span>${ax.l}か、${ax.r}か</span></div>`).join('')}</div>
     <div class="zgrid">${cards}</div></div>`;
 }
 
