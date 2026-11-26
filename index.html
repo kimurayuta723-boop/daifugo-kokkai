@@ -770,6 +770,10 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .ph-order .oc.out{opacity:.55}
 .ph-order .ar{flex:none;align-self:center;color:var(--gold);font-size:15px;line-height:1}
 .ph-top .me .mypt{font-family:var(--num);font-size:13px;font-weight:700;color:var(--gold2)}
+/* 帯は中身を左右の余白込みで並べ、端の人も中央まで寄せられるようにする */
+.ph-order{display:block;position:relative}
+.ph-order .track{display:inline-flex;align-items:stretch;gap:4px;padding:0 50%}
+.ph-order .oc{width:92px;min-width:0}
 
 </style>
 <script>
@@ -3193,15 +3197,30 @@ function phPlay(pub, priv, m) {
   }
   S.canPlay = canPlay && myTurn;
   const finfo = `<div class="info">${f.topIds.length ? `<b>${esc(pname(pub, f.topPid))}さん</b><br>${esc(E.describe(f.top))}` : '場に札はありません'}<div class="chips">${fieldInfo(pub)}</div></div>`;
-  // 手番の順:自分から、回る向きに並べる(自分の番まであと何人かが分かる)
-  const n = pub.players.length, myI = pub.players.findIndex(p => p.id === S.pid), d = pub.dir === -1 ? -1 : 1;
-  const ordered = pub.players.map((_, k) => pub.players[((myI + d * k) % n + n) % n]);
+  // 手番の順:今操作している人を真ん中に置き、左に直前の人、右にこれからの人を回る向きの順に並べる
+  const n = pub.players.length, d = pub.dir === -1 ? -1 : 1;
+  let ci = pub.players.findIndex(p => p.id === pub.turn);
+  if (ci < 0) ci = pub.players.findIndex(p => p.id === S.pid);
+  const half = Math.floor(n / 2);
+  const ordered = Array.from({ length: n }, (_, k) => pub.players[((ci + d * (k - half)) % n + n) % n]);
   const pts = pub.points || {};
-  const plist = `<div class="ph-order" aria-label="手番の順">${ordered.map((p, k) => `${k ? '<span class="ar" aria-hidden="true">›</span>' : ''}<div class="oc ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''} ${p.id === S.pid ? 'me' : ''}"><span class="n">${p.id === S.pid ? 'あなた' : esc(p.name)}</span><span class="s">${p.out > 0 ? p.out + '番目に上がり' : p.out === -1 ? '都落ち' : p.out === -2 ? '反則' : p.passed ? 'パス' : p.count + '枚'}<b>${pts[p.id] || 0}点</b></span></div>`).join('')}</div>`;
+  const plist = `<div class="ph-order" aria-label="手番の順"><div class="track" data-turn="${esc(pub.turn || '')}">${ordered.map((p, k) => `${k ? '<span class="ar" aria-hidden="true">›</span>' : ''}<div class="oc ${pub.turn === p.id ? 'turn' : ''} ${p.out ? 'out' : ''} ${p.id === S.pid ? 'me' : ''}"><span class="n">${p.id === S.pid ? 'あなた' : esc(p.name)}</span><span class="s">${p.out > 0 ? p.out + '番目に上がり' : p.out === -1 ? '都落ち' : p.out === -2 ? '反則' : p.passed ? 'パス' : p.count + '枚'}<b>${pts[p.id] || 0}点</b></span></div>`).join('')}</div></div>`;
   const body = `<div class="ph-table">${pileHtml(pub, 'min(11vw,52px)')}${finfo}</div>${plist}${pub.cfg.lawsOn ? lawBar(pub) : ''}
     <div class="ph-status ${myTurn || (prompt && prompt.type !== 'gave') ? 'mine' : ''}">${title}</div><div class="ph-note">${note}</div>
     <div class="hand-area">${fanHtml(hand, pub, tapMode, hint)}</div>`;
   return { body, bar };
+}
+function centerOrder() {
+  const box = document.querySelector('.ph-order'); if (!box) { S.lastTurn = null; return; }
+  const tr = box.querySelector('.track');
+  const c = box.querySelector('.oc.turn') || box.querySelector('.oc.me'); if (!c) return;
+  box.scrollLeft = c.offsetLeft + c.offsetWidth / 2 - box.clientWidth / 2;
+  const t = tr.dataset.turn;
+  if (S.lastTurn && t && t !== S.lastTurn) {
+    const step = c.offsetWidth + 16;
+    tr.animate([{ transform: `translateX(${step}px)` }, { transform: 'translateX(0)' }], { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1)' });
+  }
+  S.lastTurn = t || S.lastTurn;
 }
 function explain(sel, ctx) {
   const ip = E.interpret(sel, ctx);
@@ -3251,6 +3270,7 @@ function render() {
     $app.innerHTML = html; lastHtml = html;
     document.querySelectorAll('input').forEach(i => { if (vals[i.id] != null) i.value = vals[i.id]; });
     if (keep) { const el = document.getElementById(keep); if (el) el.focus(); }
+    centerOrder();
   }
   if (pub) flashCheck(pub);
   if (pub && pub !== S.seen) { const prev = S.seen; S.seen = pub; fxCheck(prev, pub); }
