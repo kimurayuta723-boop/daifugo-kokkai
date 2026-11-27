@@ -3528,7 +3528,7 @@ function vEntry() {
     ${I.hall()}
     <h1>${logo('lg')}</h1>
     <div class="rule">法を作る大富豪</div>
-    <p class="lead">第1回の前と回が終わるたびに、みんなの投票で法律が一つ増えます。<br>革命を起こした人は、法律を一つ廃止できます。<br>最後に、立ち回りから今夜の本性を診断します。</p>
+    <p class="lead">投票で法律が増え、革命で一つ消せます。<br>最後に、今夜の本性を診断します。</p>
     <div class="stack">
       ${resumeHtml()}
       <button class="btn main" data-act="go-tv">テレビで議場を開く</button>
@@ -3536,7 +3536,7 @@ function vEntry() {
       <button class="btn" data-act="go-join">議場に入る</button>
     </div>
     <div class="links"><button class="link" data-act="lawbook-open">法律の一覧</button><button class="link" data-act="types-open">診断の16タイプ</button></div>
-    <p class="note">テレビで議場を開くと、場と法律はテレビに、手札は各自のスマホに出ます。スマホだけで遊ぶときは、議場を開いた人のスマホが親になります。親の画面は最後まで開いたままにしてください。${LOCAL ? '<br>いまは試用モードです(同じブラウザのタブ同士でだけつながります)。' : ''}</p>
+    <p class="note">テレビには場、スマホには手札が出ます。<br>議場を開いた画面は、最後まで閉じないでください。${LOCAL ? '<br>試用モード:同じブラウザのタブ同士でだけつながります。' : ''}</p>
   </div>`;
 }
 
