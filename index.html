@@ -871,6 +871,15 @@ html,body{overflow-x:clip}
 .ph-bar.lobbybar .btn[data-act=cfg-open]{grid-column:1/-1}
 .quip{font-family:var(--serif);font-weight:700;color:var(--gold2);letter-spacing:.04em}
 .panel .quip{margin-top:8px;font-size:15px}
+.ph-final .pm-k{font-size:12px;color:var(--sub);letter-spacing:.12em;margin-top:8px}
+.ph-final h2{margin:2px 0 10px;overflow-wrap:anywhere}
+.mini-table.fin{width:100%;table-layout:fixed}
+.mini-table.fin td{white-space:nowrap;padding:9px 0}
+.mini-table.fin .rk{width:3em}
+.mini-table.fin .nm{overflow:hidden;text-overflow:ellipsis;padding-right:8px}
+.mini-table.fin .nm small{margin-left:.5em;font-size:11px;color:var(--gold2)}
+.mini-table.fin .tp{width:5.6em;text-align:right;color:var(--sub);font-size:13px}
+.mini-table.fin .pt{width:3.6em;text-align:right;font-weight:700}
 
 </style>
 <script>
@@ -1217,7 +1226,19 @@ function moment(G, pid, score, text) { (G.moments[pid] = G.moments[pid] || []).p
 function rl(G) { return G.rlog || (G.rlog = { revs: [], fouls: [], locals: [], passes: {}, cuts: {}, ochi: null, geko: null, fate: null }); }
 const HOLD = { rev: 4200, cut: 2400, law: 2200, out: 2000 };
 // 試合中の実況の言い回しを順にずらして選ぶ(乱数は使わない:札の配りやCPUの判断に影響させないため)
-function vary(G, arr) { G.vc = (G.vc || 0) + 1; return arr[(G.vc * 7 + G.round) % arr.length]; }
+// 文ごとの順番を回しながら選び、直近の実況と同じ文・同じ決めぜりふ(「。」のあとの一言)が続かないようにする
+function vary(G, key, arr) {
+  G.vk = G.vk || {};
+  const recent = G.log.slice(-8).map(l => l.text != null ? l.text : l);
+  const tail = t => { const i = t.indexOf('。'); return i >= 0 && i < t.length - 1 ? t.slice(i + 1) : ''; };
+  const used = new Set(recent.map(tail).filter(Boolean));
+  const start = G.vk[key] == null ? (G.round * 3 + arr.length) % arr.length : (G.vk[key] + 1) % arr.length;
+  for (let k = 0; k < arr.length; k++) {
+    const i = (start + k) % arr.length, t = arr[i];
+    if (!recent.includes(t) && !(tail(t) && used.has(tail(t)))) { G.vk[key] = i; return t; }
+  }
+  G.vk[key] = start; return arr[start];
+}
 function say(G, text, kind) {
   G.log.push(text); if (G.log.length > 8) G.log.shift();
   if (kind) G.hold = Math.max(G.hold || 0, HOLD[kind] || (kind.startsWith('r-') ? 3200 : 1500));
@@ -1497,11 +1518,11 @@ function doPlay(G, pid, ids, now) {
   G.history.push({ r: G.round, pid, ids: G.field.topIds, d: describe(p) }); if (G.history.length > 60) G.history.shift();
   {
     const nm = pName(G, pid), d = describe(p);
-    say(G, !prevTop ? vary(G, [`${nm}さんが${d}を出しました。`, `${nm}さんが${d}から切り出します。`, `${nm}さんが${d}で口火を切りました。`, `${nm}さんの発言は${d}から。`])
-      : strongN && !G.rev ? vary(G, [`${nm}さんが${d}を投入。強気の一手です。`, `${nm}さん、ここで${d}。`, `${nm}さんが${d}で押さえにかかります。`, `${nm}さんが${d}を出しました。出し惜しみはしない主義のようです。`, `${nm}さんが${d}。議場がどよめきます。`])
-      : vary(G, [`${nm}さんが${d}を出しました。`, `${nm}さんは${d}で応じます。`, `${nm}さんが${d}を重ねました。`, `${nm}さんの答弁は${d}。`, `${nm}さんが${d}を出しました。`]));
+    say(G, !prevTop ? vary(G, 'v1', [`${nm}さんが${d}を出しました。`, `${nm}さんが${d}から切り出します。`, `${nm}さんが${d}で口火を切りました。`, `${nm}さんの発言は${d}から。`])
+      : strongN && !G.rev ? vary(G, 'v2', [`${nm}さんが${d}を投入。強気の一手です。`, `${nm}さん、ここで${d}。`, `${nm}さんが${d}で押さえにかかります。`, `${nm}さんが${d}を出しました。出し惜しみはしない主義のようです。`, `${nm}さんが${d}。議場がどよめきます。`])
+      : vary(G, 'v3', [`${nm}さんが${d}を出しました。`, `${nm}さんは${d}で応じます。`, `${nm}さんが${d}を重ねました。`, `${nm}さんの答弁は${d}。`, `${nm}さんが${d}を出しました。`]));
     hits.forEach(k => lawHit(G, k, pid, k === 'strong' ? `${nm}さんが最強の数字で場を押さえました。` : `${nm}さんが優遇されたマークで、同じ強さの札を重ねました。`));
-    if (hand.length === 1) say(G, vary(G, [`${nm}さん、残り一枚です。`, `${nm}さんの手札はあと一枚。`, `${nm}さん、上がりまであと一枚。議場がざわつきます。`, `${nm}さん、残り一枚。全員の視線が集まります。`, `${nm}さんの手札は残り一枚。誰か止めてください。`]));
+    if (hand.length === 1) say(G, vary(G, 'v4', [`${nm}さん、残り一枚です。`, `${nm}さんの手札はあと一枚。`, `${nm}さん、上がりまであと一枚。議場がざわつきます。`, `${nm}さん、残り一枚。全員の視線が集まります。`, `${nm}さんの手札は残り一枚。誰か止めてください。`]));
   }
   // 当たり札法
   if (G.fate && ids.includes(G.fate) && hand.length === 0) {
@@ -1533,7 +1554,7 @@ function doPlay(G, pid, ids, now) {
     G.rev = !G.rev; s.revs++;
     const hadLaws = G.laws.length > 0;
     if (G.laws.some(l => l.key === 'double')) rl(G).dblLost = pid;
-    { const nm = pName(G, pid), how = p.type === 'seq' ? '階段で' : ''; say(G, vary(G, [`${nm}さんが${how}革命を起こしました。`, `革命です。${nm}さんが${how}強さをひっくり返しました。`, `${nm}さん、${how}まさかの革命。`, `革命です。さっきまでの強い札が、急に頼りなくなりました。`, `${nm}さんが${how}革命。強い札を温存していた人の顔色が変わりました。`]), 'rev'); }
+    { const nm = pName(G, pid), how = p.type === 'seq' ? '階段で' : ''; say(G, vary(G, 'v5', [`${nm}さんが${how}革命を起こしました。`, `革命です。${nm}さんが${how}強さをひっくり返しました。`, `${nm}さん、${how}まさかの革命。`, `革命です。さっきまでの強い札が、急に頼りなくなりました。`, `${nm}さんが${how}革命。強い札を温存していた人の顔色が変わりました。`]), 'rev'); }
     rl(G).revs.push(pid);
     if (p.type === 'set' && p.n === 3) lawHit(G, 'rev3', pid);
     moment(G, pid, hadLaws ? 6 : 5, hadLaws ? `第${G.round}回、革命を起こして法律をすべて廃止した` : `第${G.round}回、革命を起こした`);
@@ -1547,7 +1568,7 @@ function doPlay(G, pid, ids, now) {
     }
     abolish(G);
   }
-  if (cut && !special) { s.kiri++; say(G, vary(G, ['8切りで場が流れます。', '8切り。ここで場を流します。', '8切りが出ました。場が流れます。', '8切り。議論は打ち切りです。', '8切りで強制終了。異議は受け付けません。']), 'cut'); rl(G).cuts[pid] = (rl(G).cuts[pid] || 0) + 1; }
+  if (cut && !special) { s.kiri++; say(G, vary(G, 'v6', ['8切りで場が流れます。', '8切り。ここで場を流します。', '8切りが出ました。ここで一区切りです。', '8切り。議論は打ち切りです。', '8切りで強制終了。異議は受け付けません。']), 'cut'); rl(G).cuts[pid] = (rl(G).cuts[pid] || 0) + 1; }
   proceed(G, now);
   return true;
 }
@@ -1577,7 +1598,7 @@ function finishCheck(G, pid, now, ret) {
   } else if (G.hands[pid].length === 0) {
     G.finished.push(pid);
     const place = G.finished.length;
-    { const nm = pName(G, pid); say(G, place === 1 ? vary(G, [`${nm}さんが1番目に上がりました。`, `${nm}さんが一番乗りで上がりました。`, `${nm}さん、真っ先に上がりました。`, `${nm}さんが1番目に上がり。お先に失礼、という顔です。`]) : vary(G, [`${nm}さんが${place}番目に上がりました。`, `${nm}さん、${place}番目で上がりです。`, `${nm}さんが${place}番目に議場を後にしました。`, `${nm}さん、${place}番目で上がり。ひとまず安全圏です。`]), 'out'); }
+    { const nm = pName(G, pid); say(G, place === 1 ? vary(G, 'v7', [`${nm}さんが1番目に上がりました。`, `${nm}さんが一番乗りで上がりました。`, `${nm}さん、真っ先に上がりました。`, `${nm}さんが1番目に上がり。お先に失礼、という顔です。`]) : vary(G, 'v8', [`${nm}さんが${place}番目に上がりました。`, `${nm}さん、${place}番目で上がりです。`, `${nm}さんが${place}番目に議場を後にしました。`, `${nm}さん、${place}番目で上がり。ひとまず安全圏です。`]), 'out'); }
     // 都落ち
     if (place === 1 && G.cfg.ochi && G.order && G.order[0] !== pid && isActive(G, G.order[0])) {
       G.ochi = G.order[0]; st(G, G.ochi).ochi++;
@@ -1597,7 +1618,7 @@ function finishCheck(G, pid, now, ret) {
 function afterMove(G, ret, now) {
   if (active(G).length <= 1) {
     const lastOne = active(G)[0];
-    if (lastOne) { const nm = pName(G, lastOne); say(G, vary(G, [`最後まで残ったのは${nm}さん。長い答弁でした。`, `${nm}さんがひとり残されました。お疲れさまでした。`, `議場に残ったのは${nm}さんだけ。手札がまだ重そうです。`])); }
+    if (lastOne) { const nm = pName(G, lastOne); say(G, vary(G, 'v9', [`最後まで残ったのは${nm}さん。長い答弁でした。`, `${nm}さんがひとり残されました。お疲れさまでした。`, `議場に残ったのは${nm}さんだけ。手札がまだ重そうです。`])); }
     endRound(G, now); return;
   }
   const pid = ret.pid;
@@ -1610,7 +1631,7 @@ function advance(G, from, now) {
   const cont = act.filter(id => !G.passed.includes(id) && id !== G.lastPid);
   if (!G.field.top) { G.turn = isActive(G, from) ? nextActive(G, from) : nextActive(G, from); G.cpuAt = now + 1500; return; }
   if (cont.length === 0) {
-    say(G, vary(G, ['場が流れました。', '続く人はなく、場が流れました。', '異議なし。場が流れます。', '誰も出さず、場が流れました。', '反論なし。場が流れます。', '誰も続かず、場が流れました。静かな議場です。']));
+    say(G, vary(G, 'v10', ['場が流れました。', '続く人はなく、場が流れました。', '異議なし。場が流れます。', '誰も出さず、場が流れました。', '反論なし。場は仕切り直しです。', '誰も続かず、場が流れました。静かな議場です。']));
     clearField(G, G.lastPid);
   } else {
     let t = nextActive(G, from, cont);
@@ -1649,8 +1670,8 @@ function doPass(G, pid, now) {
   rl(G).passes[pid] = (rl(G).passes[pid] || 0) + 1;
   // 同じ人のパスが続いたら、ときどきツッコミを入れる
   G.passRun = G.passRun || {}; G.passRun[pid] = (G.passRun[pid] || 0) + 1;
-  if (G.passRun[pid] === 4) { const nm = pName(G, pid); say(G, vary(G, [`${nm}さん、4回続けてパス。起きていますか。`, `${nm}さん、またパス。答弁はまだでしょうか。`, `${nm}さん、4連続のパス。何かを待っている顔です。`])); } else
-  { const nm = pName(G, pid); say(G, vary(G, [`${nm}さんはパス。`, `${nm}さん、見送りです。`, `${nm}さんはパス。`, `${nm}さん、ここは静観します。`, `${nm}さんは今回は見送り。`])); }
+  if (G.passRun[pid] === 4) { const nm = pName(G, pid); say(G, vary(G, 'v11', [`${nm}さん、4回続けてパス。起きていますか。`, `${nm}さん、またパス。答弁はまだでしょうか。`, `${nm}さん、4連続のパス。何かを待っている顔です。`])); } else
+  { const nm = pName(G, pid); say(G, vary(G, 'v12', [`${nm}さんはパス。`, `${nm}さん、見送りです。`, `${nm}さんはパス。`, `${nm}さん、ここは静観します。`, `${nm}さんは今回は見送り。`])); }
   G.blockedOnce = G.blockedOnce || {};
   if (lawParam(G.laws, 'agari') && G.hands[pid].length === 1 && !G.blockedOnce[pid]) {
     G.blockedOnce[pid] = true;
@@ -1726,12 +1747,16 @@ function standings(G) {
     .sort((a, b) => b.pts - a.pts || b.tops - a.tops || a.avg - b.avg);
 }
 function pick(G, arr) { return arr[Math.floor(R(G) * arr.length)]; }
+const pickR = pick;
 function commentary(G, order, prev) {
   // 同じ言い回しが続かないよう、出来事ごとに複数の文を用意し、直近で使った出来事の種類は後回しにする
   const L = rl(G), n = order.length, nm = id => pName(G, id) + 'さん';
   const top = order[0], last = order[n - 1], second = order[1];
   const c = [];
-  const add = (key, score, arr) => c.push({ key, score, text: pick(G, arr) });
+  // 一度使った文は、その試合では(候補が尽きるまで)使わない。名前の入らない型で覚える
+  G.cUsed = G.cUsed || [];
+  const fresh = arr => { const f = arr.filter(t => !G.cUsed.includes(shape(t))); return f.length ? f : arr; };
+  const add = (key, score, arr) => c.push({ key, score, text: pick(G, fresh(arr)) });
   if (L.geko) add('geko', 9, [
     `${nm(L.geko[0])}の下剋上法で、${nm(L.geko[1])}の手札がまるごと持っていかれました。議場騒然です。`,
     `手札の総入れ替え。${nm(L.geko[1])}はしばらく自分の手札が信じられないでしょう。`,
@@ -1863,11 +1888,16 @@ function commentary(G, order, prev) {
   c.sort((a, b) => b.score - a.score);
   const main = c[0];
   G.cHist = recent.concat(main.key).slice(-2);
-  return main.text + standingsTail(G, nm);
+  const tailTxt = standingsTail(G, nm);
+  G.cUsed.push(shape(main.text)); if (tailTxt) G.cUsed.push(shape(tailTxt));
+  return main.text + tailTxt;
 }
+// 名前と数字を伏せた文の型(同じ言い回しかどうかを比べるため)
+function shape(t) { return String(t).replace(/[^\s、。「」]+?さん/g, '〇').replace(/\d+/g, 'N'); }
 // 総合順位にふれる一言(最終回と1回目は付けない)
 function standingsTail(G, nm) {
   if (isLast(G) || G.round < 2 || R(G) < 0.35) return '';
+  const pick = (G2, arr) => { const f = arr.filter(t => !(G.cUsed || []).includes(shape(t))); return pickR(G2, f.length ? f : arr); };
   const s = standings(G); if (s.length < 2) return '';
   const a = s[0], b = s[1], gap = a.pts - b.pts;
   const left = G.cfg.rounds ? G.cfg.rounds - G.round : 0;
@@ -3044,7 +3074,10 @@ function sideTag(pub, k) { const sd = (pub.lawInfo[k] || {}).side; return sd ? `
 // いま効いたばかりの法律(数秒だけ光らせる)
 function lawHitNow(key) { return S.lh && S.lh.until > Date.now() && (key == null || S.lh.key === key) ? S.lh : null; }
 function lawsHtml(pub) {
-  if (!pub.laws.length) return `<div class="laws-none">${I.gavel()}<p>法律はまだありません。<br>開会前と、回が終わるたびに、一つずつ決めます。</p></div>`;
+  // 法律がないとき:まだ一つも決まっていないのか、失効・廃止でなくなったのかで書き分ける
+  if (!pub.laws.length) return pub.round > 0 || pub.phase === 'enacted'
+    ? `<div class="laws-none">${I.gavel()}<p>いま施行中の法律はありません。<br>回が終わるたびに、一つずつ決めます。</p></div>`
+    : `<div class="laws-none">${I.gavel()}<p>法律はまだありません。<br>開会前と、回が終わるたびに、一つずつ決めます。</p></div>`;
   return pub.laws.map(l => `<div class="law ${S.newLawKey === l.key ? 'new' : ''} ${lawHitNow(l.key) ? 'hit' : ''}"><span class="law-art">${I.law(l.key)}</span><div><div class="no">第${E.KANJI[l.no - 1]}条${l.hits ? `<span class="hits">適用 ${l.hits}回</span>` : ''}</div><div class="nm">${esc(l.name)}${sideTag(pub, l.key)}</div><div class="tx">${esc(l.text)}</div></div>${lawHitNow(l.key) ? '<span class="hitmark">適用</span>' : ''}</div>`).join('');
 }
 function remainMs(pub) { if (!pub.vote || pub.vote.remain == null) return 0; return Math.max(0, pub.vote.remain - (Date.now() - S.pubAt)); }
@@ -3216,7 +3249,7 @@ function briefPages(pub) {
     ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24M20 38h16"/>'), '一 三つの法案', '開会前と、回が終わるたびに、くじで選ばれた法案が三つ出ます。「大富豪に有利」「貧民・大貧民に有利」の法案は、階級で損得が分かれます。')}
     ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h12"/><path class="g" d="M40 32l3 6.2 6.8 1-4.9 4.8 1.2 6.8-6.1-3.2-6.1 3.2 1.2-6.8-4.9-4.8 6.8-1z"/>'), '二 大富豪が指定', '回の終わりには、大富豪が三つのうち一つを「重要法案」に指定します。大富豪がその案に入れると3票になります。')}
     ${item(I.medal('<path class="w" d="M16 26h32v24H16z"/><path class="g" d="M24 10h16v20H24z"/><path d="M22 26h20"/>'), '三 全員で投票', `三つから一つを選びます。大富豪は2票、重要法案に入れると3票。同数のときは大貧民の票で決まります(開会前は全員1票、同数はくじ)。交渉は自由です。`)}
-    ${item(I.medal('<path class="a" d="M14 18h36v28H14z" opacity=".15"/><path class="as" d="M14 18h36v28H14z" stroke-width="3"/><path d="M22 32h20"/>'), '四 可決', `決まった法律は次の回から有効です。法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`)}</div>` });
+    ${item(I.medal('<path class="a" d="M14 18h36v28H14z" opacity=".15"/><path class="as" d="M14 18h36v28H14z" stroke-width="3"/><path d="M22 32h20"/>'), '四 可決', `決まった法律は次の回から有効です。法律は${E.KANJI[c.maxLaws - 1]}つまでで、超えると古い順に失効します。「一回限り」の法律は、次の回が終わると失効します。${c.rev ? '革命が起きると、すべて廃止されます。' : ''}`)}</div>` });
   P.push({ t: '得点と診断', h: `<p style="font-size:1.15em">回ごとに、階級で得点が入ります。</p><div class="ptable">${Object.entries(E.POINTS).map(([k, v]) => `<div>${rankTag(k)}<b>${v}点</b></div>`).join('')}</div>
     <p style="font-size:1.15em;margin:.6em 0 1.4em">${c.rounds ? `会期は全${c.rounds}回です。最終回が終わるか、途中で「今夜はここまで」を押すと閉会します。` : '「今夜はここまで」を押すと閉会します。'}閉会すると、総合順位の発表のあと、ひとりずつ本性を診断します。${c.rounds && c.lastx2 ? '<br><b>最終回は得点が二倍です。</b>' : ''}${c.lawsOn && c.laws.double ? '<br>法律「倍点法」が通ると、次の一回だけ得点が二倍になります(最終回の二倍とは重なりません)。' : ''}</p>
     <div class="bgrid" style="--n:4">${E.AXES.map(ax => item('', `${ax.lc}・${ax.rc}`, `${ax.l}か、${ax.r}か。`)).join('')}</div>` });
@@ -3520,8 +3553,8 @@ function vPhone(pub, priv) {
       const d = pub.diag[S.pid];
       // 首班指名:総合順位と今夜の総理大臣(テレビがないスマホだけの遊び方でも、ここで最終順位を確かめられる)
       const fin = pub.final || [];
-      body = `<div class="panel ph-final"><p class="small" style="color:var(--gold)">閉会 ― 総合成績と首班指名</p><h2>今夜の総理大臣は${esc(pname(pub, fin[0] && fin[0].id))}さん</h2>
-        <table class="mini-table">${fin.map((r, i) => `<tr class="${r.id === S.pid ? 'me' : ''}"><td>${i + 1}位　${esc(pname(pub, r.id))}${r.id === S.pid ? '(あなた)' : ''}</td><td>大富豪${r.tops}回　<b>${r.pts}点</b></td></tr>`).join('')}</table></div>
+      body = `<div class="panel ph-final"><p class="small" style="color:var(--gold)">閉会 ― 総合成績と首班指名</p><p class="pm-k">今夜の総理大臣</p><h2>${esc(pname(pub, fin[0] && fin[0].id))}さん</h2>
+        <table class="mini-table fin">${fin.map((r, i) => `<tr class="${r.id === S.pid ? 'me' : ''}"><td class="rk">${i + 1}位</td><td class="nm">${esc(pname(pub, r.id))}${r.id === S.pid ? '<small>あなた</small>' : ''}</td><td class="tp">大富豪${r.tops}回</td><td class="pt">${r.pts}点</td></tr>`).join('')}</table></div>
         <div class="panel ph-diag">${typeCard(d)}<p class="small">今夜のあなたは(総合${d.place}位・${d.pts}点)</p><div class="ty">${esc(d.name)}</div>
         <div class="dx-code">${d.chars.map(c => `<span>${c}</span>`).join('')}</div><div class="sb">${esc(d.catch)}</div>
         ${axesHtml(d)}<p class="ds">${esc(d.desc)}</p>
@@ -3762,6 +3795,8 @@ function fxCheck(prev, pub) {
     S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
   }
   if (pub.phase !== prev.phase) {
+    // 結果発表の紙吹雪や王冠は、次の段階(法案の審議など)に進んだら片づける
+    if (prev.phase === 'roundEnd') document.querySelectorAll('.fx-confetti,.fx-crown').forEach(x => x.remove());
     if (pub.phase === 'roundEnd' && pub.order) {
       const fl = document.querySelector('.flash'); if (fl) fl.classList.remove('on');
       if (big) { fx('crown', `<span class="cw"><span class="halo"></span>${I.rank('大富豪')}</span><div class="big">${esc(pname(pub, pub.order[0]))}さん<small>大富豪</small></div>`, 3600); confetti(tv ? 70 : 30); SFX.play('crown'); }
