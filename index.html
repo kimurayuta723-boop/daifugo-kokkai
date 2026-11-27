@@ -3100,12 +3100,14 @@ function bgmEls() {
     a.addEventListener('ended', () => { if (BG.els[BG.cur] === a) bgmNext(); });
     a.addEventListener('error', () => {
       if (BG.els[BG.cur] !== a) return;
-      // 見つからなければ、ほかの置き場所(bgmフォルダ/index.htmlと同じ場所)を試す
-      if (BG.fails === 0 && BG.bi < BG.bases.length - 1) { BG.bi++; BG.base = BG.bases[BG.bi]; bgmPlayCurrent(); return; }
-      BG.fails++; if (BG.fails < BG.list.length) bgmNext();
+      // まだ一曲も流れていないときだけ、ほかの置き場所(bgmフォルダ/index.htmlと同じ場所)を試す。
+      // 一度流れた置き場所は正しいので、通信が一瞬途切れて読めなかっただけなら、置き場所は変えずに少し待って次の曲へ
+      if (!BG.good && BG.fails === 0 && BG.bi < BG.bases.length - 1) { BG.bi++; BG.base = BG.bases[BG.bi]; bgmPlayCurrent(); return; }
+      if (BG.good) BG.base = BG.good;
+      BG.fails++; if (BG.fails < BG.list.length * 2) setTimeout(() => { if (BG.els[BG.cur] === a && a.error) bgmNext(); }, 1500);
     });
     // 鳴り始めた曲の番号をその都度残す(画面を閉じたり読み込み直したりしても、次は続きの曲から流す)
-    a.addEventListener('playing', () => { if (BG.els[BG.cur] === a) { BG.fails = 0; try { localStorage.setItem('dfg-bgm-base', BG.base); localStorage.setItem('dfg-bgm-i', String(BG.i)); } catch (e) { /* 保存できない環境 */ } } });
+    a.addEventListener('playing', () => { if (BG.els[BG.cur] === a) { BG.fails = 0; BG.good = BG.base; try { localStorage.setItem('dfg-bgm-base', BG.base); localStorage.setItem('dfg-bgm-i', String(BG.i)); } catch (e) { /* 保存できない環境 */ } } });
     BG.els.push(a);
   }
   return true;
@@ -3120,7 +3122,8 @@ function egSet(k, v, sec, from) {
 function bgmPlayCurrent(noPreload) {
   const a = BG.els[BG.cur];
   if (!BG.xf) egSet(BG.cur, 1);
-  if (!a.src || !sameFile(a, BG.i)) a.src = bgmSrc(BG.i);
+  // 先読みの途中で読み込みに失敗していた曲は、読み込み直してから流す(失敗したままだと無音で止まる)
+  if (!a.src || !sameFile(a, BG.i) || a.error) a.src = bgmSrc(BG.i);
   const p = a.play(); if (p && p.catch) p.catch(() => { /* 画面を一度押すまで再生できない */ });
   if (noPreload) return;
   // 次の曲を先読みしておく
@@ -3148,6 +3151,23 @@ function bgmNext() {
   try { BG.els[1 - BG.cur].pause(); } catch (e) { /* 止められなくても次へ進む */ }
   bgmPlayCurrent();
 }
+/* 見張り:3秒ごとに、流れているはずの曲が本当に進んでいるかを確かめ、止まっていたら立て直す。
+   通信の途切れ・読み込みの失敗・端末の都合で一時停止された場合でも、BGMが切れたままにならないように */
+function bgmWatch() {
+  if (BG.watch) return;
+  BG.watch = setInterval(() => {
+    if (!BG.want || !BG.on || muted || !BG.els.length || BG.xf) { BG.stuck = 0; return; }
+    if (ctx.state === 'suspended') { ctx.resume(); return; }   // 画面を一度押すまでは動かせない
+    const a = BG.els[BG.cur];
+    if (a.ended) { BG.stuck = 0; bgmNext(); return; }
+    if (a.error) { BG.stuck = 0; if (BG.good) BG.base = BG.good; if (++BG.fails < BG.list.length * 2) bgmNext(); return; }   // 全部読めないときは、むだに試し続けない
+    if (a.paused) { const p = a.play(); if (p && p.catch) p.catch(() => {}); return; }
+    // 再生中なのに時間が進んでいない(読み込み待ちのまま固まった)状態が9秒続いたら、次の曲へ
+    if (a.currentTime === BG.lastT) { BG.stuck = (BG.stuck || 0) + 1; if (BG.stuck >= 3) { BG.stuck = 0; bgmNext(); } }
+    else BG.stuck = 0;
+    BG.lastT = a.currentTime;
+  }, 3000);
+}
 function bgmStart(list, bases) {
   BG.want = true; BG.list = list;
   BG.bases = Array.isArray(bases) ? bases : [bases || ''];
@@ -3156,6 +3176,7 @@ function bgmStart(list, bases) {
   if (last != null && BG.bases.includes(last)) BG.bases = [last].concat(BG.bases.filter(b => b !== last));
   BG.bi = 0; BG.base = BG.bases[0];
   if (!list.length || !bgmEls()) return;
+  bgmWatch();
   // 前回最後に流れた曲の次から、決まった順(1→12→1…)で流す。同じ曲が続けて流れないように
   if (!BG.started) { BG.started = true; try { const v = localStorage.getItem('dfg-bgm-i'); BG.i = v == null ? 0 : (+v + 1) % list.length; } catch (e) { BG.i = 0; } }
   bgmResume();
