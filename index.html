@@ -1100,7 +1100,8 @@ const LOCAL_RULES = [
   { key: 'spade3', name: 'スペ3返し', text: 'ジョーカー1枚には、スペードの3を1枚出して勝てる。場が流れる' },
   { key: 'storm', name: '砂嵐', text: '3を3枚出すと、どの3枚出しにも勝てる。場が流れる' },
   { key: 'seqrev', name: '階段革命', text: '4枚以上の階段でも革命が起きる' },
-  { key: 'foul', name: '反則上がり', text: '2(革命中は3)・ジョーカー・8切り・スペ3返しで上がると、最下位になる' },
+  { key: 'foul', name: '反則上がり', text: 'ジョーカーを含む出し方で上がると、最下位になる' },
+  { key: 'passlock', name: 'パスしたら流れるまで', text: '一度パスすると、場が流れるまで出せない' },
 ];
 /* 会期:0は回数を決めない */
 const ROUND_OPTS = [3, 4, 5, 6, 8, 10, 0];
@@ -1504,7 +1505,8 @@ function unanswerable(G, pid, c, ctx) {
   const revN = G.laws.some(l => l.key === 'rev3') ? 3 : 4;
   if (G.cfg.rev && ((p.type === 'set' && p.n >= revN) || (G.cfg.seqrev && p.type === 'seq' && p.n >= 4))) return null;
   if (G.cfg.back11 && (p.type === 'set' ? p.r === 11 : c.ids.some(x => parse(x).r === 11))) return null;
-  const rs = active(G).filter(id => id !== pid && !G.passed.includes(id));
+  // 出すと、それまでにパスした人にもまた番が回る(「パスしたら流れるまで」のときを除く)
+  const rs = active(G).filter(id => id !== pid && (!G.cfg.passlock || !G.passed.includes(id)));
   const c2 = Object.assign({}, ctx, { top: p });
   return !rs.some(id => candidates(G.hands[id], c2).length);
 }
@@ -1538,7 +1540,7 @@ function act(G, pid, a, now) {
       const cs = candidates(hand, ctx);
       // 「取れた場」として数えるのは、切り札(2・ジョーカー・最強の数字)や8切りを使わずに取れる場合だけ。
       // ほかの全員がもうパスしている場面も、何を出しても取れるので数えない(どれも、言われるまでもないため)
-      const rs = active(G).filter(id => id !== pid && !G.passed.includes(id));
+      const rs = active(G).filter(id => id !== pid && (!G.cfg.passlock || !G.passed.includes(id)));
       gv.win = rs.length ? cs.filter(c => !isTrump(c.ids, ctx) && !(c.p.has8 && G.cfg.eight) && unanswerable(G, pid, c, ctx) === true) : [];
       if (a.t === 'play') { const p = bestPlay(a.ids || [], ctx); gv.mine = p ? unanswerable(G, pid, { ids: a.ids, p }, ctx) : null; }
     }
@@ -1722,6 +1724,9 @@ function doPlay(G, pid, ids, now) {
   G.field.top = p; G.field.topIds = cardSort(ids); G.field.topPid = pid; G.field.plays++;
   G.field.stack = (G.field.stack || []).concat([{ ids: G.field.topIds, pid, k: G.ver }]).slice(-4);
   G.lastPid = pid; G.leadPass = 0;
+  // 新しい札が出たら、それまでにパスした人にもまた番が回る(出した人の前の人まで一巡して、全員パスなら場が流れる)。
+  // ローカルルール「パスしたら流れるまで」のときだけ、一度パスした人は場が流れるまで出せない
+  if (!G.cfg.passlock) G.passed = [];
   if (G.passRun) G.passRun[pid] = 0;
   const s = st(G, pid); s.plays++; if (!prevTop) s.leads++; if (ids.length >= 2) s.multi++;
   const strongN = ids.filter(c => { const r = parse(c).r; return r === 15 || r === JOKER_V; }).length;
@@ -1749,9 +1754,8 @@ function doPlay(G, pid, ids, now) {
   if (special === 'spade3') { say(G, 'スペ3返し。ジョーカーを破り、場が流れます。', 'r-spade3'); rl(G).locals.push('spade3'); }
   if (special === 'storm') { say(G, '砂嵐。3の3枚で場が流れます。', 'r-storm'); rl(G).locals.push('storm'); }
   // 反則上がりの判定に使う
-  // いちばん強い数字(ふだんは2、革命中・11バック中は3)・ジョーカー・8切り・スペ3返しで上がると反則
-  const topRank = ctx.rev ? 3 : 15;
-  G.lastFoulish = hand.length === 0 && G.cfg.foul && (ids.some(c => { const r = parse(c).r; return r === topRank || r === JOKER_V; }) || (p.has8 && G.cfg.eight) || special === 'spade3');
+  // 反則上がりは、ジョーカーを含む出し方で上がったときだけ(2・8切り・スペ3返しで上がるのは反則にしない)
+  G.lastFoulish = hand.length === 0 && G.cfg.foul && ids.some(c => parse(c).r === JOKER_V);
   const queue = [];
   // 5飛ばし・9リバース・11バックの知らせは、同じ一手で革命が起きたときは革命のあとに出す(大きい出来事を先に見せる)
   const localSay = [], flushLocal = () => { localSay.splice(0).forEach(a => say(G, ...a)); };
@@ -1868,7 +1872,11 @@ function predictNext(G) {
   const act = active(G);
   if (!G.field.top) return nextActive(G, G.turn, act.filter(id => id !== G.turn)) || null;
   const pool = act.filter(id => id !== G.turn && !G.passed.includes(id));
-  return pool.length ? nextActive(G, G.turn, pool) : null;  // ほかが全員パス済みなら、出すかどうかで次が変わるので予告しない
+  const ifPass = pool.length ? nextActive(G, G.turn, pool) : null;
+  if (G.cfg.passlock) return ifPass;  // ほかが全員パス済みなら、出すかどうかで次が変わるので予告しない
+  // 出せばパスした人にも番が戻るので、出したときとパスしたときで次の人が同じ場合だけ予告する
+  const ifPlay = nextActive(G, G.turn, act.filter(id => id !== G.turn));
+  return ifPass && ifPass === ifPlay ? ifPass : null;
 }
 function doPass(G, pid, now) {
   if (G.phase !== 'play' || G.turn !== pid) return false;
@@ -2408,6 +2416,20 @@ function cpuDecide(G, pid) {
         return strong - c.ids.length * (ctx.top ? 0 : 3);
       };
       cands.sort((a, b) => sc(a) - sc(b));
+      // 反則上がり(ジョーカーで上がると最下位)があるときは、ジョーカーを最後まで抱えないようにする。
+      // ただし毎回は完璧にせず、ときどきうっかり抱えたまま上がってしまう(人らしさを残すため)
+      const isJ = id => parse(id).r === JOKER_V;
+      if (G.cfg.foul && hand.some(isJ) && R(G) < 0.65) {
+        const foulC = c => c.ids.length === hand.length && c.ids.some(isJ);
+        const leavesJ = c => { const rest = hand.filter(x => !c.ids.includes(x)); return rest.length > 0 && rest.every(isJ); };
+        const safe = cands.filter(c => !foulC(c));
+        // 手札が残り少ないうちに、ジョーカーを含む出し方で先に使っておく
+        if (hand.length <= 3) { const useJ = safe.filter(c => c.ids.some(isJ)); if (useJ.length) return { t: 'play', ids: useJ[0].ids }; }
+        const safer = safe.filter(c => !leavesJ(c));
+        const pool = safer.length ? safer : safe;
+        if (!pool.length) { if (ctx.top) return { t: 'pass' }; }
+        else { cands.length = 0; pool.forEach(c => cands.push(c)); }
+      }
       const pick = cands[0];
       const isStrong = pick.ids.some(id => { const r = parse(id).r; return r === JOKER_V || r === 15 || r === ctx.strong; });
       if (ctx.top && isStrong && hand.length > 5 && R(G) < 0.6) return { t: 'pass' };
@@ -3123,9 +3145,20 @@ function egSet(k, v, sec, from) {
   const g = BG.eg[k] && BG.eg[k].gain; if (!g) return; const t = ctx.currentTime;
   g.cancelScheduledValues(t); g.setValueAtTime(sec ? (from != null ? from : g.value) : v, t); if (sec) g.linearRampToValueAtTime(v, t + sec);
 }
+// 曲を重ねて入れ替えるときの音量の曲線。直線で重ねると、真ん中で全体の音量が下がり(約-3dB)、
+// 重ね終わりで戻るのが「急に大きくなった」ように聞こえるため、二つを足した大きさが一定になる曲線(sin・cos)を使う
+function egCurve(k, up, sec) {
+  const g = BG.eg[k] && BG.eg[k].gain; if (!g) return;
+  const n = 64, c = new Float32Array(n);
+  for (let i = 0; i < n; i++) { const x = i / (n - 1) * Math.PI / 2; c[i] = up ? Math.sin(x) : Math.cos(x); }
+  const t = ctx.currentTime;
+  g.cancelScheduledValues(t);
+  try { g.setValueCurveAtTime(c, t, sec); } catch (e) { g.setValueAtTime(up ? 0 : 1, t); g.linearRampToValueAtTime(up ? 1 : 0, t + sec); }
+}
 function bgmPlayCurrent(noPreload) {
   const a = BG.els[BG.cur];
-  if (!BG.xf) egSet(BG.cur, 1);
+  // 重ねずに始めるとき(前の曲が最後まで流れた・読み直した)は、いきなり鳴らさず0.6秒で上げる
+  if (!BG.xf) egSet(BG.cur, 1, 0.6, 0);
   // 先読みの途中で読み込みに失敗していた曲は、読み込み直してから流す(失敗したままだと無音で止まる)
   if (!a.src || !sameFile(a, BG.i) || a.error) a.src = bgmSrc(BG.i);
   const p = a.play(); if (p && p.catch) p.catch(() => { /* 画面を一度押すまで再生できない */ });
@@ -3138,13 +3171,13 @@ function bgmCross() {
   BG.xf = true;
   BG.i = (BG.i + 1) % BG.list.length;
   BG.cur = 1 - BG.cur;
-  egSet(BG.cur, 1, XF, 0);
-  egSet(old, 0, XF);
+  egCurve(BG.cur, true, XF);
+  egCurve(old, false, XF);
   bgmPlayCurrent(true);  // 前の曲がまだ鳴っているので、先読みは重ね終わってから
   setTimeout(() => {
     BG.xf = false;
     try { BG.els[old].pause(); } catch (e) { /* 止められなくても続ける */ }
-    egSet(old, 1);
+    // 止めた曲の音量は0のままにしておく(ここで1に戻すと、止まりきる前の音が一瞬大きく鳴ることがある)。次に流すときに上げる
     if (BG.want) { const b = BG.els[old]; b.src = bgmSrc(BG.i + 1); b.load(); }
   }, XF * 1000 + 300);
 }
