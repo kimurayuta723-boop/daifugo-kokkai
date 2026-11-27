@@ -1026,7 +1026,7 @@ const LOCAL_RULES = [
   { key: 'spade3', name: 'スペ3返し', text: 'ジョーカー1枚には、スペードの3を1枚出して勝てる。場が流れる' },
   { key: 'storm', name: '砂嵐', text: '3を3枚出すと、どの3枚出しにも勝てる。場が流れる' },
   { key: 'seqrev', name: '階段革命', text: '4枚以上の階段でも革命が起きる' },
-  { key: 'foul', name: '反則上がり', text: '2・ジョーカー・8切り・スペ3返しで上がると、最下位になる' },
+  { key: 'foul', name: '反則上がり', text: '2(革命中は3)・ジョーカー・8切り・スペ3返しで上がると、最下位になる' },
 ];
 /* 会期:0は回数を決めない */
 const ROUND_OPTS = [3, 4, 5, 6, 8, 10, 0];
@@ -1596,7 +1596,9 @@ function doPlay(G, pid, ids, now) {
   if (special === 'spade3') { say(G, 'スペ3返し。ジョーカーを破り、場が流れます。', 'r-spade3'); rl(G).locals.push('spade3'); }
   if (special === 'storm') { say(G, '砂嵐。3の3枚で場が流れます。', 'r-storm'); rl(G).locals.push('storm'); }
   // 反則上がりの判定に使う
-  G.lastFoulish = hand.length === 0 && G.cfg.foul && (ids.some(c => { const r = parse(c).r; return r === 15 || r === JOKER_V; }) || (p.has8 && G.cfg.eight) || special === 'spade3');
+  // いちばん強い数字(ふだんは2、革命中・11バック中は3)・ジョーカー・8切り・スペ3返しで上がると反則
+  const topRank = ctx.rev ? 3 : 15;
+  G.lastFoulish = hand.length === 0 && G.cfg.foul && (ids.some(c => { const r = parse(c).r; return r === topRank || r === JOKER_V; }) || (p.has8 && G.cfg.eight) || special === 'spade3');
   const queue = [];
   if (!cut) {
     if (G.cfg.skip5 && nOf(5)) { ret.skip = nOf(5); say(G, `5飛ばし。${ret.skip}人飛ばします。`, 'r-skip5'); rl(G).locals.push('skip5'); }
