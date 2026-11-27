@@ -1720,10 +1720,12 @@ function doPlay(G, pid, ids, now) {
   const topRank = ctx.rev ? 3 : 15;
   G.lastFoulish = hand.length === 0 && G.cfg.foul && (ids.some(c => { const r = parse(c).r; return r === topRank || r === JOKER_V; }) || (p.has8 && G.cfg.eight) || special === 'spade3');
   const queue = [];
+  // 5飛ばし・9リバース・11バックの知らせは、同じ一手で革命が起きたときは革命のあとに出す(大きい出来事を先に見せる)
+  const localSay = [], flushLocal = () => { localSay.splice(0).forEach(a => say(G, ...a)); };
   if (!cut) {
-    if (G.cfg.skip5 && nOf(5)) { ret.skip = nOf(5); say(G, `5飛ばし。${ret.skip}人飛ばします。`, 'r-skip5'); rl(G).locals.push('skip5'); }
-    if (G.cfg.rev9 && nOf(9)) { G.dir = -(G.dir || 1); say(G, `9リバース。順番が${G.dir === 1 ? '元の向き' : '逆回り'}になりました。`, 'r-rev9'); rl(G).locals.push('rev9'); }
-    if (G.cfg.back11 && nOf(11)) { G.jback = !G.jback; say(G, G.jback ? '11バック。場が流れるまで強さが逆になります。' : '11バックが打ち消されました。', 'r-back11'); rl(G).locals.push('back11'); }
+    if (G.cfg.skip5 && nOf(5)) { ret.skip = nOf(5); localSay.push([`5飛ばし。${ret.skip}人飛ばします。`, 'r-skip5']); rl(G).locals.push('skip5'); }
+    if (G.cfg.rev9 && nOf(9)) { G.dir = -(G.dir || 1); localSay.push([`9リバース。順番が${G.dir === 1 ? '元の向き' : '逆回り'}になりました。`, 'r-rev9']); rl(G).locals.push('rev9'); }
+    if (G.cfg.back11 && nOf(11)) { G.jback = !G.jback; localSay.push([G.jback ? '11バック。場が流れるまで強さが逆になります。' : '11バックが打ち消されました。', 'r-back11']); rl(G).locals.push('back11'); }
   }
   if (G.cfg.give7 && nOf(7)) queue.push({ type: 'give7', pid, n: nOf(7) });
   if (G.cfg.drop10 && nOf(10)) queue.push({ type: 'drop10', pid, n: nOf(10) });
@@ -1735,6 +1737,7 @@ function doPlay(G, pid, ids, now) {
     const hadLaws = G.laws.length > 0;
     { const nm = pName(G, pid), how = p.type === 'seq' ? '階段で' : ''; say(G, vary(G, 'v5', [`${nm}さんが${how}革命を起こしました。`, `革命です。${nm}さんが${how}強さをひっくり返しました。`, `${nm}さん、${how}まさかの革命。`, `革命です。さっきまでの強い札が、急に頼りなくなりました。`, `${nm}さんが${how}革命。強い札を温存していた人の顔色が変わりました。`]), 'rev'); }
     rl(G).revs.push(pid);
+    flushLocal();
     if (p.type === 'set' && p.n === 3) lawHit(G, 'rev3', pid);
     if (!hadLaws) moment(G, pid, 5, `第${G.round}回、革命を起こした`);
     if (lawParam(G.laws, 'gekokujo') && G.order) {
@@ -1748,6 +1751,7 @@ function doPlay(G, pid, ids, now) {
     }
     if (startRepeal(G, pid, now)) { G.cutPending = cut && !special; return true; }
   }
+  flushLocal();
   if (cut && !special) { s.kiri++; say(G, vary(G, 'v6', ['8切りで場が流れます。', '8切り。ここで場を流します。', '8切りが出ました。ここで一区切りです。', '8切り。議論は打ち切りです。', '8切りで強制終了。異議は受け付けません。']), 'cut'); rl(G).cuts[pid] = (rl(G).cuts[pid] || 0) + 1; }
   proceed(G, now);
   return true;
@@ -4390,7 +4394,7 @@ function fxCheck(prev, pub) {
     else SFX.play('deal');
     S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
   } else if (pub.round > prev.round) {
-    if (pub.last && big) { const r = pub.round, x2 = pub.cfg.lastx2; queueFx(() => { fx('round', `<div class="fx-title"><small>第${r}回</small><b>最終回</b>${x2 ? '<small style="margin-top:.8em">得点二倍</small>' : ''}</div>`, 3400); SFX.play('fanfare'); }); }
+    if (pub.last && big) { const r = pub.round, x2 = pub.cfg.lastx2; queueFx(() => { if (S.pub && S.pub.round !== r) return; fx('round', `<div class="fx-title"><small>第${r}回</small><b>最終回</b>${x2 ? '<small style="margin-top:.8em">得点二倍</small>' : ''}</div>`, 3400); SFX.play('fanfare'); }); }
     else if (big) SFX.play('shuffle'); else SFX.play('deal');
     S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
   }
@@ -4402,7 +4406,8 @@ function fxCheck(prev, pub) {
   // 革命・8切り・廃止・法律・上がり:前回から増えた演出を、古い順にすべて並べる
   const seen = prev.flash ? prev.flash.n : 0;
   const news = (pub.flashes && pub.flashes.length ? pub.flashes : (pub.flash ? [pub.flash] : [])).filter(f => f.n > seen);
-  news.forEach(f => queueFx(() => flashFx(f, pub, big)));
+  // 順番待ちのあいだに次の回へ進んでいたら、前の回の知らせは出さない
+  news.forEach(f => queueFx(() => { if (S.pub && S.pub.round !== pub.round) return; flashFx(f, pub, big); }));
   // 回の最後の一手の演出を出し終えてから、結果の画面に切り替える(王冠などの演出はそのあと)
   if (S.holdEnd != null && pub.phase === 'roundEnd') {
     const r = pub.round, release = () => { if (S.holdEnd === r) { S.holdEnd = null; lastHtml = ''; render(); } };
@@ -4413,9 +4418,10 @@ function fxCheck(prev, pub) {
     // 結果発表の紙吹雪や王冠は、次の段階(法案の審議など)に進んだら片づける
     if (prev.phase === 'roundEnd') document.querySelectorAll('.fx-confetti,.fx-crown').forEach(x => x.remove());
     if (pub.phase === 'roundEnd' && pub.order) {
-      if (big) { const nm = esc(pname(pub, pub.order[0])); queueFx(() => { const fl = document.querySelector('.flash'); if (fl) fl.classList.remove('on'); fx('crown', `<span class="cw"><span class="halo"></span>${I.rank('大富豪')}</span><div class="big">${nm}さん<small>大富豪</small></div>`, 3600); confetti(tv ? 70 : 30); SFX.play('crown'); }); }
+      // 順番待ちのあいだに法案の審議などへ進んでいたら、王冠は出さない
+      if (big) { const nm = esc(pname(pub, pub.order[0])), r = pub.round; queueFx(() => { if (!S.pub || S.pub.phase !== 'roundEnd' || S.pub.round !== r) return; const fl = document.querySelector('.flash'); if (fl) fl.classList.remove('on'); fx('crown', `<span class="cw"><span class="halo"></span>${I.rank('大富豪')}</span><div class="big">${nm}さん<small>大富豪</small></div>`, 3600); confetti(tv ? 70 : 30); SFX.play('crown'); }); }
     }
-    if (pub.phase === 'mark' && big) queueFx(() => { fx('gavel', I.gavel() + '<div class="big">審議</div>', 2400); SFX.play('knock3'); setTimeout(shake, 250); setTimeout(shake, 610); setTimeout(shake, 970); });
+    if (pub.phase === 'mark' && big) queueFx(() => { if (!S.pub || !['mark', 'vote'].includes(S.pub.phase)) return; fx('gavel', I.gavel() + '<div class="big">審議</div>', 2400); SFX.play('knock3'); setTimeout(shake, 250); setTimeout(shake, 610); setTimeout(shake, 970); });
     if (pub.phase === 'vote' && big) SFX.play('bellVote');
     if (pub.phase === 'enacted' && pub.vote && pub.vote.result) {
       S.newLawKey = pub.vote.result; setTimeout(() => { S.newLawKey = null; }, 1500);
