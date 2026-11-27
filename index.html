@@ -334,6 +334,7 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .ph-diag .type-card .tc-ix{font-size:18px}.ph-diag .type-card .tc-ix.tl{left:12px;top:11px}.ph-diag .type-card .tc-ix.br{right:12px;bottom:11px}
 .ph-diag .ty{font-family:var(--serif);font-size:34px;font-weight:700;letter-spacing:.1em;line-height:1.4;margin-top:4px;color:var(--gold2)}
 .ph-diag .sb{font-weight:700;margin-bottom:14px}
+.ph-diag .diag-save{width:100%;margin:0 0 20px}
 .ph-diag .ds{font-family:var(--serif);line-height:2}
 .ph-diag .mo{margin-top:18px;padding-top:12px;border-top:1px solid var(--rule)}
 .ph-diag .mo .k{display:block;font-size:12px;color:var(--gold)}
@@ -517,6 +518,8 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .ph .axes{font-size:13px}.ph .axis{grid-template-columns:4.2em 1fr 4.2em}.ph .dx-code span{font-size:15px}
 .ph-diag h3{font-family:var(--serif);color:var(--gold2);font-size:16px;margin:18px 0 6px;letter-spacing:.12em}
 .ph-diag .dx-an{font-size:13.5px}
+.dx-sum{font-weight:700;line-height:1.75;margin:.5em 0 .2em;max-width:48em}
+.ph-diag .dx-sum{font-size:15px;margin:4px 0 8px}
 
 /* ローカルルールの演出 */
 .fx-rule{display:grid;place-items:center}
@@ -1278,7 +1281,8 @@ function titleOf(G, pid) {
   const i = G.order.indexOf(pid); return i < 0 ? '' : TITLES[G.players.length][i];
 }
 function st(G, pid) {
-  return G.stats[pid] || (G.stats[pid] = { think: 0, thinkN: 0, withMaj: 0, leads: 0, multi: 0, plays: 0, passes: 0, passOpt: 0, strongEarly: 0, strongLate: 0, revs: 0, kiri: 0, tops: 0, bottoms: 0, marks: 0, markWins: 0, votes: 0, withTop: 0, againstTop: 0, gekokujo: 0, blocked: 0, ochi: 0, climb: 0, fate: 0, voteFor: {}, rounds: 0, rankSum: 0 });
+  return G.stats[pid] || (G.stats[pid] = { think: 0, thinkN: 0, withMaj: 0, leads: 0, multi: 0, plays: 0, passes: 0, passOpt: 0, strongEarly: 0, strongLate: 0, revs: 0, kiri: 0, tops: 0, bottoms: 0, marks: 0, markWins: 0, votes: 0, withTop: 0, againstTop: 0, gekokujo: 0, blocked: 0, ochi: 0, climb: 0, fate: 0, voteFor: {}, rounds: 0, rankSum: 0,
+    ranks: [], handRk: [], xg: [], g7: [], d10: [], longT: null, lawGain: 0, lawHits: {}, chance: 0, took: 0, missed: 0, missEx: null, overkill: 0, overEx: null });
 }
 function moment(G, pid, score, text) { (G.moments[pid] = G.moments[pid] || []).push({ score, text, round: G.round }); }
 function rl(G) { return G.rlog || (G.rlog = { revs: [], fouls: [], locals: [], passes: {}, cuts: {}, ochi: null, geko: null, fate: null }); }
@@ -1393,6 +1397,9 @@ function beginPlay(G, now) {
   else lead = G.players.find(p => G.hands[p.id].includes('D3')).id;
   G.phase = 'play'; G.turn = lead; G.cpuAt = now + 2600;
   G.players.forEach(p => { st(G, p.id).rounds++; });
+  // 交換後に配られている手札の強さの順位(0=いちばん強い)
+  const ctx = makeCtx(G), sc = G.players.map(p => handScore(G.hands[p.id], ctx));
+  G.players.forEach((p, i) => { st(G, p.id).handRk.push(sc.filter(x => x > sc[i]).length); });
 }
 
 function clearField(G, leader) {
@@ -1415,6 +1422,7 @@ function clearField(G, leader) {
 function lawHit(G, key, pid, text) {
   const l = G.laws.find(x => x.key === key); if (!l) return;
   l.hits = (l.hits || 0) + 1;
+  if (pid) { const h = st(G, pid).lawHits; h[key] = (h[key] || 0) + 1; }
   const lg = rl(G); lg.hits = lg.hits || {}; lg.hits[key] = (lg.hits[key] || 0) + 1;
   G.lawHit = { key, pid: pid || null, n: (G.lawHit ? G.lawHit.n : 0) + 1 };
   if (text) say(G, `第${KANJI[lawNo(G, l) - 1]}条 適用。${text}`);
@@ -1451,6 +1459,32 @@ function repealLaw(G, pid, key, auto) {
 }
 
 /* 行動:{t:'play',ids} {t:'pass'} {t:'exchange',ids} {t:'param',v} {t:'tsure',id|null} {t:'gekokujo',target} {t:'repeal',key} {t:'mark',key} {t:'vote',key} */
+/* ---------- 神の視点:全員の手札を知ったうえでの評価(診断用) ---------- */
+// その札を出したら、まだ続けられる人の誰も返せないか(true=場を取れる / false=返される / null=革命などで判断しない)
+function unanswerable(G, pid, c, ctx) {
+  const p = c.p;
+  if (p.has8 && G.cfg.eight) return true;
+  const revN = G.laws.some(l => l.key === 'rev3') ? 3 : 4;
+  if (G.cfg.rev && ((p.type === 'set' && p.n >= revN) || (G.cfg.seqrev && p.type === 'seq' && p.n >= 4))) return null;
+  if (G.cfg.back11 && (p.type === 'set' ? p.r === 11 : c.ids.some(x => parse(x).r === 11))) return null;
+  const rs = active(G).filter(id => id !== pid && !G.passed.includes(id));
+  const c2 = Object.assign({}, ctx, { top: p });
+  return !rs.some(id => candidates(G.hands[id], c2).length);
+}
+const isTrump = (ids, ctx) => ids.some(x => { const r = parse(x).r; return r === JOKER_V || r === (ctx.rev ? 3 : 15) || (ctx.strong && r === ctx.strong); });
+// 手札の強さ(革命中は弱い数字ほど強い)。強い札ほど重く数える
+function handScore(hand, ctx) {
+  return hand.reduce((a, id) => { const r = parse(id).r; if (r === JOKER_V) return a + 14; const v = rankVal(r, ctx), x = (ctx.rev ? 18 - v : v) - 3; return a + x * x / 12; }, 0);
+}
+// 手札の中で、選んだ札がどれだけ弱いほうか(0=いちばん弱い札ばかり、1=いちばん強い札ばかり)
+function weakPct(hand, ids, ctx) {
+  const sorted = hand.slice().sort((a, b) => strength(a, ctx) - strength(b, ctx));
+  const vals = ids.map(x => sorted.findIndex(y => strength(y, ctx) === strength(x, ctx)));
+  const n = ids.length, L = sorted.length;
+  const minSum = n * (n - 1) / 2, maxSum = n * (2 * L - n - 1) / 2, sum = vals.reduce((a, b) => a + b, 0);
+  return maxSum > minSum ? Math.max(0, (sum - minSum) / (maxSum - minSum)) : 0;
+}
+const fieldDesc = top => top ? describe(top) : null;
 function act(G, pid, a, now) {
   now = now ?? Date.now();
   const before = G.phase === 'play' ? G.turn : null;
@@ -1458,7 +1492,19 @@ function act(G, pid, a, now) {
     const s = st(G, pid); s.think += Math.min(60000, now - G.turnAt); s.thinkN++;
   }
   const fn = G.flash ? G.flash.n : 0;
+  // 神の視点の下ごしらえ(出す・パスの前の状況を覚えておく)
+  let gv = null;
+  if ((a.t === 'play' || a.t === 'pass') && G.phase === 'play' && G.turn === pid) {
+    const ctx = makeCtx(G), hand = G.hands[pid].slice();
+    gv = { ctx, hand, top: G.field.top, round: G.round, ms: G.turnAt ? Math.min(60000, now - G.turnAt) : 0 };
+    if (G.field.top) {
+      const cs = candidates(hand, ctx);
+      gv.win = cs.filter(c => unanswerable(G, pid, c, ctx) === true);
+      if (a.t === 'play') { const p = bestPlay(a.ids || [], ctx); gv.mine = p ? unanswerable(G, pid, { ids: a.ids, p }, ctx) : null; }
+    }
+  }
   const ok = actInner(G, pid, a, now);
+  if (ok && gv) godView(G, pid, a, gv);
   if (ok) G.ver++;
   if (G.hold) { G.cpuAt = Math.max(G.cpuAt || 0, now + G.hold); G.hold = 0; }
   // 演出が出ている間は、CPUも次の手を待つ(この行動で出た演出が複数なら、画面では順番に出るので合計を待つ)
@@ -1469,6 +1515,26 @@ function act(G, pid, a, now) {
   }
   if (G.phase === 'play' && G.turn !== before) G.turnAt = now;
   return ok;
+}
+function godView(G, pid, a, gv) {
+  const s = st(G, pid);
+  const did = a.t === 'pass' ? 'パスしました' : `${describe(bestPlay(a.ids, gv.ctx))}を出しました`;
+  if (gv.ms && (!s.longT || gv.ms > s.longT.ms)) s.longT = { ms: gv.ms, round: gv.round, top: fieldDesc(gv.top), did };
+  if (!gv.top || !gv.win || !gv.win.length) return;
+  s.chance++;
+  const best = gv.win.slice().sort((x, y) => x.ids.length - y.ids.length || cmpV(x.p.v, y.p.v, gv.ctx))[0];
+  if (a.t === 'pass') {
+    s.missed++;
+    if (!s.missEx || gv.round >= s.missEx.round) s.missEx = { round: gv.round, top: describe(gv.top), card: describe(best.p), rev: gv.ctx.rev, strong: gv.ctx.strong && !bestPlay(best.ids, Object.assign({}, gv.ctx, { strong: null })) ? gv.ctx.strong : null };
+  } else if (gv.mine === true) {
+    s.took++;
+    // 切り札を使わなくても場を取れたのに、切り札を使った
+    if (isTrump(a.ids, gv.ctx) && gv.win.some(c => !isTrump(c.ids, gv.ctx))) {
+      s.overkill++;
+      const alt = gv.win.filter(c => !isTrump(c.ids, gv.ctx)).sort((x, y) => cmpV(x.p.v, y.p.v, gv.ctx))[0];
+      s.overEx = { round: gv.round, used: describe(bestPlay(a.ids, gv.ctx)), alt: describe(alt.p), rev: gv.ctx.rev };
+    }
+  }
 }
 function actInner(G, pid, a, now) {
   switch (a.t) {
@@ -1508,6 +1574,7 @@ function actInner(G, pid, a, now) {
       const nd = G.pending.need[pid]; if (!nd || G.pending.done[pid]) return false;
       const ids = (a.ids || []).filter(c => G.hands[pid].includes(c));
       if (ids.length !== nd.n) return false;
+      { const ctx = makeCtx(G); st(G, pid).xg.push({ round: G.round, to: nd.to, ids: cardSort(ids), pct: weakPct(G.hands[pid], ids, ctx) }); }
       ids.forEach(c => { G.hands[pid].splice(G.hands[pid].indexOf(c), 1); G.hands[nd.to].push(c); });
       G.hands[nd.to] = cardSort(G.hands[nd.to]);
       G.pending.done[pid] = ids;
@@ -1550,6 +1617,7 @@ function actInner(G, pid, a, now) {
       if (G.phase !== a.t || G.pending.pid !== pid) return false;
       const ids = (a.ids || []).filter(c => G.hands[pid].includes(c));
       if (ids.length > G.pending.n || new Set(ids).size !== ids.length) return false;
+      if (ids.length) { const rec = { round: G.round, ids: cardSort(ids), pct: weakPct(G.hands[pid], ids, makeCtx(G)), to: G.pending.to }; st(G, pid)[a.t === 'give7' ? 'g7' : 'd10'].push(rec); }
       ids.forEach(c => G.hands[pid].splice(G.hands[pid].indexOf(c), 1));
       if (a.t === 'give7') {
         const to = G.pending.to; G.hands[to] = cardSort(G.hands[to].concat(ids));
@@ -1809,7 +1877,7 @@ function endRound(G, now) {
   if (G.fateWin) { const i = order.indexOf(G.fateWin); const j = Math.max(0, i - 2); order.splice(i, 1); order.splice(j, 0, G.fateWin); }
   const n = order.length, prev = G.order;
   order.forEach((id, i) => {
-    const s = st(G, id); s.rankSum += i;
+    const s = st(G, id); s.rankSum += i; s.ranks.push(TITLES[n][i]); s.lastFin = i;
     if (i === 0) s.tops++;
     if (i === n - 1) s.bottoms++;
     moment(G, id, 1, `第${G.round}回、${TITLES[n][i]}になった`);
@@ -1833,6 +1901,7 @@ function endRound(G, now) {
     if (genzei && t === '大富豪') adj.push({ key: 'genzei', name: '大富豪減税法', d: 2 });
     if (hosho && (t === '貧民' || t === '大貧民')) adj.push({ key: 'hosho', name: '最低保障法', d: 1 });
     const pts = POINTS[t] * mul + adj.reduce((a, x) => a + x.d, 0);
+    st(G, id).lawGain += adj.reduce((a, x) => a + x.d, 0) + (byLaw ? POINTS[t] : 0);
     G.points[id] = (G.points[id] || 0) + pts;
     return { id, title: t, prev: prev ? TITLES[n][prev.indexOf(id)] : null, prevPos: prev ? prev.indexOf(id) : null, pts, total: G.points[id], x2: mul === 2 ? (byLaw ? 'law' : 'last') : null, adj };
   });
@@ -2280,22 +2349,92 @@ function diagnose(G) {
       if (!less) return more === N - 1 ? 'いちばん少ない' : '少ないほう';
       return more < less ? '多いほう' : more > less ? '少ないほう' : '真ん中くらい';
     };
-    const A = [];
-    A.push(`出せるのに見送ったのは${s.passOpt}回で、全員の中で${where(S.map(x => x.passOpt))}です。`);
-    if (s.strongEarly || s.strongLate) A.push(s.strongEarly >= s.strongLate ? `2とジョーカーは早めに使う派で、序盤に${s.strongEarly}枚を切りました。` : `2とジョーカーは最後まで温存する派で、残り3枚以下で${s.strongLate}枚を出しました。`);
-    if (s.thinkN) { const sec = think[i] / 1000; const r = rankOf(think, true); A.push(`一手にかける時間は平均${sec.toFixed(1)}秒で、${r === 1 ? 'いちばんの長考派' : r === N ? 'いちばんの即決派' : r <= N / 2 ? 'じっくり考えるほう' : '決断が早いほう'}でした。`); }
-    if (s.votes) A.push(`投票は${s.votes}回。大富豪と同じ側に${s.withTop}回、反対側に${s.againstTop}回入れ、可決した側に乗ったのは${s.withMaj}回です。`);
-    if (s.revs) A.push(`革命を${s.revs}回起こしました。${s.gekokujo ? `うち${s.gekokujo}回は下剋上法で手札を入れ替えました。` : ''}`);
-    if (s.ochi) A.push(`都落ちを${s.ochi}回経験しています。`);
-    if (s.kiri >= 2) A.push(`8切りは${s.kiri}回。場を流して主導権を取り返すのが得意です。`);
-    if (s.marks) A.push(`大富豪として重要法案を${s.marks}回指定し、${s.markWins ? `${s.markWins}回を通しました。` : '一度も通せませんでした。'}`);
+    // 今夜の立ち回り:候補の文を集め、その人が目立った順に4〜5本だけ選ぶ(w が大きいほど目立つ)
+    const C = [], add = (w, t) => C.push({ w, t });
+    const nm = k => pName(G, ids[k]);
+    // ほかの人と比べる言い方(「〇〇さんに次いで2番目」)
+    const besides = (vals, hi) => {
+      const me = vals[i], order = vals.map((v, k) => ({ v, k })).sort((a, b) => hi ? b.v - a.v : a.v - b.v);
+      const r = order.findIndex(o => o.v === me) + 1;
+      const above = r > 1 ? order[r - 2] : null;
+      return { r, above: above ? nm(above.k) : null };
+    };
+    { const po = S.map(x => x.passOpt), b = besides(po, true);
+      add(1 + (b.r === 1 && s.passOpt >= 3 ? 1.5 : 0) + (s.passOpt === 0 ? 0.8 : 0), `出せるのに見送ったのは${s.passOpt}回で、全員の中で${where(po)}です。`); }
+    if (s.strongEarly || s.strongLate) add(1.2, s.strongEarly >= s.strongLate ? `2とジョーカーは早めに使う派で、序盤に${s.strongEarly}枚を切りました。` : `2とジョーカーは最後まで温存する派で、残り3枚以下で${s.strongLate}枚を出しました。`);
+    if (s.thinkN) {
+      const sec = think[i] / 1000, b = besides(think, true);
+      const tail = b.r === 1 ? '全員でいちばんの長考派です' : b.r === N ? '全員でいちばんの即決派です' : `${b.above}さんに次いで${b.r}番目に長く考えています`;
+      add(1.2 + (b.r === 1 || b.r === N ? 1 : 0), `一手にかける時間は平均${sec.toFixed(1)}秒で、${tail}。`);
+    }
+    if (s.longT && s.longT.ms >= 8000) {
+      const lt = s.longT, sec = Math.round(lt.ms / 1000);
+      add(1 + lt.ms / 15000, `いちばん長く考えたのは第${lt.round}回、${lt.top ? `場の${lt.top}に対して` : '自分から出す番で'}${sec}秒悩んだ末に${lt.did}。`);
+    }
+    if (s.ranks.length >= 2) {
+      const moved = new Set(s.ranks).size > 1;
+      add(moved ? 1.6 + (Math.max(...s.ranks.map(t => TITLES[N].indexOf(t))) - Math.min(...s.ranks.map(t => TITLES[N].indexOf(t)))) * 0.3 : 1, moved ? `順位は${s.ranks.join('→')}と動きました。` : `順位は毎回${s.ranks[0]}で、まったく動きませんでした。`);
+    }
+    // 神の視点1:配られた札の強さと、実際の順位
+    { const k = Math.min(s.handRk.length, s.ranks.length);
+      if (k) {
+        const h = s.handRk.slice(0, k).reduce((a, b) => a + b, 0) / k + 1;
+        const f = s.ranks.slice(0, k).reduce((a, t) => a + TITLES[N].indexOf(t), 0) / k + 1;
+        const d = h - f;
+        add(1.3 + Math.abs(d) * 0.9, `交換後の手札の強さは平均で全員中${h.toFixed(1)}番目、順位は平均${f.toFixed(1)}位。${d >= 0.8 ? '配られた札以上の結果を出しています。' : d <= -0.8 ? '札の強さを結果に生かしきれませんでした。' : 'ほぼ札の強さどおりの結果です。'}`);
+      } }
+    // 神の視点2:誰にも返されない札を持っていた場面で、取りに行ったか
+    if (s.chance >= 2) {
+      const ex = s.missEx && s.missed ? `第${s.missEx.round}回には、${s.missEx.strong ? `最強法で${RL[s.missEx.strong]}がいちばん強いので、` : ''}${s.missEx.rev ? '革命中の' : ''}場の${s.missEx.top}に${s.missEx.card}を出せば誰も返せなかったのに見送っています。` : '';
+      const head = `全員の手札を見ると、誰にも返されない札を持っていた場面が${s.chance}回あり、`;
+      const body = !s.missed && s.took === s.chance ? 'すべて出して場を取りました。'
+        : !s.missed ? `そのうち${s.took}回は出して場を取りました。見送りは一度もありません。`
+        : `出して場を取ったのは${s.took}回、見送ったのは${s.missed}回です。`;
+      add(1.4 + (s.missed / s.chance) * 1.5 + (s.took === s.chance ? 0.8 : 0), head + body + ex);
+    }
+    // 神の視点3:切り札の使い方
+    if (s.overkill) add(1.6 + s.overkill * 0.5, `もっと弱い札でも場を取れた場面で、切り札を使ったのが${s.overkill}回あります。第${s.overEx.round}回は${s.overEx.rev ? '革命中で、' : ''}${s.overEx.alt}で足りたところを${s.overEx.used}で取りました。`);
+    else if (s.took >= 3) add(1.2, `場を取るときは、足りる札の中で弱いものを選べています。切り札の無駄づかいはありませんでした。`);
+    // カードの交換で渡した札
+    if (s.xg.length) {
+      const avg = s.xg.reduce((a, x) => a + x.pct, 0) / s.xg.length, last = s.xg[s.xg.length - 1];
+      const ex = `第${last.round}回は${pName(G, last.to)}さんに${last.ids.map(label).join('と')}を渡しています`;
+      add(avg < 0.01 || avg > 0.35 ? 2 : 1.2, avg < 0.01 ? `交換では${s.xg.length > 1 ? '毎回、' : ''}手札でいちばん弱い札を選んで渡しました。容赦がありません(${ex})。` : avg > 0.35 ? `交換で渡した札は手札の中では強めで、相手への情けが見えます(${ex})。` : `交換では弱めの札を渡しつつ、少し手加減しています(${ex})。`);
+    }
+    if (s.g7.length || s.d10.length) {
+      const part = [];
+      if (s.g7.length) { const all = [].concat(...s.g7.map(x => x.ids)); part.push(`7渡しで${all.map(label).join('・')}を渡し`); }
+      if (s.d10.length) { const all = [].concat(...s.d10.map(x => x.ids)); part.push(`10捨てで${all.map(label).join('・')}を捨て`); }
+      const recs = s.g7.concat(s.d10), avg = recs.reduce((a, x) => a + x.pct, 0) / recs.length;
+      add(1.2, `${part.join('、')}ました。${avg < 0.15 ? 'いらない弱い札をうまく手放しています。' : avg > 0.5 ? '強い札まで手放していて、思い切りのよさが出ています。' : ''}`);
+    }
+    // 法律との関わり
+    { const hk = Object.keys(s.lawHits), tot = hk.reduce((a, k) => a + s.lawHits[k], 0);
+      if (tot) {
+        const top = hk.sort((a, b) => s.lawHits[b] - s.lawHits[a])[0];
+        add(1 + tot * 0.15 + (s.lawGain ? 0.5 : 0), `法律が効いた場面に${tot}回関わり、いちばん多かったのは${LAWS[top].name()}(${s.lawHits[top]}回)です。${s.lawGain ? `法律による上乗せは合わせて${s.lawGain}点でした。` : ''}`);
+      } else if (s.lawGain) add(1.2, `法律による上乗せは合わせて${s.lawGain}点でした。`); }
+    if (s.votes) add(1, `投票は${s.votes}回。大富豪と同じ側に${s.withTop}回、反対側に${s.againstTop}回入れ、可決した側に乗ったのは${s.withMaj}回です。`);
+    if (s.revs) add(2.5, `革命を${s.revs}回起こしました。${s.gekokujo ? `うち${s.gekokujo}回は下剋上法で手札を入れ替えました。` : ''}`);
+    if (s.ochi) add(2.2, `都落ちを${s.ochi}回経験しています。`);
+    if (s.kiri >= 2) add(1 + s.kiri * 0.3, `8切りは${s.kiri}回。場を流して主導権を取り返すのが得意です。`);
+    if (s.marks) add(1.4, `大富豪として重要法案を${s.marks}回指定し、${s.markWins ? `${s.markWins}回を通しました。` : '一度も通せませんでした。'}`);
     const place = fin.findIndex(x => x.id === id) + 1;
-    A.push(`得点は${fin[place - 1].pts}点で、総合${place}位でした。`);
+    // 総評:その夜を一文で
+    const summary = (() => {
+      const k = Math.min(s.handRk.length, s.ranks.length);
+      const d = k ? (s.handRk.slice(0, k).reduce((a, b) => a + b, 0) - s.ranks.slice(0, k).reduce((a, t) => a + TITLES[N].indexOf(t), 0)) / k : 0;
+      const head = place === 1 ? '総合1位、今夜の総理大臣。' : place === N ? `総合${place}位、今夜の最下位。` : `総合${place}位。`;
+      const luck = d >= 0.8 ? (place <= Math.ceil(N / 2) ? '配られた札以上の結果を、腕で勝ち取った夜でした。' : '弱い札が続くなか、札の強さ以上に粘った夜でした。') : d <= -0.8 ? (place <= N / 2 ? '強い札に助けられつつも、取りこぼしのあった夜でした。' : 'いい札をもらいながら、生かしきれなかった夜でした。') : place === 1 ? '強い札を確実に勝ちにつなげた夜でした。' : place === N ? '札にも流れにも恵まれなかった夜でした。' : '配られた札なりに、手堅くまとめた夜でした。';
+      return head + luck;
+    })();
+    const A = [].concat(C.map((c, k) => ({ c, k })).sort((a, b) => b.c.w - a.c.w || a.k - b.k).slice(0, 5).map(x => x.c.t));
+    A.push(`得点は合わせて${fin[place - 1].pts}点でした。`);
     const ms = (G.moments[id] || []).slice().sort((a, b) => b.score - a.score || b.round - a.round);
     res[id] = {
       type: code, code, chars: axes.map(a => a.ch), axes, name: T.name, sub: T.catch, catch: T.catch, desc: T.desc, strong: T.strong, weak: T.weak,
       match: { code: T.match, name: TYPES16[T.match].name }, rival: { code: T.rival, name: TYPES16[T.rival].name },
-      analysis: A, moment: ms[0] ? ms[0].text : null, pts: fin[place - 1].pts, place,
+      analysis: A, summary, moment: ms[0] ? ms[0].text : null, momentScore: ms[0] ? ms[0].score : 0, pts: fin[place - 1].pts, place,
       nums: [
         { k: '得点', v: `${fin[place - 1].pts}点` },
         { k: '大富豪', v: `${s.tops}回` },
@@ -3609,7 +3748,7 @@ function vTvDiag(pub) {
     <div class="diag-sub">${esc(d.catch)}</div>
     ${axesHtml(d)}
     <p class="dx-desc">${esc(d.desc)}</p>
-    <div class="dx-an">${d.analysis.slice(0, 3).map(t => `<div>${esc(t)}</div>`).join('')}</div>
+    ${d.summary ? `<p class="dx-sum">${esc(d.summary)}</p>` : ''}<div class="dx-an">${d.analysis.slice(0, d.summary ? 2 : 3).map(t => `<div>${esc(t)}</div>`).join('')}</div>
     <div class="dx-sub"><span>相性のいいタイプ <b>${esc(d.match.name)}</b></span><span>手ごわい相手 <b>${esc(d.rival.name)}</b></span></div>
     </div>${typeCard(d)}</div>`;
 }
@@ -3726,9 +3865,9 @@ function vPhone(pub, priv) {
       body = `<div class="panel ph-final"><p class="small" style="color:var(--gold)">閉会 ― 総合成績と首班指名</p><p class="pm-k">今夜の総理大臣</p><h2>${esc(pname(pub, fin[0] && fin[0].id))}さん</h2>
         <table class="mini-table fin">${fin.map((r, i) => `<tr class="${r.id === S.pid ? 'me' : ''}"><td class="rk">${i + 1}位</td><td class="nm">${esc(pname(pub, r.id))}${r.id === S.pid ? '<small>あなた</small>' : ''}</td><td class="tp">大富豪${r.tops}回</td><td class="pt">${r.pts}点</td></tr>`).join('')}</table></div>
         <div class="panel ph-diag">${typeCard(d)}<p class="small">今夜のあなたは(総合${d.place}位・${d.pts}点)</p><div class="ty">${esc(d.name)}</div>
-        <div class="dx-code">${d.chars.map(c => `<span>${c}</span>`).join('')}</div><div class="sb">${esc(d.catch)}</div>
+        <div class="dx-code">${d.chars.map(c => `<span>${c}</span>`).join('')}</div><div class="sb">${esc(d.catch)}</div><button class="btn diag-save" data-act="diag-img">結果を画像で保存・送る</button>
         ${axesHtml(d)}<p class="ds">${esc(d.desc)}</p>
-        <h3>今夜の立ち回り</h3><div class="dx-an">${d.analysis.map(t => `<div>${esc(t)}</div>`).join('')}</div>
+        <h3>今夜の立ち回り</h3>${d.summary ? `<p class="dx-sum">${esc(d.summary)}</p>` : ''}<div class="dx-an">${d.analysis.map(t => `<div>${esc(t)}</div>`).join('')}</div>
         ${d.moment ? `<div class="mo"><span class="k">決め手になった場面</span>${esc(d.moment)}</div>` : ''}
         <h3>強みと気をつけたい点</h3><p class="ds">${esc(d.strong)}<br>${esc(d.weak)}</p>
         <h3>相性</h3><p class="ds">相性のいいタイプは「${esc(d.match.name)}」、手ごわい相手は「${esc(d.rival.name)}」です。</p></div>`;
@@ -3899,10 +4038,149 @@ let lastHtml = '';
 function fitTv() {
   document.querySelectorAll('.is-tv .tv-main, .is-tv .sheet-main').forEach(el => {
     el.style.fontSize = '';
-    for (let k = 1; k <= 6 && el.scrollHeight > el.clientHeight + 1; k++) el.style.fontSize = (1 - k * 0.04) + 'em';
+    // 診断の左側のように、中の箱だけがあふれて切れる場合も縮める
+    const over = () => el.scrollHeight > el.clientHeight + 1 || [...el.querySelectorAll('.dx .left')].some(x => x.scrollHeight > x.clientHeight + 1);
+    for (let k = 1; k <= 6 && over(); k++) el.style.fontSize = (1 - k * 0.04) + 'em';
   });
 }
 window.addEventListener('resize', () => fitTv());
+/* 診断結果を画像にする(LINEなどで送る用)。縦長で、画面の診断と同じ色と書体で描く */
+const DI_FONT = { sans: '"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Meiryo",sans-serif', serif: '"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP","Noto Serif CJK JP",serif' };
+const DI_C = { bg: '#5a1521', line: '#681c29', fg: '#f3ead6', sub: '#d0bda0', rule: '#7d3442', gold: '#cfab5c', gold2: '#e8d39b', shu: '#c9451f', face: '#fffdf7', ink: '#1f1e1c', track: '#7d3442' };
+function diLoadSvg(svg) {
+  return new Promise((ok, ng) => {
+    const im = new Image(); im.onload = () => ok(im); im.onerror = ng;
+    im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
+}
+// 文字を1字ずつ測って折り返す(日本語は単語の区切りがないため)
+function diWrap(ctx, text, w) {
+  const out = []; let line = '';
+  for (const ch of text) {
+    if (ctx.measureText(line + ch).width > w && line) {
+      // 句読点や閉じかっこで行を始めない
+      if ('、。」』)を'.includes(ch)) { line += ch; continue; }
+      out.push(line); line = ch;
+    } else line += ch;
+  }
+  if (line) out.push(line);
+  // 最後の行が1〜2字だけにならないよう、前の行から字を送る
+  const k = out.length - 1;
+  if (k > 0 && [...out[k]].length <= 2) { const pr = [...out[k - 1]]; out[k] = pr.splice(-2).join('') + out[k]; out[k - 1] = pr.join(''); }
+  return out;
+}
+function diText(ctx, text, x, y, o) {
+  ctx.font = `${o.weight || 400} ${o.size}px ${o.serif ? DI_FONT.serif : DI_FONT.sans}`;
+  ctx.fillStyle = o.color || DI_C.fg; ctx.textAlign = o.align || 'left'; ctx.textBaseline = 'alphabetic';
+  if ('letterSpacing' in ctx) ctx.letterSpacing = (o.ls || 0) + 'px';
+  if (!o.w) { ctx.fillText(text, x, y); return y; }
+  const lines = diWrap(ctx, text, o.w).slice(0, o.max || 9);
+  lines.forEach((l, k) => ctx.fillText(l, x, y + k * o.lh));
+  return y + (lines.length - 1) * o.lh;
+}
+async function diagImage(d, who) {
+  if (document.fonts && document.fonts.ready) await document.fonts.ready;
+  const W = 1080, H = 1620, P = 84;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const c = cv.getContext('2d');
+  if (!c.roundRect) c.roundRect = function (x, y, w, h) { this.rect(x, y, w, h); }; // 古い端末では角を丸めない
+  // 地:画面と同じ菱形の地紋
+  c.fillStyle = DI_C.bg; c.fillRect(0, 0, W, H);
+  c.strokeStyle = DI_C.line; c.lineWidth = 1.5;
+  for (let y = -54; y < H + 54; y += 54) for (let x = -54; x < W + 54; x += 54) {
+    c.beginPath(); c.moveTo(x + 27, y + 3); c.lineTo(x + 51, y + 27); c.lineTo(x + 27, y + 51); c.lineTo(x + 3, y + 27); c.closePath(); c.stroke();
+  }
+  // 上の見出し
+  diText(c, '今夜の本性診断', P, 112, { size: 34, serif: true, weight: 700, color: DI_C.gold2, ls: 6 });
+  c.fillStyle = DI_C.gold; c.fillRect(P, 140, W - 2 * P, 3);
+  // タイプの札
+  const cx = P, cy = 196, cw = 300, ch = 420;
+  c.fillStyle = DI_C.face; c.strokeStyle = '#2b2a27'; c.lineWidth = 3;
+  c.beginPath(); c.roundRect(cx, cy, cw, ch, 22); c.fill(); c.stroke();
+  c.strokeStyle = DI_C.shu; c.lineWidth = 2; c.beginPath(); c.roundRect(cx + 14, cy + 14, cw - 28, ch - 28, 12); c.stroke();
+  const chars = d.chars.join('');
+  diText(c, chars[0], cx + 30, cy + 66, { size: 38, serif: true, weight: 700, color: DI_C.shu });
+  c.save(); c.translate(cx + cw - 30, cy + ch - 66); c.rotate(Math.PI);
+  diText(c, chars[0], 0, 0, { size: 38, serif: true, weight: 700, color: DI_C.shu }); c.restore();
+  try {
+    const css = `<style>*{vector-effect:non-scaling-stroke}.a{fill:${DI_C.shu}}.as{stroke:${DI_C.shu}}.k{fill:#1f1a15;stroke:none}.pp{fill:${DI_C.face}}.g{fill:${DI_C.gold}}.w{fill:${DI_C.face}}.s{fill:${DI_C.ink}}.gs{stroke:${DI_C.gold};stroke-width:5px}.thin{stroke-width:1.4px}</style>`;
+    const svg = I.type(d.code).replace('<svg ', `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" color="${DI_C.ink}" `).replace(/stroke-width="2.2"/, 'stroke-width="4.5"').replace(/(<svg[^>]*>)/, `$1${css}`);
+    c.drawImage(await diLoadSvg(svg), cx + 50, cy + 74, 200, 200);
+  } catch (e) { /* 絵が描けない端末では札の文字だけにする */ }
+  diText(c, d.name, cx + cw / 2, cy + 312, { size: d.name.length > 6 ? 26 : 30, serif: true, weight: 700, color: DI_C.ink, align: 'center', ls: 4 });
+  diText(c, chars, cx + cw / 2, cy + 350, { size: 22, serif: true, color: DI_C.shu, align: 'center', ls: 10 });
+  // 右側:名前・タイプ名・ひとこと
+  const rx = cx + cw + 56, rw = W - P - rx;
+  diText(c, `${who}さんは`, rx, 236, { size: 28, color: DI_C.sub });
+  let ts = 76; c.font = `700 ${ts}px ${DI_FONT.serif}`; if ('letterSpacing' in c) c.letterSpacing = '2px';
+  while (c.measureText(d.name).width > rw && ts > 40) { ts -= 2; c.font = `700 ${ts}px ${DI_FONT.serif}`; }
+  diText(c, d.name, rx, 236 + ts + 22, { size: ts, serif: true, weight: 700, color: DI_C.gold2, ls: 2 });
+  let y = 236 + ts + 22 + 70;
+  d.chars.forEach((ch1, k) => {
+    const bx = rx + k * 70;
+    c.strokeStyle = DI_C.gold; c.lineWidth = 2; c.beginPath(); c.roundRect(bx, y - 44, 56, 56, 6); c.stroke();
+    diText(c, ch1, bx + 28, y - 4, { size: 30, serif: true, weight: 700, color: DI_C.gold2, align: 'center' });
+  });
+  y += 70;
+  y = diText(c, d.catch, rx, y, { size: 30, weight: 700, w: rw, lh: 46, max: 3 });
+  diText(c, `総合${d.place}位・${d.pts}点`, rx, Math.max(y + 64, cy + ch - 6), { size: 28, color: DI_C.sub });
+  // 四つの軸
+  y = cy + ch + 96;
+  d.axes.forEach((a, k) => {
+    const yy = y + k * 62, bx = P + 150, bw = W - 2 * P - 300;
+    diText(c, a.l, P, yy, { size: 27, weight: a.left ? 700 : 400, color: a.left ? DI_C.fg : DI_C.sub });
+    diText(c, a.r, W - P, yy, { size: 27, weight: a.left ? 400 : 700, color: a.left ? DI_C.sub : DI_C.fg, align: 'right' });
+    c.fillStyle = DI_C.track; c.beginPath(); c.roundRect(bx, yy - 17, bw, 12, 6); c.fill();
+    const fw = bw * a.pct / 100; c.fillStyle = DI_C.gold;
+    c.beginPath(); c.roundRect(a.left ? bx : bx + bw - fw, yy - 17, fw, 12, 6); c.fill();
+  });
+  // 決め手になった場面(なければ説明文)
+  y += 4 * 62 + 40;
+  c.fillStyle = DI_C.rule; c.fillRect(P, y - 46, W - 2 * P, 2);
+  // 「富豪になった」程度の場面しかないときは、立ち回りに場所を譲る
+  if (d.moment && (d.momentScore == null || d.momentScore > 1)) {
+    diText(c, '決め手になった場面', P, y, { size: 25, color: DI_C.gold });
+    y = diText(c, d.moment, P, y + 52, { size: 32, weight: 700, w: W - 2 * P, lh: 50, max: 2 }) + 90;
+  }
+  // 今夜の立ち回り:入るだけ載せる(最後の得点の行は上に出しているので省く)
+  const an = (d.analysis || []).slice(0, -1);
+  if (an.length && y < H - 230) {
+    diText(c, '今夜の立ち回り', P, y, { size: 25, color: DI_C.gold }); y += 50;
+    // 総評の頭の「総合N位」は上に出しているので省く
+    if (d.summary) y = diText(c, d.summary.replace(/^総合\d+位[^。]*。/, ''), P, y, { size: 29, weight: 700, w: W - 2 * P, lh: 46, max: 2 }) + 60;
+    for (const t of an) {
+      c.font = `400 27px ${DI_FONT.sans}`; const n = diWrap(c, t, W - 2 * P - 40).length;
+      if (y + (n - 1) * 44 > H - 170) break;
+      diText(c, '―', P, y, { size: 27, color: DI_C.sub });
+      y = diText(c, t, P + 40, y, { size: 27, color: DI_C.fg, w: W - 2 * P - 40, lh: 44 }) + 58;
+    }
+  }
+  // 下の帯
+  c.fillStyle = DI_C.gold; c.fillRect(P, H - 120, W - 2 * P, 2);
+  const dt = new Date();
+  diText(c, `${dt.getFullYear()}年${dt.getMonth() + 1}月${dt.getDate()}日 開会`, P, H - 66, { size: 24, color: DI_C.sub });
+  diText(c, '大富豪国会', W - P, H - 66, { size: 24, color: DI_C.sub, align: 'right', ls: 3 });
+  return new Promise(ok => cv.toBlob(ok, 'image/png'));
+}
+// 診断画面が出たら先に画像を作っておく(送る操作の直後に共有画面を開くため)
+function prepDiagImage(pub) {
+  const d = pub && pub.phase === 'diag' && S.view !== 'tv' && pub.diag && pub.diag[S.pid];
+  if (!d) { S.diagImg = null; return; }
+  const key = `${pub.code}-${pub.round}-${d.code}-${d.pts}-${d.place}`;
+  if (S.diagImg && S.diagImg.key === key) return;
+  S.diagImg = { key, blob: null };
+  diagImage(d, pname(pub, S.pid)).then(b => { if (S.diagImg && S.diagImg.key === key) S.diagImg.blob = b; }).catch(() => {});
+}
+async function saveDiagImage() {
+  const im = S.diagImg; if (!im) return;
+  if (!im.blob) im.blob = await diagImage(S.pub.diag[S.pid], pname(S.pub, S.pid));
+  const file = new File([im.blob], '大富豪国会_診断.png', { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
 function render() {
   if (S.dragging) { S.pendingRender = true; return; }
   if (!document.getElementById('illus-defs')) { const d = document.createElement('div'); d.id = 'illus-defs'; d.innerHTML = I.DEFS; document.body.appendChild(d); }
@@ -3932,6 +4210,7 @@ function render() {
     fitTv();
   }
 
+  prepDiagImage(pub);
   if (pub && pub !== S.seen) { const prev = S.seen; S.seen = pub; fxCheck(prev, pub); }
   soundButton();
   let ob = document.querySelector('.offline');
@@ -4134,6 +4413,7 @@ document.addEventListener('click', async ev => {
     case 'sound': SFX.setMuted(!SFX.isMuted()); if (!SFX.isMuted()) SFX.play('gavel'); render(); break;
     case 'bgm': SFX.setBgm(!SFX.bgmOn()); render(); soundButton(); break;
     case 'cfg-open': S.showCfg = true; render(); break;
+    case 'diag-img': saveDiagImage(); break;
     case 'types-open': S.showTypes = true; S.openType = null; lastHtml = ''; render(); window.scrollTo(0, 0); break;
     case 'types-close': S.showTypes = false; lastHtml = ''; render(); break;
     case 'lawbook-open': S.showLawbook = true; lastHtml = ''; render(); window.scrollTo(0, 0); break;
