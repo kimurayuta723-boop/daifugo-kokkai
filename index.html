@@ -945,6 +945,30 @@ html,body{overflow-x:clip}
 .panel .xplan{font-size:14px}
 .rtable.tight ~ .comment .gv{font-size:1.02em}
 
+/* 出す順番の演出(第1回の始まり) */
+.fo-box{position:relative;z-index:2;text-align:center;color:var(--fg);animation:foIn .4s both,foOut .5s calc(var(--dur) - 600ms) forwards}
+.fo-box>small{display:block;font-size:1.4vw;letter-spacing:.5em;color:var(--gold);margin-bottom:2vw}
+.fo-lead{display:flex;align-items:center;justify-content:center;gap:2.6vw}
+.fo-lead .card{--cw:6.4vw;animation:foPop .6s .2s both}
+.fo-lead p{margin:0;text-align:left;font-family:var(--serif);font-size:3.4vw;line-height:1.35;color:var(--fg)}
+.fo-lead p b{color:var(--gold2);font-weight:700}
+.fo-lead p span{display:block;margin-top:.7vw;font-family:var(--sans);font-size:1.25vw;letter-spacing:.12em;color:var(--sub)}
+.fo-box ol{list-style:none;display:flex;flex-wrap:wrap;justify-content:center;align-items:baseline;max-width:80vw;margin:3.4vw auto 0;padding:0;font-size:1.8vw;letter-spacing:.06em}
+.fo-box li{opacity:0;animation:foIn .4s calc(.9s + var(--i) * .35s) forwards}
+.fo-box li+li::before{content:"›";margin:0 1vw;color:var(--gold)}
+.fo-box li:first-child{color:var(--gold2);font-weight:700}
+.fo-box li small{margin-left:.4em;font-size:.6em;letter-spacing:.1em;color:var(--gold)}
+@keyframes foIn{from{opacity:0}to{opacity:1}}
+@keyframes foOut{to{opacity:0}}
+@keyframes foPop{from{opacity:0;transform:scale(.7) rotate(-8deg)}to{opacity:1;transform:none}}
+.is-ph .fo-box>small{font-size:3.4vw;margin-bottom:5vw}
+.is-ph .fo-lead{gap:5vw}
+.is-ph .fo-lead .card{--cw:15vw}
+.is-ph .fo-lead p{font-size:7vw}
+.is-ph .fo-lead p span{font-size:3vw;margin-top:1.5vw}
+.is-ph .fo-box ol{max-width:88vw;margin-top:7vw;font-size:4.2vw;row-gap:1.5vw}
+.is-ph .fo-box li+li::before{margin:0 2vw}
+
 </style>
 <script>
 /* ===== Firebaseの設定 =====
@@ -1401,7 +1425,8 @@ function beginPlay(G, now) {
   let lead;
   if (G.order) lead = G.order[G.order.length - 1];
   else lead = G.players.find(p => G.hands[p.id].includes('D3')).id;
-  G.phase = 'play'; G.turn = lead; G.cpuAt = now + 2600;
+  // 第1回は開会の幕と「出す順番」の演出を見せてから始める
+  G.phase = 'play'; G.turn = lead; G.cpuAt = now + (G.round === 1 ? 9000 : 2600);
   G.players.forEach(p => { st(G, p.id).rounds++; });
   // 交換後に配られている手札の強さの順位(0=いちばん強い)
   const ctx = makeCtx(G), sc = G.players.map(p => handScore(G.hands[p.id], ctx));
@@ -1431,6 +1456,7 @@ function lawHit(G, key, pid, text) {
   l.hits = (l.hits || 0) + 1;
   if (pid) { const h = st(G, pid).lawHits; h[key] = (h[key] || 0) + 1; }
   const lg = rl(G); lg.hits = lg.hits || {}; lg.hits[key] = (lg.hits[key] || 0) + 1;
+  if (pid) { lg.hitP = lg.hitP || {}; (lg.hitP[key] = lg.hitP[key] || []).push(pid); }
   G.lawHit = { key, pid: pid || null, n: (G.lawHit ? G.lawHit.n : 0) + 1 };
   if (text) say(G, `第${KANJI[lawNo(G, l) - 1]}条 適用。${text}`);
 }
@@ -1506,7 +1532,10 @@ function act(G, pid, a, now) {
     gv = { ctx, hand, top: G.field.top, round: G.round, ms: G.turnAt ? Math.min(60000, now - G.turnAt) : 0 };
     if (G.field.top) {
       const cs = candidates(hand, ctx);
-      gv.win = cs.filter(c => unanswerable(G, pid, c, ctx) === true);
+      // 「取れた場」として数えるのは、切り札(2・ジョーカー・最強の数字)や8切りを使わずに取れる場合だけ。
+      // ほかの全員がもうパスしている場面も、何を出しても取れるので数えない(どれも、言われるまでもないため)
+      const rs = active(G).filter(id => id !== pid && !G.passed.includes(id));
+      gv.win = rs.length ? cs.filter(c => !isTrump(c.ids, ctx) && !(c.p.has8 && G.cfg.eight) && unanswerable(G, pid, c, ctx) === true) : [];
       if (a.t === 'play') { const p = bestPlay(a.ids || [], ctx); gv.mine = p ? unanswerable(G, pid, { ids: a.ids, p }, ctx) : null; }
     }
   }
@@ -1579,7 +1608,7 @@ function actInner(G, pid, a, now) {
       return false;
     case 'again':
       if (G.phase !== 'diag') return false;
-      Object.assign(G, { phase: 'lobby', round: 0, order: null, laws: [], stats: {}, moments: {}, diag: null, final: null, results: null, history: [], points: {}, streak: null, godComment: null, gHist: [] });
+      Object.assign(G, { phase: 'lobby', round: 0, order: null, laws: [], stats: {}, moments: {}, diag: null, final: null, results: null, history: [], points: {}, lawPts: {}, streak: null, godComment: null, gHist: [], gOnce: [] });
       return true;
     case 'exchange': {
       if (G.phase !== 'exchange') return false;
@@ -1919,6 +1948,8 @@ function endRound(G, now) {
     const pts = POINTS[t] * mul + adj.reduce((a, x) => a + x.d, 0);
     st(G, id).lawGain += adj.reduce((a, x) => a + x.d, 0) + (byLaw ? POINTS[t] : 0);
     G.points[id] = (G.points[id] || 0) + pts;
+    // 法律で上乗せされた点の累計(上乗せがなければ順位が違ったかを解説で言うため)
+    G.lawPts = G.lawPts || {}; G.lawPts[id] = (G.lawPts[id] || 0) + adj.reduce((a, x) => a + x.d, 0);
     return { id, title: t, prev: prev ? TITLES[n][prev.indexOf(id)] : null, prevPos: prev ? prev.indexOf(id) : null, pts, total: G.points[id], x2: mul === 2 ? (byLaw ? 'law' : 'last') : null, adj };
   });
   if (genzei) lawHit(G, 'genzei', order[0], `大富豪減税法により、${pName(G, order[0])}さんに2点を上乗せします。`);
@@ -2020,7 +2051,8 @@ function godComment(G, order) {
   // いちばん長く考えた場面
   if (V.long && V.long.ms >= 15000) {
     const lt = V.long, sec = Math.round(lt.ms / 1000), where = lt.top ? `場の${lt.top}を前に` : '自分から出す番で';
-    add('g-long', 3 + (lt.missed ? 2 : 0), lt.missed ? [
+    // ただの長考は一つの試合で一度だけ取り上げる(取れた場の見送りにつながった長考は毎回でも言う)
+    if (lt.missed || !(G.gOnce || []).includes('g-long0')) add(lt.missed ? 'g-long' : 'g-long0', 3 + (lt.missed ? 2 : 0), lt.missed ? [
       `この回いちばん長く考えたのは${nm(lt.pid)}。${where}${sec}秒悩んで、${lt.did}。ただ、全員の手札を見ると、あそこは出せば取れる場面でした。`,
       `${nm(lt.pid)}の${sec}秒の長考は、パスで終わりました。実は、出していれば誰も返せなかった場面です。`]
       : [`この回いちばん長く考えたのは${nm(lt.pid)}。${where}${sec}秒悩んで、${lt.did}。`,
@@ -2030,10 +2062,8 @@ function godComment(G, order) {
   const hx = (L.xg || []).filter(x => !(G.players.find(p => p.id === x.pid) || {}).cpu);
   if (hx.length) {
     const x = hx.sort((a, b) => Math.abs(b.pct - 0.2) - Math.abs(a.pct - 0.2))[0], lb = x.ids.map(label).join('と');
-    if (x.pct < 0.01) add('g-xg', 3, [
-      `交換で${nm(x.pid)}が${nm(x.to)}に渡したのは${lb}。手札でいちばん弱い札です。情け無用でした。`,
-      `${nm(x.pid)}から${nm(x.to)}への贈り物は${lb}。手札の底から選んでいます。`]);
-    else if (x.pct > 0.35) add('g-xg', 4, [
+    // 弱い札を渡すのは定石なので取り上げない
+    if (x.pct > 0.35) add('g-xg', 4, [
       `交換で${nm(x.pid)}が${nm(x.to)}に渡したのは${lb}。手札の中では強めの札です。何か裏取引でもあったのでしょうか。`,
       `${nm(x.pid)}、交換で${lb}を手放しました。弱い札はほかにもあったのに。優しさか、作戦か。`]);
   }
@@ -2045,6 +2075,7 @@ function godComment(G, order) {
   const pickN = c.length >= 2 && c[1].score >= 4.5 && c[0].text.length + c[1].text.length <= 140 ? 2 : 1;
   const out = c.slice(0, pickN);
   G.gHist = recent.concat(out.map(x => x.key)).slice(-3);
+  G.gOnce = (G.gOnce || []).concat(out.map(x => x.key).filter(k => k === 'g-long0'));
   out.forEach(x => G.cUsed.push(shape(x.text)));
   return out.map(x => x.text).join('');
 }
@@ -2123,7 +2154,7 @@ function commentary(G, order, prev) {
     `${nm(pm[0])}、この回は${pm[1]}回の見送り。答弁の機会を待ち続けました。`,
     `${nm(pm[0])}のパスは${pm[1]}回。そろそろ何か出してください。`]);
   const cm = Object.entries(L.cuts).sort((a, b) => b[1] - a[1])[0];
-  if (cm && cm[1] >= 2) add('cut', 4, [
+  if (cm && cm[1] >= 3) add('cut', 4, [   // 8は4枚あるので、2回くらいは珍しくない
     `${nm(cm[0])}の8切りが${cm[1]}回。場を流す名人です。`,
     `8切り${cm[1]}回。${nm(cm[0])}は議事進行を握っていました。`,
     `都合が悪くなると8切り。${nm(cm[0])}の強行採決が${cm[1]}回ありました。`,
@@ -2140,16 +2171,29 @@ function commentary(G, order, prev) {
     `倍点法のおかげで${nm(top)}は一気に${POINTS['大富豪'] * 2}点。点差が大きく動きました。`,
     `得点二倍の回を制したのは${nm(top)}。${nm(last)}は痛い0点です。`,
     `倍点法の回で大富豪。${nm(top)}にとっては値千金の勝利です。`]);
-  const lh = Object.entries(L.hits || {}).sort((a, b) => b[1] - a[1])[0];
-  if (lh && LAWS[lh[0]]) {
-    const ln = LAWS[lh[0]].name((G.laws.find(l => l.key === lh[0]) || {}).param);
-    if (lh[1] >= 3) add('lawhit', 5, [
-      `この回は「${ln}」が${lh[1]}回も適用されました。法律が勝負を左右しています。`,
-      `「${ln}」が${lh[1]}回効いた回でした。可決に回った人の読みが当たったと言えます。`,
-      `議場を動かしたのは「${ln}」。${lh[1]}回の適用で、手札の使い方が大きく変わりました。`]);
-    else if (lh[0] === 'genzei' || lh[0] === 'hosho') add('lawhit', 4, [
-      `「${ln}」の上乗せで、点差が少し動きました。`,
-      `「${ln}」が得点に効いています。採決の重みを感じる回でした。`]);
+  // 法律の解説は、適用された回数ではなく、結果にどう響いたかを言う(回数は札の配りで自然に増えるため)
+  const hp = L.hitP || {}, lname = k => LAWS[k].name((G.laws.find(l => l.key === k) || {}).param);
+  if (hp.agari && LAWS.agari) {
+    const id = hp.agari[hp.agari.length - 1], k = hp.agari.filter(x => x === id).length, f = order.indexOf(id);
+    add('lawhit', f >= n - 2 ? 6 : 4, f >= n - 2 ? [
+      `${nm(id)}は上がり阻止法で${k > 1 ? `${k}回も` : ''}足止めされ、そのまま${TITLES[n][f]}に。あと一枚が遠い回でした。`,
+      `あと一枚のところで上がり阻止法に止められた${nm(id)}。結果は${TITLES[n][f]}です。`]
+    : [`${nm(id)}は上がり阻止法で札を引かされながらも、${f + 1}番目で上がりました。`,
+      `上がり阻止法に一度は止められた${nm(id)}が、引いた札ごと押し切りました。`]);
+  }
+  for (const k of ['ban', 'joker']) if (hp[k]) {
+    const cnt = {}; hp[k].forEach(x => { cnt[x] = (cnt[x] || 0) + 1; });
+    const id = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a])[0], f = order.indexOf(id);
+    if (cnt[id] >= 2 && f >= Math.ceil(n / 2)) add('lawhit', 5, [
+      `「${lname(k)}」のせいで出せる札がなく、${nm(id)}はパスを${cnt[id]}回強いられました。結果は${TITLES[n][f]}です。`,
+      `${nm(id)}、手札はあっても「${lname(k)}」に阻まれて${cnt[id]}回のパス。法律に泣いた回でした。`]);
+  }
+  if (G.lawPts && order.some(id => G.lawPts[id])) {
+    const tot = id => G.points[id] || 0, raw = id => tot(id) - (G.lawPts[id] || 0);
+    const lead = order.slice().sort((a, b) => tot(b) - tot(a))[0], leadRaw = order.slice().sort((a, b) => raw(b) - raw(a))[0];
+    if (lead !== leadRaw && tot(lead) > tot(leadRaw)) add('lawhit', 6, [
+      `いま総合首位の${nm(lead)}ですが、法律による上乗せがなければ首位は${nm(leadRaw)}でした。採決が順位を動かしています。`,
+      `法律の上乗せ点を除くと、総合首位は${nm(leadRaw)}。${nm(lead)}の首位は、採決のたまものです。`]);
   }
   const lhit = L.hits || {};
   if (lhit.koukai && L.openPid) add('koukai', 6, L.openPid === top ? [
@@ -2506,7 +2550,7 @@ function diagnose(G) {
     // 全員の手札から見た評価2:誰にも返されない札を持っていた場面で、取りに行ったか
     if (s.chance >= 2) {
       const ex = s.missEx && s.missed ? `第${s.missEx.round}回には、${s.missEx.strong ? `最強法で${RL[s.missEx.strong]}がいちばん強いので、` : ''}${s.missEx.rev ? '革命中の' : ''}場の${s.missEx.top}に${s.missEx.card}を出せば誰も返せなかったのに見送っています。` : '';
-      const head = `全員の手札を見ると、誰にも返されない札を持っていた場面が${s.chance}回あり、`;
+      const head = `全員の手札を見ると、切り札や8切りを使わずに場を取れる札を持っていた場面が${s.chance}回あり、`;
       const body = !s.missed && s.took === s.chance ? 'すべて出して場を取りました。'
         : !s.missed ? `そのうち${s.took}回は出して場を取りました。見送りは一度もありません。`
         : `出して場を取ったのは${s.took}回、見送ったのは${s.missed}回です。`;
@@ -2514,30 +2558,38 @@ function diagnose(G) {
     }
     // 全員の手札から見た評価3:切り札の使い方
     if (s.overkill) add(1.6 + s.overkill * 0.5, `もっと弱い札でも場を取れた場面で、切り札を使ったのが${s.overkill}回あります。第${s.overEx.round}回は${s.overEx.rev ? '革命中で、' : ''}${s.overEx.alt}で足りたところを${s.overEx.used}で取りました。`);
-    else if (s.took >= 3) add(1.2, `場を取るときは、足りる札の中で弱いものを選べています。切り札の無駄づかいはありませんでした。`);
+    else if (s.took >= 3) add(0.8, `場を取るときは、足りる札の中で弱いものを選べています。切り札の無駄づかいはありませんでした。`);
     // カードの交換で渡した札
     if (s.xg.length) {
       const avg = s.xg.reduce((a, x) => a + x.pct, 0) / s.xg.length, last = s.xg[s.xg.length - 1];
       const ex = `第${last.round}回は${pName(G, last.to)}さんに${last.ids.map(label).join('と')}を渡しています`;
-      add(avg < 0.01 || avg > 0.35 ? 2 : 1.2, avg < 0.01 ? `交換では${s.xg.length > 1 ? '毎回、' : ''}手札でいちばん弱い札を選んで渡しました。容赦がありません(${ex})。` : avg > 0.35 ? `交換で渡した札は手札の中では強めで、相手への情けが見えます(${ex})。` : `交換では弱めの札を渡しつつ、少し手加減しています(${ex})。`);
+      // いちばん弱い札を渡すのは定石なので書かない。定石から外れたときだけ取り上げる
+      if (avg > 0.35) add(2, `交換で渡した札は手札の中では強めで、相手への情けが見えます(${ex})。`);
+      else if (avg > 0.1) add(1, `交換では弱めの札を渡しつつ、少し手加減しています(${ex})。`);
     }
     if (s.g7.length || s.d10.length) {
       const part = [];
       if (s.g7.length) { const all = [].concat(...s.g7.map(x => x.ids)); part.push(`7渡しで${all.map(label).join('・')}を渡し`); }
       if (s.d10.length) { const all = [].concat(...s.d10.map(x => x.ids)); part.push(`10捨てで${all.map(label).join('・')}を捨て`); }
       const recs = s.g7.concat(s.d10), avg = recs.reduce((a, x) => a + x.pct, 0) / recs.length;
-      add(1.2, `${part.join('、')}ました。${avg < 0.15 ? 'いらない弱い札をうまく手放しています。' : avg > 0.5 ? '強い札まで手放していて、思い切りのよさが出ています。' : ''}`);
+      // 弱い札を手放すのは当然なので、強い札まで手放したときだけ取り上げる
+      if (avg > 0.5) add(1.4, `${part.join('、')}ました。強い札まで手放していて、思い切りのよさが出ています。`);
     }
-    // 法律との関わり
-    { const hk = Object.keys(s.lawHits), tot = hk.reduce((a, k) => a + s.lawHits[k], 0);
-      if (tot) {
-        const top = hk.sort((a, b) => s.lawHits[b] - s.lawHits[a])[0];
-        add(1 + tot * 0.15 + (s.lawGain ? 0.5 : 0), `法律が効いた場面に${tot}回関わり、いちばん多かったのは${LAWS[top].name()}(${s.lawHits[top]}回)です。${s.lawGain ? `法律による上乗せは合わせて${s.lawGain}点でした。` : ''}`);
-      } else if (s.lawGain) add(1.2, `法律による上乗せは合わせて${s.lawGain}点でした。`); }
+    // 法律との関わり:適用された回数ではなく、本人に何が起きたかを書く
+    { const lh = s.lawHits;
+      if (lh.agari) add(1.4 + lh.agari * 0.3, `上がり阻止法で、あと一枚のところを${lh.agari}回止められました。`);
+      for (const k of ['ban', 'joker']) if ((lh[k] || 0) >= 2) add(1.3, `「${LAWS[k].name((G.laws.find(l => l.key === k) || {}).param)}」のせいで、出せる札がなくパスした場面が${lh[k]}回ありました。`);
+      if (lh.fate) add(2, `当たり札で${lh.fate}回上がり、階級を一気に上げました。`);
+      const lp = G.lawPts || {}, raw = x => (G.points[x] || 0) - (lp[x] || 0);
+      const placeRaw = ids.filter(x => raw(x) > raw(id)).length + 1, placeNow = fin.findIndex(x => x.id === id) + 1;
+      if (lp[id] && placeRaw !== placeNow) add(2.2, `法律で上乗せされた${lp[id]}点がなければ、総合${placeRaw}位でした。${placeRaw > placeNow ? '採決に助けられています。' : ''}`);
+      else if (!lp[id] && placeRaw !== placeNow) add(2.2, `ほかの人への法律の上乗せがなければ、総合${placeRaw}位でした。`);
+    }
     if (s.votes) add(1, `投票は${s.votes}回。大富豪と同じ側に${s.withTop}回、反対側に${s.againstTop}回入れ、可決した側に乗ったのは${s.withMaj}回です。`);
     if (s.revs) add(2.5, `革命を${s.revs}回起こしました。${s.gekokujo ? `うち${s.gekokujo}回は下剋上法で手札を入れ替えました。` : ''}`);
     if (s.ochi) add(2.2, `都落ちを${s.ochi}回経験しています。`);
-    if (s.kiri >= 2) add(1 + s.kiri * 0.3, `8切りは${s.kiri}回。場を流して主導権を取り返すのが得意です。`);
+    // 8切りは配られれば誰でも使うので、全員の中で目立って多いときだけ書く
+    if (s.kiri >= 3 && S.every(x => x.kiri <= s.kiri)) add(1 + s.kiri * 0.3, `8切りは${s.kiri}回で、全員の中でいちばん多く使いました。場を流して主導権を取り返すのが得意です。`);
     if (s.marks) add(1.4, `大富豪として重要法案を${s.marks}回指定し、${s.markWins ? `${s.markWins}回を通しました。` : '一度も通せませんでした。'}`);
     const place = fin.findIndex(x => x.id === id) + 1;
     // 総評:その夜を一文で
@@ -4350,7 +4402,7 @@ function render() {
 /* ---------- 演出と効果音 ---------- */
 const bigSound = pub => S.view === 'tv' || pub.mode === 'phone';
 /* 演出:主役の演出はすべて、議場を暗くしてから中央に「動き+短い題字」を出す */
-const DIM_FX = ['crown', 'cut', 'gavel', 'round', 'repeal'];
+const DIM_FX = ['crown', 'cut', 'gavel', 'round', 'repeal', 'order'];
 function fx(kind, html, ms) {
   // 画面をふさぐ演出が終わる時刻を覚えておく(次の演出は、これが終わってから出す)。紙吹雪はふさがないので数えない
   if (kind !== 'confetti') S.fxUntil = Math.max(S.fxUntil || 0, Date.now() + (ms || 2600));
@@ -4360,6 +4412,20 @@ function fx(kind, html, ms) {
     document.querySelectorAll('.fx-dimmed').forEach(x => x.remove());
     el.classList.add('fx-dimmed'); el.style.setProperty('--dur', (ms || 2600) + 'ms'); }
   document.body.appendChild(el); setTimeout(() => el.remove(), ms || 2600);
+}
+// 出す順番の演出。テレビ(とスマホだけで遊ぶとき)は画面全体で、テレビのある場では各自のスマホに帯で出す
+function orderFx(pub, big) {
+  const ids = pub.players.map(p => p.id), k0 = ids.indexOf(pub.turn);
+  const seq = ids.slice(k0).concat(ids.slice(0, k0));
+  const lead = pname(pub, pub.turn), mine = S.pid && seq.indexOf(S.pid);
+  if (!big) {
+    const me = S.pid === pub.turn;
+    showBanner({ kind: 'order', text: me ? '♦3を持つあなたから始めます。' : `♦3を持つ${lead}さんから始めます。あなたは${mine + 1}番目です。` }, pub);
+    return;
+  }
+  const lis = seq.map((id, i) => `<li style="--i:${i}">${esc(pname(pub, id))}${id === S.pid ? '<small>あなた</small>' : ''}</li>`).join('');
+  fx('order', `<div class="fo-box"><small>出す順番</small><div class="fo-lead">${cardHtml('D3')}<p><b>${esc(lead)}さん</b>から<span>♦3を持っている人が最初に出します</span></p></div><ol>${lis}</ol></div>`, 3600 + seq.length * 350);
+  SFX.play('deal');
 }
 function confetti(n) {
   let h = '';
@@ -4398,6 +4464,8 @@ function fxCheck(prev, pub) {
     else if (big) SFX.play('shuffle'); else SFX.play('deal');
     S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
   }
+  // 第1回の始まり:♦3を持つ人から、どの順で出すかを見せる(開会の幕のあと)
+  if (pub.round === 1 && prev.round !== 1 && pub.phase === 'play' && pub.turn) queueFx(() => { if (S.pub && S.pub.round === 1) orderFx(pub, big); });
   // 演出の順番:この更新で起きた出来事(革命・8切り・上がりなど)を先に並べ、段階が変わったときの演出(王冠・審議など)はそのあとに出す
   // 札が出た
   const st = pub.field.stack || [], pst = prev.field.stack || [];
