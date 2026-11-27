@@ -2383,19 +2383,31 @@ function flag() { return sv('0 0 120 120', CORE.AR, 'type-ic'); }
 
 /* ホームの挿絵:丸屋根の議場(特定の建物ではない) */
 function hall() {
+  // 国会議事堂をもとにした正面図。下から 基壇 → 左右の翼棟 → 中央棟(列柱の玄関) → 塔 → 段々の屋根 の順に、
+  // どの部材も下の部材の上に載るように組んである(宙に浮く部分や、はみ出す部分を作らない)
   let rays = '';
-  for (let k = 0; k < 19; k++) { const a = Math.PI + k * Math.PI / 18; rays += `<path d="M200 92L${(200 + 230 * Math.cos(a)).toFixed(1)} ${(92 + 230 * Math.sin(a)).toFixed(1)}" class="ray"/>`; }
-  let cols = '';
-  for (let k = 0; k < 8; k++) { const x = 122 + k * 21; cols += `<path class="col" d="M${x} 160h9v66h-9z"/>`; }
+  for (let k = 0; k < 19; k++) { const a = Math.PI + k * Math.PI / 18; rays += `<path d="M200 46L${(200 + 240 * Math.cos(a)).toFixed(1)} ${(46 + 240 * Math.sin(a)).toFixed(1)}" class="ray"/>`; }
+  // 翼棟の窓(左右対称に2段×5列)
   let wins = '';
-  for (const x of [72, 96, 286, 310]) wins += `<path class="win" d="M${x} 176h14v22c0-5-3-8-7-8s-7 3-7 8z"/>`;
+  for (const y of [180, 202]) for (let k = 0; k < 5; k++) {
+    const x = 56 + k * 18;
+    wins += `<path class="win" d="M${x} ${y}h9v13h-9z"/><path class="win" d="M${400 - x - 9} ${y}h9v13h-9z"/>`;
+  }
+  // 中央棟の上の窓(上が丸い縦長の窓を3つ)
+  let upper = '';
+  for (const x of [171, 195, 219]) upper += `<path class="win" d="M${x} 160v-13a5 5 0 0 1 10 0v13z"/>`;
+  // 玄関の列柱(5本)と、塔の列柱(4本)
+  let cols = '';
+  for (let k = 0; k < 5; k++) { const x = 160 + k * 19; cols += `<path class="col" d="M${x} 176h8v52h-8z"/>`; }
+  let tcols = '';
+  for (let k = 0; k < 4; k++) { const x = 181 + k * 11.5; tcols += `<path class="col" d="M${x.toFixed(1)} 92h5v30h-5z"/>`; }
   return `<svg class="hall" viewBox="0 0 400 270" aria-hidden="true">${rays}
-    <path class="body" d="M56 156h288v72H56z"/>${wins}
-    <path class="body" d="M112 150h176v78H112z"/>${cols}
-    <path class="ped" d="M104 152l96-36 96 36z"/><path class="line" d="M128 146l72-26 72 26"/>
-    <path class="body" d="M160 92h80v26h-80z"/><path class="line" d="M166 98h68M166 112h68"/>
-    <path class="dome" d="M150 92c0-34 22-56 50-56s50 22 50 56z"/><path class="line" d="M175 92c0-30 11-50 25-56M225 92c0-30-11-50-25-56M200 36v56"/>
-    <path class="body" d="M192 22h16v14h-16z"/><path class="line" d="M200 6v16"/><circle class="tip" cx="200" cy="6" r="3"/>
+    <path class="body" d="M44 170h112v58H44zM244 170h112v58H244z"/><path class="ped" d="M40 164h120v6H40zM240 164h120v6H240z"/>${wins}
+    <path class="body" d="M148 132h104v96H148z"/><path class="ped" d="M144 126h112v6H144z"/>${upper}
+    <path class="body" d="M154 168h92v8h-92z"/>${cols}
+    <path class="body" d="M174 84h52v42h-52z"/>${tcols}<path class="ped" d="M168 78h64v6h-64z"/>
+    <path class="dome" d="M174 70h52v8h-52zM180 62h40v8h-40zM186 54h28v8h-28zM192 46h16v8h-16z"/>
+    <path class="body" d="M196 36h8v10h-8z"/><path class="line" d="M200 22v14"/><circle class="tip" cx="200" cy="20" r="3"/>
     <path class="base" d="M40 228h320v10H40zM28 238h344v10H28zM16 248h368v10H16z"/></svg>`;
 }
 function mic() { return sv('0 0 64 64', `<rect class="g" x="23" y="6" width="18" height="30" rx="9"/><path d="M28 14h8M28 20h8M28 26h8"/><path d="M15 30c0 10 8 17 17 17s17-7 17-17"/><path d="M32 47v9M22 58h20"/>`, 'mic'); }
