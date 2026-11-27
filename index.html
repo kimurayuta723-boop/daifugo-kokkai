@@ -1436,7 +1436,7 @@ function lawHit(G, key, pid, text) {
 }
 /* 革命による廃止:三枚革命法は自動で失効し、ほかは革命を起こした人が一つ選んで廃止する。
    回の初めに効き終わった一回限りの法律(政権交代法・逆転開会法)は、消しても意味がないので選べない。
-   選べる法律が一つだけなら自動で廃止。二つ以上なら 'repeal' の段階で本人に選んでもらう(3分で一番古いものを自動で廃止)。
+   選べる法律が一つだけなら自動で廃止。二つ以上なら 'repeal' の段階で本人に選んでもらう(3分でいちばん古いものを自動で廃止)。
    順番:革命の演出 →(下剋上法の相手選び)→ 廃止の選択 → 7渡し・10捨て → 8切り・上がりの判定
    戻り値 true = 選択待ちに入った(呼び出し側は proceed せずに戻る) */
 const REPEAL_MS = 180000;
@@ -1461,7 +1461,7 @@ function repealLaw(G, pid, key, auto) {
   if (key === 'koukai') G.open = null;
   rl(G).repealed = (rl(G).repealed || []).concat([{ pid, key, name }]);
   G.repeal = { key, name, pid, auto: auto || null, n: (G.repeal ? G.repeal.n : 0) + 1 };
-  say(G, auto === 'timeout' ? `時間切れのため、一番古い「${name}」を廃止しました。` : auto === 'only' ? `革命により、「${name}」が廃止されました。` : `${pName(G, pid)}さんが「${name}」を廃止しました。`, 'repeal', { repeal: G.repeal });
+  say(G, auto === 'timeout' ? `時間切れのため、いちばん古い「${name}」を廃止しました。` : auto === 'only' ? `革命により、「${name}」が廃止されました。` : `${pName(G, pid)}さんが「${name}」を廃止しました。`, 'repeal', { repeal: G.repeal });
   moment(G, pid, 6, `第${G.round}回、革命を起こして「${name}」を廃止した`);
 }
 
@@ -1960,7 +1960,7 @@ function godComment(G, order) {
     if (weakest.includes(top)) add('g-luckgood', 8, [
       `配られた手札を調べたところ、いちばん弱かったのは${nm(top)}でした。それで大富豪です。札ではなく腕で勝った回でした。`,
       `実は${nm(top)}の手札、配られた時点では${n}人中で最弱でした。そこから大富豪まで持っていく手腕は見事です。`,
-      `配られた時点では、${nm(top)}が一番の貧乏くじを引いていました。それでも大富豪。手札は言い訳にならないようです。`]);
+      `配られた時点では、${nm(top)}がいちばんの貧乏くじを引いていました。それでも大富豪。手札は言い訳にならないようです。`]);
     else if (hr[top] >= Math.ceil(n / 2)) add('g-luckgood', 5, [
       `${nm(top)}の手札は全員の中で${hr[top] + 1}番目の強さでした。強い札がなくても、出す順番で勝てるという見本です。`,
       `配られた札の強さでは${hr[top] + 1}番手だった${nm(top)}が大富豪に。札の差を立ち回りで埋めました。`]);
@@ -1968,7 +1968,7 @@ function godComment(G, order) {
     if (sb) add('g-luckbad', sb === L.ochi ? 4.5 : 8, [
       `全員の手札を見比べると、いちばん強い札を持っていたのは${nm(sb)}でした。結果は${title(sb)}。どこで歯車が狂ったのでしょう。`,
       `${nm(sb)}、配られた札だけなら今回の大富豪候補の筆頭でした。結果は${title(sb)}。宝の持ち腐れとはこのことです。`,
-      `調査の結果、配られた手札が一番の当たりだったのは${nm(sb)}でした。それが${title(sb)}に終わるのが、大富豪の怖いところです。`]);
+      `調査の結果、配られた手札がいちばんの当たりだったのは${nm(sb)}でした。それが${title(sb)}に終わるのが、大富豪の怖いところです。`]);
   }
   // 最後まで手元に残った切り札
   const ctx = makeCtx(G);
@@ -2096,7 +2096,7 @@ function commentary(G, order, prev) {
     `${nm(top)}、二期連続の大富豪。手札交換の有利を生かしました。`,
     `大富豪の座は引き続き${nm(top)}に。安定した政権運営です。`]);
   if (prev && prev[n - 1] === last && n > 2) add('stuck', 5, [
-    `${nm(last)}は二回続けて大貧民。そろそろ風向きが変わってほしいところです。`,
+    `${nm(last)}は2回続けて大貧民。そろそろ風向きが変わってほしいところです。`,
     `${nm(last)}、また大貧民に。それでも一票の重みは変わりません。`,
     `連続の大貧民となった${nm(last)}。次の採決では存在感を示せるでしょうか。`,
     `${nm(last)}、2回続けて大貧民。札の神様とけんか中かもしれません。`]);
@@ -2298,7 +2298,7 @@ function waitingFor(G) {
 function isCpu(G, pid) { const p = G.players.find(x => x.id === pid); return !!(p && p.cpu); }
 function tick(G, now, auto) {
   now = now ?? Date.now();
-  // 廃止の選択が3分を過ぎたら、一番古い法律を自動で廃止する(人がいなくても進むように)
+  // 廃止の選択が3分を過ぎたら、いちばん古い法律を自動で廃止する(人がいなくても進むように)
   if (G.phase === 'repeal' && now >= G.pending.deadline) return act(G, G.pending.pid, { t: 'repeal', key: G.pending.options[0], auto: 'timeout' }, now);
   if (now < G.cpuAt) return false;
   const w = waitingFor(G).filter(id => isCpu(G, id) || (auto && auto(id)));
@@ -2411,14 +2411,14 @@ const TYPES16 = {
     desc: '無理な勝負はせず、強い札を手元に残しながら、大勢と同じ側に静かに立ちます。目立たないのに、終わってみると上位にいる。経験に裏打ちされた安定感があります。',
     strong: '大崩れしない。最後まで手札に余裕がある。', weak: '慎重すぎて、勝てる場面を見送ることがある。', match: 'APCG', rival: 'ARIS' },
   DPCS: { name: '沈黙の書記官', catch: '黙って全部見ている人',
-    desc: '口数は少なく、出された札をすべて覚えているかのような落ち着きぶりです。権力の側に立ちつつ、投票では自分の判断を通します。最後に一番得をしているのはたいていこの人です。',
+    desc: '口数は少なく、出された札をすべて覚えているかのような落ち着きぶりです。権力の側に立ちつつ、投票では自分の判断を通します。最後にいちばん得をしているのはたいていこの人です。',
     strong: '状況把握が正確で、ミスが少ない。', weak: '自分から場を動かすことが少なく、流れに置いていかれることも。', match: 'APCS', rival: 'ARIG' },
   DPIG: { name: '空気を読む陣笠', catch: 'みんなと同じ側にいると落ち着く人',
     desc: '強い人の側について、投票でも多数派に乗る、平和を愛するタイプです。深く考え込まずに場に合わせられるので、誰とでも遊びやすい。いつの間にか中堅の座に収まっています。',
     strong: '敵を作らず、どんな顔ぶれでもなじめる。', weak: '流されやすく、自分の勝ち筋を見失いがち。', match: 'APCG', rival: 'ARCS' },
   DPIS: { name: '気まぐれな傍聴人', catch: '眺めているだけのようで、たまに鋭い人',
     desc: '大きな勝負には加わらず、権力の側からのんびり場を眺めています。ところが投票では急に独自の一票を投じるなど、気まぐれに存在感を出します。',
-    strong: '肩の力が抜けていて、プレッシャーに強い。', weak: '本気を出すのが遅く、気づくと手遅れのことも。', match: 'DRIS', rival: 'ARCG' },
+    strong: '肩の力が抜けていて、重圧に強い。', weak: '本気を出すのが遅く、気づくと手遅れのことも。', match: 'DRIS', rival: 'ARCG' },
   DRCG: { name: '裏で糸を引く黒幕', catch: '表に出ずに、票と流れを操る人',
     desc: '自分では強い札を切らず、守りを固めながら反体制の側で多数派を作ります。誰かが革命を起こすとき、その裏にはたいていこの人の根回しがあります。',
     strong: '自分は傷つかずに、大富豪を引きずり下ろせる。', weak: '自分が大富豪になると、急に守るものが増えて動きが鈍る。', match: 'ARCG', rival: 'APIG' },
@@ -3758,7 +3758,7 @@ function vTv(pub) {
 function commentHtml(pub) {
   if (!pub.comment) return '';
   // 調査委員会の報告:全員の手札を調べたうえでの一言(解説の下に、区切って添える)
-  const g = pub.godComment ? `<p class="gv"><small>調査委員会の報告 ― 全員の手札を調べると</small>${esc(pub.godComment)}</p>` : '';
+  const g = pub.godComment ? `<p class="gv"><small>調査委員会の報告</small>${esc(pub.godComment)}</p>` : '';
   return `<div class="comment doc">${I.mic()}<div class="cm-body"><p><small>国会中継の解説</small>${esc(pub.comment)}</p>${g}</div></div>`;
 }
 
@@ -3894,7 +3894,7 @@ function vLaws() {
     ['回の終わりの審議', '回が終わるたびに法案が三つ出て、大富豪が一つを「重要法案」に指定します。'],
     ['採決', '大富豪は2票、重要法案に入れると3票、ほかの人は1票。同数のときは大貧民の票で決まります。交渉は自由です。'],
     ['施行と失効', '決まった法律は次の回から有効です。上限(初めは三つ)を超えると古い順に失効します。「一回限り」の法律は、次の回が終わると失効します。'],
-    ['革命で廃止', '革命を起こした人は、法律を一つ選んで廃止できます。三枚革命法は革命が起きると自動で失効します。効き終わった一回限りの法律(政権交代法・逆転開会法)は選べません。3分たっても選ばないときは、一番古い法律が廃止されます。'],
+    ['革命で廃止', '革命を起こした人は、法律を一つ選んで廃止できます。三枚革命法は革命が起きると自動で失効します。効き終わった一回限りの法律(政権交代法・逆転開会法)は選べません。3分たっても選ばないときは、いちばん古い法律が廃止されます。'],
     ['法律が効いたとき', 'テレビの現行法の欄で、その条文に「適用」の判が押され、適用された回数が残ります。'],
   ];
   return `<div class="zukan lawbook"><div class="zukan-head"><div><div class="eyebrow">立法の手引き</div><h1>法律の一覧</h1></div><button class="btn" data-act="lawbook-close">戻る</button></div>
@@ -4075,7 +4075,7 @@ function phPlay(pub, priv, m) {
   } else if (prompt && prompt.type === 'repeal') {
     // 革命を起こした人が、廃止する法律を一つ選ぶ
     const opts = prompt.options.map(k => pub.laws.find(l => l.key === k)).filter(Boolean);
-    return { body: `<div class="panel repeal-pick"><p class="small" style="color:var(--shu)">革命</p><h2>廃止する法律を一つ選んでください</h2><p>選んだ法律は、この場ですぐに廃止されます。3分たっても選ばないときは、一番古い法律が自動で廃止されます。</p>
+    return { body: `<div class="panel repeal-pick"><p class="small" style="color:var(--shu)">革命</p><h2>廃止する法律を一つ選んでください</h2><p>選んだ法律は、この場ですぐに廃止されます。3分たっても選ばないときは、いちばん古い法律が自動で廃止されます。</p>
       <div class="opts">${opts.map(l => `<button class="opt doc ${S.choice === l.key ? 'on' : ''}" data-choice="${l.key}"><span class="opt-art">${I.law(l.key)}</span><span><span class="lno">第${E.KANJI[l.no - 1]}条</span><span class="nm">${esc(l.name)}</span>${sideTag(pub, l.key)}<span class="tx">${esc(l.text)}</span></span></button>`).join('')}</div></div>`,
       bar: `<div class="ph-bar one"><button class="btn main" data-act="repeal" ${S.choice && prompt.options.includes(S.choice) ? '' : 'disabled'}>この法律を廃止する</button></div>` };
   } else if (myTurn) {
@@ -4097,7 +4097,7 @@ function phPlay(pub, priv, m) {
     else if (m.out === -2) note = '反則上がりのため、この回は最下位です';
   }
   S.canPlay = canPlay && myTurn;
-  const finfo = `<div class="info">${f.topIds.length ? `<b>${esc(pname(pub, f.topPid))}さん</b><br>${esc(E.describe(f.top))}` : '場に札はありません'}<button class="chips cheat-open" data-act="cheat" aria-label="ルール早見を開く">${fieldInfo(pub)}<span class="chip q">ルール早見</span></button></div>`;
+  const finfo = `<div class="info">${f.topIds.length ? `<b>${esc(pname(pub, f.topPid))}さん</b><br>${esc(E.describe(f.top))}` : '場は空です'}<button class="chips cheat-open" data-act="cheat" aria-label="ルール早見を開く">${fieldInfo(pub)}<span class="chip q">ルール早見</span></button></div>`;
   // 手番の順:今操作している人を真ん中に置き、左に直前の人、右にこれからの人を回る向きの順に並べる
   const n = pub.players.length, d = pub.dir === -1 ? -1 : 1;
   let ci = pub.players.findIndex(p => p.id === pub.turn);
@@ -4304,7 +4304,13 @@ function render() {
   if (S.dragging) { S.pendingRender = true; return; }
   if (!document.getElementById('illus-defs')) { const d = document.createElement('div'); d.id = 'illus-defs'; d.innerHTML = I.DEFS; document.body.appendChild(d); }
   let html = '';
-  const pub = S.pub;
+  const real = S.pub;
+  // 回が終わった更新で、最後の一手の演出(8切り・上がり・都落ちなど)があるときは、演出が終わるまで場を見せておく
+  if (real && S.seen && real !== S.seen && real.phase === 'roundEnd' && S.seen.phase !== 'roundEnd' && S.view !== 'entry') {
+    const seenN = S.seen.flash ? S.seen.flash.n : 0;
+    if ((real.flashes || []).some(f => f.n > seenN)) S.holdEnd = real.round;
+  }
+  const pub = real && real.phase === 'roundEnd' && S.holdEnd === real.round ? Object.assign({}, real, { phase: 'play', turn: null, next: null }) : real;
   // 法律が効いた:その条文と関係した人を数秒だけ光らせ、判を押す音を鳴らす
   if (pub && pub.lawHit && pub.lawHit.n !== S.lhN) {
     // 音は鳴らさない(禁止法などは一回に何度も効くため。大きな出来事の法律は、それぞれの演出で音が鳴る)
@@ -4329,13 +4335,13 @@ function render() {
     fitTv();
   }
 
-  prepDiagImage(pub);
-  if (pub && pub !== S.seen) { const prev = S.seen; S.seen = pub; fxCheck(prev, pub); }
+  prepDiagImage(real);
+  if (real && real !== S.seen) { const prev = S.seen; S.seen = real; fxCheck(prev, real); }
   soundButton();
   let ob = document.querySelector('.offline');
   if (S.offline && !ob) { ob = document.createElement('div'); ob.className = 'offline'; ob.textContent = '通信が切れています。つながると自動で続きから再開します。'; document.body.appendChild(ob); }
   if (!S.offline && ob) ob.remove();
-  if (S.restored && pub) { S.restored = false; fx('round', `<div class="fx-title"><small>${APP_NAME}</small><b style="font-size:3.4vw">続きから再開</b></div>`, 2600); }
+  if (S.restored && real) { S.restored = false; fx('round', `<div class="fx-title"><small>${APP_NAME}</small><b style="font-size:3.4vw">続きから再開</b></div>`, 2600); }
 }
 /* ---------- 演出と効果音 ---------- */
 const bigSound = pub => S.view === 'tv' || pub.mode === 'phone';
@@ -4361,7 +4367,7 @@ function shake() { $app.classList.remove('shake'); void $app.offsetWidth; $app.c
    一つずつ、前の演出が終わってから出す。音だけのものも同じ列に並べて、演出とずれないようにする */
 const FXQ = [];
 let fxTimer = null;
-function queueFx(run) { FXQ.push({ run, at: Date.now() }); pumpFx(); }
+function queueFx(run, must) { FXQ.push({ run, at: Date.now(), must }); pumpFx(); }
 function pumpFx() {
   if (fxTimer || !FXQ.length) return;
   const wait = Math.max(0, (S.fxUntil || 0) - Date.now());
@@ -4369,7 +4375,7 @@ function pumpFx() {
     fxTimer = null;
     const j = FXQ.shift();
     // 画面が裏に回っていたなどで20秒以上遅れた演出は、今さら出しても場と合わないので飛ばす
-    if (Date.now() - j.at < 20000) { try { j.run(); } catch (e) { /* 演出の失敗で進行を止めない */ } }
+    if (j.must || Date.now() - j.at < 20000) { try { j.run(); } catch (e) { /* 演出の失敗で進行を止めない */ } }
     pumpFx();
   }, wait ? wait + 120 : 0);
 }
@@ -4388,6 +4394,21 @@ function fxCheck(prev, pub) {
     else if (big) SFX.play('shuffle'); else SFX.play('deal');
     S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
   }
+  // 演出の順番:この更新で起きた出来事(革命・8切り・上がりなど)を先に並べ、段階が変わったときの演出(王冠・審議など)はそのあとに出す
+  // 札が出た
+  const st = pub.field.stack || [], pst = prev.field.stack || [];
+  const key = s => s.length ? s[s.length - 1].ids.join() + s.length : '';
+  if (key(st) && key(st) !== key(pst)) SFX.play('play');
+  // 革命・8切り・廃止・法律・上がり:前回から増えた演出を、古い順にすべて並べる
+  const seen = prev.flash ? prev.flash.n : 0;
+  const news = (pub.flashes && pub.flashes.length ? pub.flashes : (pub.flash ? [pub.flash] : [])).filter(f => f.n > seen);
+  news.forEach(f => queueFx(() => flashFx(f, pub, big)));
+  // 回の最後の一手の演出を出し終えてから、結果の画面に切り替える(王冠などの演出はそのあと)
+  if (S.holdEnd != null && pub.phase === 'roundEnd') {
+    const r = pub.round, release = () => { if (S.holdEnd === r) { S.holdEnd = null; lastHtml = ''; render(); } };
+    queueFx(release, true);
+    setTimeout(release, 15000);   // 画面が裏に回っていて演出が止まっても、結果の画面は必ず出す
+  }
   if (pub.phase !== prev.phase) {
     // 結果発表の紙吹雪や王冠は、次の段階(法案の審議など)に進んだら片づける
     if (prev.phase === 'roundEnd') document.querySelectorAll('.fx-confetti,.fx-crown').forEach(x => x.remove());
@@ -4402,14 +4423,6 @@ function fxCheck(prev, pub) {
     }
     if (pub.phase === 'diag' && big) SFX.play('drumroll');
   }
-  // 札が出た
-  const st = pub.field.stack || [], pst = prev.field.stack || [];
-  const key = s => s.length ? s[s.length - 1].ids.join() + s.length : '';
-  if (key(st) && key(st) !== key(pst)) SFX.play('play');
-  // 革命・8切り・廃止・法律・上がり:前回から増えた演出を、古い順にすべて並べる
-  const seen = prev.flash ? prev.flash.n : 0;
-  const news = (pub.flashes && pub.flashes.length ? pub.flashes : (pub.flash ? [pub.flash] : [])).filter(f => f.n > seen);
-  news.forEach(f => queueFx(() => flashFx(f, pub, big)));
   // 自分の番
   // 次が自分の番になったら、軽く知らせる(目を離していても気づけるように)
   if (S.view !== 'tv' && pub.next === S.pid && prev.next !== S.pid && pub.turn !== S.pid && navigator.vibrate) try { navigator.vibrate(15); } catch (e) { /* 振動できない端末 */ }
