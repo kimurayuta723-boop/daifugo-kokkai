@@ -682,13 +682,15 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .ph-bar .btn{white-space:nowrap;font-size:14px}
 /* BGMの入切(音の入切の左隣) */
 .bgm-btn{position:fixed;right:70px;top:10px;z-index:60;font-size:12px;color:var(--sub);border:1px solid var(--rule);border-radius:99px;padding:3px 10px;background:var(--bg2)}
-.is-tv .bgm-btn{right:calc(29vw + 76px);top:14px}
+.is-tv .bgm-btn{right:calc(29vw + 70px);top:14px}
 .bgm-btn:disabled{opacity:.4}
 .ph-top .rd .iconbtn+.iconbtn{margin-left:4px}
 .ph-top .rd .iconbtn:disabled{opacity:.4}
 /* ホームに戻る */
 .home-btn{position:fixed;right:136px;top:10px;z-index:60;font-size:12px;color:var(--sub);border:1px solid var(--rule);border-radius:99px;padding:3px 10px;background:var(--bg2)}
-.is-tv .home-btn{right:calc(29vw + 150px);top:14px}
+.is-tv .home-btn{right:calc(29vw + 140px);top:14px}
+.fs-btn{position:fixed;right:208px;top:10px;z-index:60;font-size:12px;color:var(--sub);border:1px solid var(--rule);border-radius:99px;padding:3px 10px;background:var(--bg2)}
+.is-tv .fs-btn{right:calc(29vw + 206px);top:14px}
 .confirm-back{position:fixed;inset:0;z-index:100;background:rgba(24,6,10,.72);display:grid;place-items:center;padding:20px}
 .confirm{max-width:460px;width:100%;border-radius:12px;padding:26px 26px 22px;border-top:5px solid var(--gold)}
 .confirm h3{font-family:var(--serif);font-size:21px;letter-spacing:.06em;margin-bottom:10px;color:var(--docink)}
@@ -722,8 +724,9 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 @media (max-width:760px){.zc .nm{font-size:16px;white-space:normal}.zc .ill{width:84px;height:84px}}
 /* ---------- テレビ:説明・診断・一覧など、右の欄がない画面では右上のボタンを画面の右端へ ---------- */
 .is-tv:has(.sheet.full) .sound-btn,.is-tv:has(.zukan) .sound-btn{right:14px}
-.is-tv:has(.sheet.full) .bgm-btn,.is-tv:has(.zukan) .bgm-btn{right:76px}
-.is-tv:has(.sheet.full) .home-btn,.is-tv:has(.zukan) .home-btn{right:150px}
+.is-tv:has(.sheet.full) .bgm-btn,.is-tv:has(.zukan) .bgm-btn{right:70px}
+.is-tv:has(.sheet.full) .home-btn,.is-tv:has(.zukan) .home-btn{right:140px}
+.is-tv:has(.sheet.full) .fs-btn,.is-tv:has(.zukan) .fs-btn{right:206px}
 /* 一覧の見出しはボタンと重ならないよう少し下げる */
 .is-tv .zukan{padding-top:3.6vw}
 /* 16タイプの軸の説明:見出しと本文を分けて、4つとも同じ形に */
@@ -3544,7 +3547,7 @@ function lawsHtml(pub) {
   // 法律がないとき:まだ一つも決まっていないのか、失効・廃止でなくなったのかで書き分ける
   if (!pub.laws.length) return pub.round > 0 || pub.phase === 'enacted'
     ? `<div class="laws-none">${I.gavel()}<p>いま施行中の法律はありません。<br>回が終わるたびに、一つずつ決めます。</p></div>`
-    : `<div class="laws-none">${I.gavel()}<p>法律はまだありません。<br>第1回の前と、回が終わるたびに、一つずつ決めます。</p></div>`;
+    : `<div class="laws-none">${I.gavel()}<p>法律はまだありません。<br>各回の前に一つずつ決めます。</p></div>`;
   const cand = pub.phase === 'repeal' && pub.pending && pub.pending.options ? pub.pending.options : null;
   return pub.laws.map(l => `<div class="law ${S.newLawKey === l.key ? 'new' : ''} ${lawHitNow(l.key) ? 'hit' : ''} ${cand ? (cand.includes(l.key) ? 'cand' : 'nocand') : ''}"><span class="law-art">${I.law(l.key)}</span><div><div class="no">第${E.KANJI[l.no - 1]}条${l.hits ? `<span class="hits">適用 ${l.hits}回</span>` : ''}</div><div class="nm">${esc(l.name)}${sideTag(pub, l.key)}</div><div class="tx">${esc(l.text)}</div></div>${lawHitNow(l.key) ? '<span class="hitmark">適用</span>' : ''}</div>`).join('');
 }
@@ -3652,7 +3655,7 @@ function cheatHtml(pub) {
   const laws = pub.laws.length ? pub.laws.map(l => `<li><b>${esc(l.name)}</b>${esc(l.text)}</li>`).join('') : '<li class="none">施行中の法律はありません</li>';
   return `<div class="confirm-back" data-act="cheat-close"><div class="confirm doc cheat" role="dialog" aria-label="ルール早見">
     <h3>ルール早見</h3>
-    <p class="ck">いまの札の強さ(左が弱く、右が強い)${ctx.rev ? '。<b>強さが逆になっています</b>' : ''}</p>
+    <p class="ck">いまの札の強さ(右ほど強い)${ctx.rev ? '。<b>革命中で逆転しています</b>' : ''}</p>
     <div class="ranks">${cells}</div>
     ${ctx.ban ? `<p class="note">${E.RL[ctx.ban]}は禁止法のため出せません。</p>` : ''}
     <p class="ck">いまの場</p><div class="chips">${states}</div>
@@ -3664,8 +3667,8 @@ function homeConfirmHtml() {
   if (!S.confirmHome) return '';
   const role = myRole();
   const msg = role === 'player'
-    ? 'ホームに戻っても、あなたの議席は残ります。あなたの番が来ると進行が止まるので、ホームの「続きから戻る」で早めに戻ってください。'
-    : `${role === 'tv' ? 'このテレビ' : 'このスマホ'}が親なので、戻るあいだ議事は止まります。12時間以内なら、ホームの「続きから戻る」で同じ議場の続きから再開できます。`;
+    ? 'ホームに戻っても議席は残ります。ただし自分の番で進行が止まるので、「続きから戻る」で早めに戻ってください。'
+    : `${role === 'tv' ? 'このテレビ' : 'このスマホ'}が親なので、ホームにいるあいだは議事が止まります。12時間以内なら「続きから戻る」で再開できます。`;
   return `<div class="confirm-back"><div class="confirm doc" role="dialog" aria-label="ホームに戻る">
     <h3>ホームに戻りますか</h3><p>${msg}</p>
     <div class="confirm-btns"><button class="btn" data-act="home-cancel">やめる</button><button class="btn main" data-act="home-go">ホームに戻る</button></div></div></div>`;
@@ -3679,7 +3682,7 @@ function vJoin(host) {
   return `<div class="entry">
     <div class="entry-head">${logo()}</div>
     <h2 class="entry-h">${host ? '議場を開く' : '議場に入る'}</h2>
-    <p class="lead">${host ? 'あなたのスマホが親になります。' : 'テレビか親のスマホに出ている4文字を入力してください。'}</p>
+    <p class="lead">${host ? 'あなたのスマホが親になります。' : 'テレビ(または親のスマホ)に出ている4文字を入れてください。'}</p>
     ${S.err ? `<p class="err">${esc(S.err)}</p>` : ''}
     ${host ? '' : `<div class="field"><label for="code">議場の番号</label><input id="code" class="code" maxlength="4" autocomplete="off" value="${esc(S.code)}"></div>`}
     <div class="field"><label for="name">名前(8文字まで)</label><input id="name" maxlength="8" autocomplete="off" value="${esc(S.name)}"></div>
@@ -3718,30 +3721,30 @@ function briefPages(pub) {
   const c = pub.cfg, P = [];
   const item = (art, h, p) => `<div class="bitem doc">${art}<h4>${h}</h4><p>${p}</p></div>`;
   P.push({ t: '本日の議事次第', roomy: true, h: `<div class="bgrid" style="--n:4">
-    ${item(I.medal(`<rect class="w" x="14" y="10" width="22" height="32" rx="3"/><rect class="w" x="28" y="20" width="22" height="32" rx="3"/><path class="s" d="M39 30l3.5 4.5L39 39l-3.5-4.5z" style="color:#ad2a20"/>`), '一 大富豪を遊ぶ', 'ふつうの大富豪です。手札をなくした順に、大富豪・富豪…と階級が決まります。')}
-    ${c.lawsOn ? item(I.law('strong'), '二 法律を作る', '第1回の前と、回が終わるたびに、法案が三つ出て、全員の投票で新しい法律が一つ決まります。') : item(I.gavel(), '二 法律はなし', '今夜は法律を作りません。ルールどおりの大富豪で競います。')}
-    ${item(I.rank('大富豪'), '三 得点を競う', `回ごとに階級で得点が入ります。${pub.cfg.rounds ? `<span class="nw">全${pub.cfg.rounds}回</span>を終えたら閉会し、` : '最後に'}合計点の1位を今夜の総理大臣に指名します。`)}
-    ${item(I.type('APCG'), '四 本性を診断', 'パスの仕方、強い札の使いどき、考える時間、投票先から、16タイプのどれかに分けます。')}</div>` });
+    ${item(I.medal(`<rect class="w" x="14" y="10" width="22" height="32" rx="3"/><rect class="w" x="28" y="20" width="22" height="32" rx="3"/><path class="s" d="M39 30l3.5 4.5L39 39l-3.5-4.5z" style="color:#ad2a20"/>`), '一 大富豪を遊ぶ', 'いつもの大富豪です。早く上がった順に、大富豪・富豪…と階級が決まります。')}
+    ${c.lawsOn ? item(I.law('strong'), '二 法律を作る', '各回の前に、全員の投票で法律を一つずつ作ります。') : item(I.gavel(), '二 法律はなし', '今夜は法律を作りません。ルールどおりの大富豪で競います。')}
+    ${item(I.rank('大富豪'), '三 得点を競う', `階級に応じて得点が入ります。${pub.cfg.rounds ? `<span class="nw">全${pub.cfg.rounds}回</span>を終えて、` : '閉会の時点で、'}合計点の1位が今夜の総理大臣です。`)}
+    ${item(I.type('APCG'), '四 本性を診断', '札の出し方や投票先から、閉会後に一人ずつの本性を16タイプで診断します。')}</div>` });
   const strength = `<div class="strength">${['C3', 'H7', 'S11', 'D14', 'C15', 'X1'].map((id, i) => (i ? '<span class="arrow">‹</span>' : '') + cardHtml(id)).join('')}</div>`;
   const basics = [
-    item('', '出し方', `場の札と同じ枚数で、より強い札を出します。同じ数字をまとめて出せます${c.seq ? '。同じマークの連番3枚以上は「階段」として出せます' : ''}。出せないとき、出したくないときはパス。全員がパスすると場が流れ、最後に出した人から再開です。迷ったら、スマホの場の下にある「ルール早見」で、いまの札の強さを確かめられます。`),
-    c.rev ? item('', '革命', `同じ数字を4枚以上出すと、強さが逆になります${c.seqrev ? '(4枚以上の階段でも起きます)' : ''}。${c.lawsOn ? '<b>革命を起こした人は、法律を一つ選んで廃止できます。</b>' : ''}`) : '',
-    c.eight ? item('', '8切り', '8を含む出し方をすると、その場で場が流れ、出した人から再開します。') : '',
-    c.lock ? item('', '縛り', '同じマークの札が続くと、場が流れるまでそのマークしか出せなくなります。') : '',
-    c.exchange ? item('', 'カード交換', '2回目からは、大貧民が強い札2枚を大富豪へ、貧民が1枚を富豪へ渡し、受け取った側は好きな札を返します。枚数は法律で変わることがあります。誰が誰に何枚渡すかは、前の回の終わりに画面で予告されます。') : '',
-    c.ochi ? item('', '都落ち', '大富豪が1番に上がれなかったら、その場で大貧民になります。') : '',
+    item('', '出し方', `場と同じ枚数で、より強い札を出します。同じ数字はまとめて出せます${c.seq ? '。同じマークの3枚以上の連番は「階段」として出せます' : ''}。出せないときはパス。全員がパスすると場が流れ、最後に出した人から始めます。`),
+    c.rev ? item('', '革命', `同じ数字を4枚以上出すと、札の強さが逆転します${c.seqrev ? '(4枚以上の階段でも起きます)' : ''}。${c.lawsOn ? '<b>革命を起こした人は、法律を一つ廃止できます。</b>' : ''}`) : '',
+    c.eight ? item('', '8切り', '8を出すと、そこで場が流れます。続きは出した人からです。') : '',
+    c.lock ? item('', '縛り', '同じマークが続けて出ると、場が流れるまでそのマークしか出せません。') : '',
+    c.exchange ? item('', 'カード交換', '第2回から、大貧民は強い札2枚を大富豪に、貧民は1枚を富豪に渡し、同じ枚数を返してもらいます。') : '',
+    c.ochi ? item('', '都落ち', '大富豪が1番に上がれないと、その場で大貧民に転落します。') : '',
   ].filter(Boolean);
   basics[0] = basics[0].replace('class="bitem doc"', 'class="bitem doc wide"');
   P.push({ t: '大富豪の基本', h: `<p class="sub" style="font-size:1.1em">弱い札から順に、3・4・5…K・A・2・ジョーカー。${c.jokers ? `ジョーカーは${c.jokers}枚入っています。` : 'ジョーカーは入っていません。'}</p>${strength}<div class="bgrid" style="--n:${basics.length > 4 ? 4 : 3}">${basics.join('')}</div>` });
   const locs = E.LOCAL_RULES.filter(r => c[r.key]);
   if (locs.length) P.push({ t: '今夜のローカルルール', h: `<div class="bgrid" style="--n:3">${locs.map(r => item('', r.name, r.text + '。')).join('')}</div>` });
   if (c.lawsOn) P.push({ t: '立法の手続き', roomy: true, h: `<div class="bgrid" style="--n:4">
-    ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24M20 38h16"/>'), '一 三つの法案', '第1回の前と、回が終わるたびに、くじで選ばれた法案が三つ出ます。「大富豪に有利」「貧民・大貧民に有利」の法案は、階級で損得が分かれます。')}
-    ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h12"/><path class="g" d="M40 32l3 6.2 6.8 1-4.9 4.8 1.2 6.8-6.1-3.2-6.1 3.2 1.2-6.8-4.9-4.8 6.8-1z"/>'), '二 大富豪が指定', '回の終わりには、大富豪が三つのうち一つを「重要法案」に指定します。大富豪がその案に入れると3票になります。')}
-    ${item(I.medal('<path class="w" d="M16 26h32v24H16z"/><path class="g" d="M24 10h16v20H24z"/><path d="M22 26h20"/>'), '三 全員で投票', `三つから一つを選びます。大富豪は2票、重要法案に入れると3票。同数のときは大貧民の票で決まります(最初の採決は全員1票、同数はくじ)。交渉は自由です。`)}
-    ${item(I.medal('<path class="a" d="M14 18h36v28H14z" opacity=".15"/><path class="as" d="M14 18h36v28H14z" stroke-width="3"/><path d="M22 32h20"/>'), '四 可決', `決まった法律は次の回から有効です。法律は${E.KANJI[c.maxLaws - 1]}つまでで、超えると古い順に失効します。「一回限り」の法律は、次の回が終わると失効します。${c.rev ? '革命を起こした人は、法律を一つ選んで廃止できます。' : ''}`)}</div>` });
-  P.push({ t: '得点と診断', h: `<p style="font-size:1.15em">回ごとに、階級で得点が入ります。</p><div class="ptable">${Object.entries(E.POINTS).map(([k, v]) => `<div>${rankTag(k)}<b>${v}点</b></div>`).join('')}</div>
-    <p style="font-size:1.15em;margin:.6em 0 1.4em">${c.rounds ? `会期は全${c.rounds}回です。最終回が終わるか、途中で「今夜はここまで」を押すと閉会します。` : '「今夜はここまで」を押すと閉会します。'}閉会すると、総合順位の発表のあと、ひとりずつ本性を診断します。${c.rounds && c.lastx2 ? '<br><b>最終回は得点が二倍です。</b>' : ''}${c.lawsOn && c.laws.double ? '<br>法律「倍点法」が通ると、次の一回だけ得点が二倍になります(最終回の二倍とは重なりません)。' : ''}</p>
+    ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h24M20 38h16"/>'), '一 三つの法案', '各回の前に、くじで選ばれた法案が三つ出ます。大富豪に有利なもの、貧民に有利なものがあり、階級で損得が分かれます。')}
+    ${item(I.medal('<path class="w" d="M14 12h36v40H14z"/><path d="M20 22h24M20 30h12"/><path class="g" d="M40 32l3 6.2 6.8 1-4.9 4.8 1.2 6.8-6.1-3.2-6.1 3.2 1.2-6.8-4.9-4.8 6.8-1z"/>'), '二 大富豪が指定', '大富豪は三つのうち一つを「重要法案」に指定できます。その案に入れると、大富豪の票は3票です。')}
+    ${item(I.medal('<path class="w" d="M16 26h32v24H16z"/><path class="g" d="M24 10h16v20H24z"/><path d="M22 26h20"/>'), '三 全員で投票', `大富豪は2票(重要法案なら3票)、ほかは1票。同数なら大貧民が決めます。最初の採決だけは全員1票で、同数ならくじです。根回しは自由です。`)}
+    ${item(I.medal('<path class="a" d="M14 18h36v28H14z" opacity=".15"/><path class="as" d="M14 18h36v28H14z" stroke-width="3"/><path d="M22 32h20"/>'), '四 可決', `可決した法律は次の回から施行。上限は${E.KANJI[c.maxLaws - 1]}つで、超えると古いものから失効します。「一回限り」の法律は1回で失効。${c.rev ? '革命が起きると、法律を一つ廃止できます。' : ''}`)}</div>` });
+  P.push({ t: '得点と診断', h: `<p style="font-size:1.15em">回ごとに、階級に応じて得点が入ります。</p><div class="ptable">${Object.entries(E.POINTS).map(([k, v]) => `<div>${rankTag(k)}<b>${v}点</b></div>`).join('')}</div>
+    <p style="font-size:1.15em;margin:.6em 0 1.4em">${c.rounds ? `会期は全${c.rounds}回。最終回のあと、または途中で「今夜はここまで」を押すと閉会します。` : '「今夜はここまで」を押すと閉会します。'}閉会後は、総合順位の発表と、一人ずつの本性診断です。${c.rounds && c.lastx2 ? '<br><b>最終回は得点二倍です。</b>' : ''}${c.lawsOn && c.laws.double ? '<br>倍点法が通ると、次の1回も得点二倍です(最終回とは重ねません)。' : ''}</p>
     <div class="bgrid" style="--n:4">${E.AXES.map(ax => item('', `${ax.lc}・${ax.rc}`, `${ax.l}か、${ax.r}か。`)).join('')}</div>` });
   return P;
 }
@@ -3755,7 +3758,7 @@ function tvSide(pub) {
   const c = pub.cfg;
   if (pub.phase === 'lobby') {
     const steps = c.lawsOn
-      ? [`会期は${roundsText(c)}。ふつうの大富豪を一回ずつ遊びます。`, '第1回の前と、回が終わるたびに法案が三つ出ます。回の終わりには、大富豪が一つを「重要法案」に指定します。', '三つの中から全員で投票します。大富豪は2票、重要法案に入れると3票。同数なら大貧民が決めます(最初の採決は全員1票)。', `法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命を起こした人は、法律を一つ選んで廃止できます。' : ''}`, '最後に、遊び方から今夜の本性を診断します。']
+      ? [`会期は${roundsText(c)}。ふつうの大富豪を一回ずつ遊びます。`, '各回の前に法案が三つ出て、大富豪が一つを「重要法案」に指定します。', '三つから一つを投票で決めます。大富豪は2票(重要法案なら3票)、ほかは1票。同数なら大貧民が決めます。', `法律は${E.KANJI[c.maxLaws - 1]}つまで。${c.rev ? '革命を起こした人は、法律を一つ選んで廃止できます。' : ''}`, '最後に、遊び方から今夜の本性を診断します。']
       : [`会期は${roundsText(c)}。ふつうの大富豪を遊びます。`, '今夜は法律を作りません(設定で切り替えられます)。', '最後に、遊び方から今夜の本性を診断します。'];
     return `<aside class="tv-side doc"><div class="laws-h">議事の流れ</div><div class="side-in"><ol class="howto">${steps.map(t => `<li>${t}</li>`).join('')}</ol></div></aside>`;
   }
@@ -3772,13 +3775,13 @@ function cfgHtml(pub) {
   const rules = E.RULES.map(r => tg('rule:' + r.key, c[r.key], r.name, r.text)).join('')
     + `<div class="tg na"><span></span><span><span class="nm">ジョーカー</span><span class="tx">山札に入れる枚数</span></span>${seg('jokers', [0, 1, 2], c.jokers, v => v + '枚')}</div>`;
   const vote = c.lawsOn ? `<div class="tg na sess"><span><span class="nm">法律の上限</span><span class="tx">超えると古い順に失効</span></span>${seg('maxLaws', [1, 2, 3, 4, 5], c.maxLaws, v => v + 'つ')}</div>` : '';
-  const laws = tg('lawsOn', c.lawsOn, '法律を作る', '第1回の前と、回が終わるたびに投票で法律を一つ決める') + vote + (c.lawsOn ? E.LAW_KEYS.map((k, i) => {
+  const laws = tg('lawsOn', c.lawsOn, '法律を作る', '各回の前に、投票で法律を一つ決める') + vote + (c.lawsOn ? E.LAW_KEYS.map((k, i) => {
     const w = why(k);
     // 初期設定の候補と、あとから加える法律の境目に見出しを入れる
     const head = i === 0 ? '<div class="lsub">初期設定の候補</div>' : E.LAW_OFF.includes(k) && !E.LAW_OFF.includes(E.LAW_KEYS[i - 1]) ? '<div class="lsub">必要なら加える法律</div>' : '';
     return head + tg('law:' + k, c.laws[k] && !w, pub.lawInfo[k].name, w || pub.lawInfo[k].text, I.lawPlain(k), w ? 'why' : 'lt');
   }).join('') : '');
-  const session = `<h3>会期</h3><div class="tg na sess"><span><span class="nm">回数</span><span class="tx">最終回が終わると閉会。「なし」は回数を決めない</span></span>${seg('rounds', E.ROUND_OPTS, c.rounds, v => v ? v + '回' : 'なし')}</div>${c.rounds ? tg('lastx2', c.lastx2, '最終回は得点二倍', '倍点法とは重ならない') : ''}`;
+  const session = `<h3>会期</h3><div class="tg na sess"><span><span class="nm">回数</span><span class="tx">最終回のあとに閉会。「なし」は回数を決めずに遊ぶ</span></span>${seg('rounds', E.ROUND_OPTS, c.rounds, v => v ? v + '回' : 'なし')}</div>${c.rounds ? tg('lastx2', c.lastx2, '最終回は得点二倍', '倍点法とは重ならない') : ''}`;
   const locals = E.LOCAL_RULES.map(r => tg('rule:' + r.key, c[r.key], r.name, r.text)).join('');
   return `<div class="cfg"><div><h3>基本ルール</h3>${rules}${session}</div><div><h3>ローカルルール</h3>${locals}</div><div class="lawcol"><h3>法律</h3>${laws}</div></div>`;
 }
@@ -3893,7 +3896,7 @@ function vTvVote(pub) {
   const wait = pub.players.filter(p => !v.voted.includes(p.id)).map(p => esc(p.name));
   return `<div class="vote-head">
       <div><div class="eyebrow">${top ? '根回しの時間' : '最初の採決'} ― 投票は各自のスマホで</div><div class="big" style="margin-bottom:.2em">${!top ? '最初の法律を決めます' : v.options.length > 2 ? 'どの法案を通しますか' : 'どちらの法案を通しますか'}</div>
-      <p class="sub">${!top ? 'まだ階級がないので、全員1票です。同数のときはくじで決まります。全員が入れるか、締め切ると開票です。' : `大富豪の${esc(pname(pub, top))}さんは2票${v.marked ? `、重要法案「${esc(pub.lawInfo[v.marked].name)}」に入れると3票` : ''}。同数のときは大貧民の${esc(pname(pub, pub.order[pub.order.length - 1]))}さんの票で決まります。全員が入れるか、締め切ると開票です。`}</p></div>
+      <p class="sub">${!top ? 'まだ階級がないので全員1票。同数ならくじで決めます。全員が投票するか、締め切った時点で開票です。' : `大富豪の${esc(pname(pub, top))}さんは2票${v.marked ? `、重要法案「${esc(pub.lawInfo[v.marked].name)}」に入れると3票` : ''}。同数のときは大貧民の${esc(pname(pub, pub.order[pub.order.length - 1]))}さんの票で決まります。全員が入れるか、締め切ると開票です。`}</p></div>
       <div class="timer">${voted.length}<small style="font-size:.4em">/${pub.players.length}票</small></div></div>
     <div class="bills" style="--n:${v.options.length}">${v.options.map((k, i) => billHtml(pub, k, i, k === v.marked ? { stamp: stamp('重要') } : null)).join('')}</div>
     <p class="voted">投票済み:${voted.join('、') || 'まだいません'}${wait.length ? `　/　まだ:${wait.join('、')}` : ''}</p>`;
@@ -3969,12 +3972,12 @@ function vLaws() {
   };
   const on = E.LAW_KEYS.filter(k => def[k]), off = E.LAW_KEYS.filter(k => !def[k]);
   const steps = [
-    ['最初の採決', '法案が三つ出て、全員1票で最初の法律を一つ決めます。同数ならくじで決まります。'],
+    ['最初の採決', '三つの法案から、全員1票で最初の法律を決めます。同数ならくじです。'],
     ['回の終わりの審議', '回が終わるたびに法案が三つ出て、大富豪が一つを「重要法案」に指定します。'],
-    ['採決', '大富豪は2票、重要法案に入れると3票、ほかの人は1票。同数のときは大貧民の票で決まります。交渉は自由です。'],
-    ['施行と失効', '決まった法律は次の回から有効です。上限(初めは三つ)を超えると古い順に失効します。「一回限り」の法律は、次の回が終わると失効します。'],
-    ['革命で廃止', '革命を起こした人は、法律を一つ選んで廃止できます。三枚革命法は革命が起きると自動で失効します。効き終わった一回限りの法律(政権交代法・逆転開会法)は選べません。3分たっても選ばないときは、いちばん古い法律が廃止されます。'],
-    ['法律が効いたとき', 'テレビの現行法の欄で、その条文に「適用」の判が押され、適用された回数が残ります。'],
+    ['採決', '大富豪は2票(重要法案なら3票)、ほかは1票。同数なら大貧民が決めます。根回しは自由です。'],
+    ['施行と失効', '可決した法律は次の回から施行。上限(初めは三つ)を超えると古いものから失効し、「一回限り」の法律は1回で失効します。'],
+    ['革命で廃止', '革命を起こした人は、法律を一つ廃止できます。三枚革命法は革命と同時に失効し、効き終わった一回限りの法律(政権交代法・逆転開会法)は選べません。3分以内に選ばないと、いちばん古い法律が廃止されます。'],
+    ['法律が効いたとき', '法律が効くと、テレビの現行法の欄に「適用」の判が押されます。'],
   ];
   return `<div class="zukan lawbook"><div class="zukan-head"><div><div class="eyebrow">立法の手引き</div><h1>法律の一覧</h1></div><button class="btn" data-act="lawbook-close">戻る</button></div>
     <ol class="lb-steps">${steps.map(([h, t], i) => `<li><span class="k">${E.KANJI[i]}</span><div><b>${h}</b><p>${t}</p></div></li>`).join('')}</ol>
@@ -4015,7 +4018,7 @@ function vPhone(pub, priv) {
   switch (pub.phase) {
     case 'lobby': {
       const joinUrl = baseUrl() + '?room=' + pub.code + (LOCAL ? '&local=1' : '');
-      body = `<div class="panel">${S.isHost ? `<div class="qrbox phq">${QR.svg(joinUrl, '#1f1a15', '#f4ecda')}</div>` : heroFan()}<h2>議場 ${esc(pub.code)}</h2><p>${S.isHost ? 'ほかの人はこのQRコードを読み取るか、「議場に入る」からこの4文字を入力します。' : 'みんながそろうまで待ちます。'}</p>
+      body = `<div class="panel">${S.isHost ? `<div class="qrbox phq">${QR.svg(joinUrl, '#1f1a15', '#f4ecda')}</div>` : heroFan()}<h2>議場 ${esc(pub.code)}</h2><p>${S.isHost ? 'QRコードを読み取るか、「議場に入る」でこの4文字を入れて参加します。' : 'みんながそろうまで待ちます。'}</p>
         <table class="mini-table">${pub.players.map(p => `<tr><td>${esc(p.name)}</td><td>${p.cpu ? 'CPU' : p.id === S.pid ? 'あなた' : ''}</td></tr>`).join('')}</table></div>`;
       if (isLeader && S.showCfg) { body = `<div class="panel"><h2>ルールと法律の設定</h2>${cfgHtml(pub)}</div>`; bar = '<div class="ph-bar one"><button class="btn main" data-act="cfg-close">決めた</button></div>'; break; }
       body += `<p class="ph-note" style="margin-top:12px">${esc(cfgSummary(pub.cfg))}</p>`;
@@ -4039,7 +4042,7 @@ function vPhone(pub, priv) {
     }
     case 'mark': {
       if (prompt && prompt.type === 'mark') {
-        body = `<div class="panel"><h2>重要法案を一つ選んでください</h2><p>三つの中から全員の投票で一つが決まります。重要法案に入れると、あなたの票は3票になります(ほかの案なら2票)。</p>
+        body = `<div class="panel"><h2>重要法案を一つ選んでください</h2><p>三つから一つを投票で決めます。あなたの票は、重要法案に入れると3票、ほかの案なら2票です。</p>
           <div class="opts">${prompt.cands.map(k => optHtml(pub, k, S.choice === k)).join('')}</div></div>`;
         bar = `<div class="ph-bar one"><button class="btn main" data-act="mark" ${S.choice && prompt.cands.includes(S.choice) ? '' : 'disabled'}>重要法案に指定する</button></div>`;
       } else body = `<div class="panel"><h2>法案の審議</h2><p>大富豪の${esc(pname(pub, pub.pending.pid))}さんが、三つの案から重要法案を選んでいます。</p>
@@ -4154,7 +4157,7 @@ function phPlay(pub, priv, m) {
   } else if (prompt && prompt.type === 'repeal') {
     // 革命を起こした人が、廃止する法律を一つ選ぶ
     const opts = prompt.options.map(k => pub.laws.find(l => l.key === k)).filter(Boolean);
-    return { body: `<div class="panel repeal-pick"><p class="small" style="color:var(--shu)">革命</p><h2>廃止する法律を一つ選んでください</h2><p>選んだ法律は、この場ですぐに廃止されます。3分たっても選ばないときは、いちばん古い法律が自動で廃止されます。</p>
+    return { body: `<div class="panel repeal-pick"><p class="small" style="color:var(--shu)">革命</p><h2>廃止する法律を一つ選んでください</h2><p>選んだ法律はすぐに廃止されます。3分以内に選ばないと、いちばん古い法律が廃止されます。</p>
       <div class="opts">${opts.map(l => `<button class="opt doc ${S.choice === l.key ? 'on' : ''}" data-choice="${l.key}"><span class="opt-art">${I.law(l.key)}</span><span><span class="lno">第${E.KANJI[l.no - 1]}条</span><span class="nm">${esc(l.name)}</span>${sideTag(pub, l.key)}<span class="tx">${esc(l.text)}</span></span></button>`).join('')}</div></div>`,
       bar: `<div class="ph-bar one"><button class="btn main" data-act="repeal" ${S.choice && prompt.options.includes(S.choice) ? '' : 'disabled'}>この法律を廃止する</button></div>` };
   } else if (myTurn) {
@@ -4206,7 +4209,7 @@ function centerOrder() {
 function explain(sel, ctx) {
   const ip = E.interpret(sel, ctx);
   if (!ip.length) {
-    if (ctx.jokerSeal && sel.every(id => id[0] === 'X')) return 'ジョーカー封印法のため、ジョーカーだけでは出せません';
+    if (ctx.jokerSeal && sel.every(id => id[0] === 'X')) return 'ジョーカー封印法により、ジョーカー単独では出せません';
     if (ctx.ban && sel.some(id => E.parse(id).r === ctx.ban)) return `${E.RL[ctx.ban]}禁止法のため、${E.RL[ctx.ban]}は出せません`;
     return '同じ数字か、同じマークの3枚以上の階段にしてください';
   }
@@ -4554,7 +4557,7 @@ function ruleFx(k, big) {
 }
 function soundButton() {
   bgmCheck();
-  if (S.view !== 'tv' || !S.pub) { document.querySelectorAll('.sound-btn,.bgm-btn,.home-btn').forEach(b => b.remove()); return; }
+  if (S.view !== 'tv' || !S.pub) { document.querySelectorAll('.sound-btn,.bgm-btn,.home-btn,.fs-btn').forEach(b => b.remove()); return; }
   let b = document.querySelector('.sound-btn');
   if (!b) { b = document.createElement('button'); b.className = 'sound-btn'; b.dataset.act = 'sound'; document.body.appendChild(b); }
   b.textContent = SFX.isMuted() ? '音 切' : '音 入';
@@ -4564,7 +4567,22 @@ function soundButton() {
   g.disabled = SFX.isMuted();
   let h = document.querySelector('.home-btn');
   if (!h) { h = document.createElement('button'); h.className = 'home-btn'; h.dataset.act = 'home-ask'; h.textContent = 'ホーム'; document.body.appendChild(h); }
+  // 全画面:対応しているブラウザだけに出す(iPhoneのSafariなどは非対応)
+  if (fsEnabled()) {
+    let f = document.querySelector('.fs-btn');
+    if (!f) { f = document.createElement('button'); f.className = 'fs-btn'; f.dataset.act = 'fullscreen'; document.body.appendChild(f); }
+    f.textContent = fsOn() ? '全画面 入' : '全画面 切';
+  }
 }
+/* テレビの全画面表示(ブラウザのアドレス欄やタブを消して、議場だけを映す) */
+const fsEnabled = () => !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+const fsOn = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+function toggleFullscreen() {
+  const d = document, el = d.documentElement;
+  const p = fsOn() ? (d.exitFullscreen || d.webkitExitFullscreen).call(d) : (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+  if (p && p.catch) p.catch(() => { /* 断られても遊べる */ });
+}
+['fullscreenchange', 'webkitfullscreenchange'].forEach(ev => document.addEventListener(ev, () => { soundButton(); lastHtml = ''; render(); }));
 /* BGM:流すのはテレビと、スマホだけで遊ぶときの親のスマホだけ。ほかのスマホでは流さない */
 const BGM_FILES = ['01_kanki', '02_eine_kleine', '03_elise', '04_haru', '05_canon', '06_lullaby', '07_mao',
   '08_gymnopedie', '09_minuet', '10_greensleeves', '11_turkish_march', '12_ieji'].map(n => n + '.mp3');
@@ -4641,6 +4659,7 @@ document.addEventListener('click', async ev => {
     case 'cheat-close': if (ev.target.closest('.cheat') && !ev.target.closest('[data-act=cheat-close].btn')) break; S.showCheat = false; render(); break;
     case 'sound': SFX.setMuted(!SFX.isMuted()); if (!SFX.isMuted()) SFX.play('gavel'); render(); break;
     case 'bgm': SFX.setBgm(!SFX.bgmOn()); render(); soundButton(); break;
+    case 'fullscreen': toggleFullscreen(); break;
     case 'cfg-open': S.showCfg = true; render(); break;
     case 'diag-img': saveDiagImage(); break;
     case 'types-open': S.showTypes = true; S.openType = null; lastHtml = ''; render(); window.scrollTo(0, 0); break;
