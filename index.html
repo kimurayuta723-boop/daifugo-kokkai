@@ -1257,10 +1257,15 @@ function vary(G, key, arr) {
   }
   G.vk[key] = start; return arr[start];
 }
-function say(G, text, kind) {
+// kind 付きの実況は演出(flash)にもなる。一度の行動で革命と8切りのように複数が続くことがあるので、
+// 最新の一つ(flash)だけでなく直近の列(flashes)も渡し、画面側で順番に見せる
+function say(G, text, kind, extra) {
   G.log.push(text); if (G.log.length > 8) G.log.shift();
   if (kind) G.hold = Math.max(G.hold || 0, HOLD[kind] || (kind.startsWith('r-') ? 3200 : 1500));
-  if (kind) G.flash = { text, kind, t: Date.now(), n: (G.flash ? G.flash.n : 0) + 1 };
+  if (kind) {
+    G.flash = Object.assign({ text, kind, t: Date.now(), n: (G.flash ? G.flash.n : 0) + 1 }, extra || {});
+    G.flashes = (G.flashes || []).concat([G.flash]).slice(-8);
+  }
 }
 
 function addPlayer(G, p) {
@@ -1401,7 +1406,7 @@ function repealLaw(G, pid, key, auto) {
   if (key === 'koukai') G.open = null;
   rl(G).repealed = (rl(G).repealed || []).concat([{ pid, key, name }]);
   G.repeal = { key, name, pid, auto: auto || null, n: (G.repeal ? G.repeal.n : 0) + 1 };
-  say(G, auto === 'timeout' ? `時間切れのため、一番古い「${name}」を廃止しました。` : auto === 'only' ? `革命により、「${name}」が廃止されました。` : `${pName(G, pid)}さんが「${name}」を廃止しました。`, 'repeal');
+  say(G, auto === 'timeout' ? `時間切れのため、一番古い「${name}」を廃止しました。` : auto === 'only' ? `革命により、「${name}」が廃止されました。` : `${pName(G, pid)}さんが「${name}」を廃止しました。`, 'repeal', { repeal: G.repeal });
   moment(G, pid, 6, `第${G.round}回、革命を起こして「${name}」を廃止した`);
 }
 
@@ -1416,10 +1421,10 @@ function act(G, pid, a, now) {
   const ok = actInner(G, pid, a, now);
   if (ok) G.ver++;
   if (G.hold) { G.cpuAt = Math.max(G.cpuAt || 0, now + G.hold); G.hold = 0; }
-  // 演出が出ている間は、CPUも次の手を待つ
+  // 演出が出ている間は、CPUも次の手を待つ(この行動で出た演出が複数なら、画面では順番に出るので合計を待つ)
   if (G.flash && G.flash.n !== fn) {
-    const k = G.flash.kind || '';
-    const wait = k === 'rev' ? 4200 : k.startsWith('r-') ? 3200 : k === 'cut' ? 2500 : k === 'law' ? 2600 : k === 'out' ? 2200 : 0;
+    const waitOf = k => k === 'rev' ? 4200 : k.startsWith('r-') ? 3200 : k === 'cut' ? 2500 : k === 'repeal' ? 3400 : k === 'law' ? 2600 : k === 'out' ? 2200 : 0;
+    const wait = (G.flashes || []).filter(f => f.n > fn).reduce((a, f) => a + waitOf(f.kind || ''), 0);
     G.cpuAt = Math.max(G.cpuAt || 0, now + wait);
   }
   if (G.phase === 'play' && G.turn !== before) G.turnAt = now;
@@ -2266,7 +2271,7 @@ function pubView(G, now) {
     turn: G.phase === 'play' ? G.turn : null,
     field: { top: G.field.top, topIds: G.field.topIds, topPid: G.field.topPid, prevIds: G.field.prevIds, lock: G.field.lock, stack: G.field.stack || [] },
     cfg: G.cfg, rev: G.rev, jback: !!G.jback, dir: G.dir || 1, laws: G.laws.map((l, i) => ({ key: l.key, param: l.param, no: i + 1, hits: l.hits || 0, name: LAWS[l.key].name(l.param), text: LAWS[l.key].text(l.param) })), lawHit: G.lawHit || null, openHand: G.open && lawParam(G.laws, 'koukai') && G.hands && G.hands[G.open] ? { pid: G.open, ids: cardSort(G.hands[G.open]) } : null,
-    log: G.log.slice(-5), flash: G.flash, fate: G.fate,
+    log: G.log.slice(-5), flash: G.flash, flashes: G.flashes || [], fate: G.fate,
     waiting: waitingFor(G),
     pending: G.pending ? { type: G.pending.type, pid: G.pending.pid || null, cands: G.pending.cands || null, key: G.pending.key || null, options: G.pending.options || null, deadline: G.pending.deadline || null } : null,
     repeal: G.repeal || null,
@@ -3181,23 +3186,21 @@ function heroFan() {
 }
 
 /* お知らせ(革命・8切り・法律の発動・上がり) */
-let lastFlash = 0, flashTimer = null;
-function flashCheck(pub) {
-  const f = pub.flash;
-  if (!f || f.n === lastFlash) return;
-  const first = lastFlash === 0; lastFlash = f.n;
-  if (first || !['play', 'exchange', 'param', 'tsure', 'gekokujo', 'repeal', 'give7', 'drop10'].includes(pub.phase)) return;
-  if (f.kind === 'rev' || f.kind === 'cut' || f.kind === 'repeal' || (f.kind || '').startsWith('r-')) return;
+let flashTimer = null;
+// 上がり・都落ち・法律の発動などを知らせる帯(大きな演出のないもの)。演出の列から順に呼ばれる
+function showBanner(f, pub) {
+  if (!['play', 'exchange', 'param', 'tsure', 'gekokujo', 'repeal', 'give7', 'drop10'].includes(pub.phase) && pub.phase !== 'roundEnd') return;
   let el = document.querySelector('.flash');
   if (!el) { el = document.createElement('div'); el.className = 'flash'; document.body.appendChild(el); }
-  const art = f.kind === 'rev' ? I.type('rebel') : f.kind === 'law' ? I.gavel() : '';
+  const art = f.kind === 'law' ? I.gavel() : '';
   el.className = 'flash k-' + f.kind;
   el.innerHTML = `<span>${art}<em>${esc(f.text)}</em></span>`;
   // スマホでは上部の帯(2段)をちょうど覆う高さにして、下の文字が半端に透けて重ならないようにする
   const top = document.querySelector('.ph-top'); if (top) el.style.setProperty('--h', top.offsetHeight + 'px');
   requestAnimationFrame(() => el.classList.add('on'));
-  clearTimeout(flashTimer); flashTimer = setTimeout(() => el.classList.remove('on'), 3400);
-  if (S.view !== 'tv' && navigator.vibrate && f.kind === 'rev') try { navigator.vibrate([60, 40, 60]); } catch (e) { /* 振動できない端末 */ }
+  // 帯は次の演出の順番を少しだけ待たせる(続けて届いた帯が読めるように)
+  S.fxUntil = Math.max(S.fxUntil || 0, Date.now() + 1800);
+  clearTimeout(flashTimer); flashTimer = setTimeout(() => el.classList.remove('on'), 2600);
 }
 
 /* ---------- 入口 ---------- */
@@ -3827,7 +3830,7 @@ function render() {
     centerOrder();
     fitTv();
   }
-  if (pub) flashCheck(pub);
+
   if (pub && pub !== S.seen) { const prev = S.seen; S.seen = pub; fxCheck(prev, pub); }
   soundButton();
   let ob = document.querySelector('.offline');
@@ -3840,8 +3843,8 @@ const bigSound = pub => S.view === 'tv' || pub.mode === 'phone';
 /* 演出:主役の演出はすべて、議場を暗くしてから中央に「動き+短い題字」を出す */
 const DIM_FX = ['crown', 'cut', 'gavel', 'round', 'repeal'];
 function fx(kind, html, ms) {
-  // 大きな演出が終わる時刻を覚えておく(廃止の演出は、革命の演出が終わってから出すため)
-  S.fxUntil = Math.max(S.fxUntil || 0, Date.now() + (ms || 2600));
+  // 画面をふさぐ演出が終わる時刻を覚えておく(次の演出は、これが終わってから出す)。紙吹雪はふさがないので数えない
+  if (kind !== 'confetti') S.fxUntil = Math.max(S.fxUntil || 0, Date.now() + (ms || 2600));
   const el = document.createElement('div'); el.className = 'fx fx-' + kind; el.innerHTML = html || '';
   if (kind.startsWith('rule') || DIM_FX.includes(kind)) {
     // 暗くする演出は重ねない(前のものを消してから出す)
@@ -3855,6 +3858,22 @@ function confetti(n) {
   fx('confetti', h, 4200);
 }
 function shake() { $app.classList.remove('shake'); void $app.offsetWidth; $app.classList.add('shake'); }
+/* 演出の順番待ち:一度に複数の出来事(革命→廃止→8切り、最後の札での革命→上がり→結果発表など)が届いても、
+   一つずつ、前の演出が終わってから出す。音だけのものも同じ列に並べて、演出とずれないようにする */
+const FXQ = [];
+let fxTimer = null;
+function queueFx(run) { FXQ.push({ run, at: Date.now() }); pumpFx(); }
+function pumpFx() {
+  if (fxTimer || !FXQ.length) return;
+  const wait = Math.max(0, (S.fxUntil || 0) - Date.now());
+  fxTimer = setTimeout(() => {
+    fxTimer = null;
+    const j = FXQ.shift();
+    // 画面が裏に回っていたなどで20秒以上遅れた演出は、今さら出しても場と合わないので飛ばす
+    if (Date.now() - j.at < 20000) { try { j.run(); } catch (e) { /* 演出の失敗で進行を止めない */ } }
+    pumpFx();
+  }, wait ? wait + 120 : 0);
+}
 function fxCheck(prev, pub) {
   if (!prev || S.view === 'entry') return;
   const big = bigSound(pub), tv = S.view === 'tv';
@@ -3862,11 +3881,11 @@ function fxCheck(prev, pub) {
   // 開会
   if (prev.phase === 'lobby' && pub.phase === 'brief') { if (big) SFX.play('knock3'); }
   else if (prev.phase === 'brief' && pub.phase !== 'brief') {
-    if (big) { fx('curtain', `<div class="fx-title">${I.gavel()}<small>${APP_NAME}</small><b>開会</b></div>`, 4200); SFX.play('opening'); }
+    if (big) queueFx(() => { fx('curtain', `<div class="fx-title">${I.gavel()}<small>${APP_NAME}</small><b>開会</b></div>`, 4200); SFX.play('opening'); });
     else SFX.play('deal');
     S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
   } else if (pub.round > prev.round) {
-    if (pub.last && big) { fx('round', `<div class="fx-title"><small>第${pub.round}回</small><b>最終回</b>${pub.cfg.lastx2 ? '<small style="margin-top:.8em">得点二倍</small>' : ''}</div>`, 3400); SFX.play('fanfare'); }
+    if (pub.last && big) { const r = pub.round, x2 = pub.cfg.lastx2; queueFx(() => { fx('round', `<div class="fx-title"><small>第${r}回</small><b>最終回</b>${x2 ? '<small style="margin-top:.8em">得点二倍</small>' : ''}</div>`, 3400); SFX.play('fanfare'); }); }
     else if (big) SFX.play('shuffle'); else SFX.play('deal');
     S.dealAnim = true; setTimeout(() => { S.dealAnim = false; }, 1500);
   }
@@ -3874,10 +3893,9 @@ function fxCheck(prev, pub) {
     // 結果発表の紙吹雪や王冠は、次の段階(法案の審議など)に進んだら片づける
     if (prev.phase === 'roundEnd') document.querySelectorAll('.fx-confetti,.fx-crown').forEach(x => x.remove());
     if (pub.phase === 'roundEnd' && pub.order) {
-      const fl = document.querySelector('.flash'); if (fl) fl.classList.remove('on');
-      if (big) { fx('crown', `<span class="cw"><span class="halo"></span>${I.rank('大富豪')}</span><div class="big">${esc(pname(pub, pub.order[0]))}さん<small>大富豪</small></div>`, 3600); confetti(tv ? 70 : 30); SFX.play('crown'); }
+      if (big) { const nm = esc(pname(pub, pub.order[0])); queueFx(() => { const fl = document.querySelector('.flash'); if (fl) fl.classList.remove('on'); fx('crown', `<span class="cw"><span class="halo"></span>${I.rank('大富豪')}</span><div class="big">${nm}さん<small>大富豪</small></div>`, 3600); confetti(tv ? 70 : 30); SFX.play('crown'); }); }
     }
-    if (pub.phase === 'mark' && big) { fx('gavel', I.gavel() + '<div class="big">審議</div>', 2400); SFX.play('knock3'); setTimeout(shake, 250); setTimeout(shake, 610); setTimeout(shake, 970); }
+    if (pub.phase === 'mark' && big) queueFx(() => { fx('gavel', I.gavel() + '<div class="big">審議</div>', 2400); SFX.play('knock3'); setTimeout(shake, 250); setTimeout(shake, 610); setTimeout(shake, 970); });
     if (pub.phase === 'vote' && big) SFX.play('bellVote');
     if (pub.phase === 'enacted' && pub.vote && pub.vote.result) {
       S.newLawKey = pub.vote.result; setTimeout(() => { S.newLawKey = null; }, 1500);
@@ -3889,26 +3907,25 @@ function fxCheck(prev, pub) {
   const st = pub.field.stack || [], pst = prev.field.stack || [];
   const key = s => s.length ? s[s.length - 1].ids.join() + s.length : '';
   if (key(st) && key(st) !== key(pst)) SFX.play('play');
-  // 革命・8切り・法律・上がり
-  const f = pub.flash, pf = prev.flash;
-  if (f && (!pf || f.n !== pf.n)) {
-    if (f.kind === 'rev') { fx('rev', `<div class="fx-big">革命</div><div class="fx-flag">${I.flag()}</div>`, 3900); SFX.play(big ? 'revolution' : 'whoosh'); if (navigator.vibrate) try { navigator.vibrate([80, 50, 80, 50, 160]); } catch (e) { /* 振動できない端末 */ } }
-    else if (f.kind === 'cut') { fx('cut', '<div class="big">8切り</div>', 2200); SFX.play('whoosh'); }
-    else if (f.kind === 'repeal' && pub.repeal) repealFx(pub.repeal, pub);
-    else if (f.kind === 'law' && big) SFX.play('gavel');
-    else if (f.kind && f.kind.startsWith('r-')) ruleFx(f.kind.slice(2), big);
-    else if (f.kind === 'out' && big) SFX.play('out');
-  }
+  // 革命・8切り・廃止・法律・上がり:前回から増えた演出を、古い順にすべて並べる
+  const seen = prev.flash ? prev.flash.n : 0;
+  const news = (pub.flashes && pub.flashes.length ? pub.flashes : (pub.flash ? [pub.flash] : [])).filter(f => f.n > seen);
+  news.forEach(f => queueFx(() => flashFx(f, pub, big)));
   // 自分の番
   if (S.view !== 'tv' && pub.turn === S.pid && prev.turn !== S.pid) { SFX.play('turn'); if (navigator.vibrate) try { navigator.vibrate(30); } catch (e) { /* 振動できない端末 */ } }
 }
-// 廃止の演出:条文に朱の線が引かれ、「廃止」の判が押される。革命の演出の最中なら、終わるのを待ってから出す
-function repealFx(r, pub) {
+function flashFx(f, pub, big) {
+  if (f.kind === 'rev') { fx('rev', `<div class="fx-big">革命</div><div class="fx-flag">${I.flag()}</div>`, 3900); SFX.play(big ? 'revolution' : 'whoosh'); if (navigator.vibrate) try { navigator.vibrate([80, 50, 80, 50, 160]); } catch (e) { /* 振動できない端末 */ } }
+  else if (f.kind === 'cut') { fx('cut', '<div class="big">8切り</div>', 2200); SFX.play('whoosh'); }
+  else if (f.kind === 'repeal' && (f.repeal || pub.repeal)) repealFx(f.repeal || pub.repeal, pub, big);
+  else if (f.kind && f.kind.startsWith('r-')) ruleFx(f.kind.slice(2), big);
+  else { showBanner(f, pub); if (f.kind === 'law' && big) SFX.play('gavel'); else if (f.kind === 'out' && big) SFX.play('out'); }
+}
+// 廃止の演出:条文に朱の線が引かれ、「廃止」の判が押される
+function repealFx(r, pub, big) {
   const who = r.auto === 'timeout' ? '時間切れのため自動で' : r.auto === 'only' ? '革命により' : `${esc(pname(pub, r.pid))}さんが`;
-  const html = `<div class="rp"><span class="rp-art">${I.law(r.key)}</span><div class="rp-nm"><span>${esc(r.name)}</span><i class="rp-line"></i><span class="rp-stamp">廃止</span></div><p class="rp-sub">${who}廃止しました</p></div>`;
-  const show = () => { fx('repeal', html, 3200); if (bigSound(pub)) setTimeout(() => SFX.play('stamp'), 900); };
-  const wait = Math.max(0, (S.fxUntil || 0) - Date.now());
-  if (wait > 0) setTimeout(show, wait + 150); else show();
+  fx('repeal', `<div class="rp"><span class="rp-art">${I.law(r.key)}</span><div class="rp-nm"><span>${esc(r.name)}</span><i class="rp-line"></i><span class="rp-stamp">廃止</span></div><p class="rp-sub">${who}廃止しました</p></div>`, 3200);
+  if (big) setTimeout(() => SFX.play('stamp'), 900);
 }
 function ruleFx(k, big) {
   const fl = document.querySelector('.flash'); if (fl) fl.classList.remove('on');
