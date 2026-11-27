@@ -53,6 +53,7 @@ input{font:inherit;letter-spacing:inherit;color:inherit;background:transparent}
 .logo .seal{width:1.2em;height:1.2em;transform:rotate(-7deg);flex:none}
 .logo .seal rect,.logo .seal text{stroke:var(--gold2)} .logo .seal text{fill:var(--gold2);stroke:none}
 .logo.lg{font-size:40px}
+.logo.noseal .logo-t{margin-right:-.16em}   /* 字間の分だけ右が空くので、中央にそろうよう詰める */
 .logo.sm{font-size:1em;letter-spacing:.12em}
 
 /* ---------- 札 ---------- */
@@ -3575,7 +3576,8 @@ function fieldInfo(pub) {
   if (pub.fate) parts.push(`<span class="chip">当たり札 ${esc(E.label(pub.fate))}</span>`);
   return parts.join('');
 }
-function logo(size) { return `<span class="logo ${size || ''}"><span class="logo-t">${APP_NAME}</span>${I.seal(APP_SEAL)}</span>`; }
+// 題字。「国」の印は、紙の書類の体裁をとるテレビ右下(現行法の欄)だけに朱色で押す。ほかの画面では題字と意味が重なり、中央からずれるので付けない
+function logo(size, seal) { return `<span class="logo ${size || ''} ${seal ? '' : 'noseal'}"><span class="logo-t">${APP_NAME}</span>${seal ? I.seal(APP_SEAL) : ''}</span>`; }
 function heroFan() {
   const ids = ['S14', 'H13', 'D12', 'C11', 'X1'];
   return `<div class="hero-fan">${ids.map((id, i) => cardHtml(id, { style: `--i:${i - 2}` })).join('')}</div>`;
@@ -3758,7 +3760,7 @@ function tvSide(pub) {
     return `<aside class="tv-side doc"><div class="laws-h">議事の流れ</div><div class="side-in"><ol class="howto">${steps.map(t => `<li>${t}</li>`).join('')}</ol></div></aside>`;
   }
   return `<aside class="tv-side doc"><div class="laws-h">現行法<span>${pub.laws.length}/${c.maxLaws}</span></div><div class="side-in ${pub.openHand && pub.phase === 'play' ? 'compact' : ''}">${openHandHtml(pub)}${c.lawsOn ? lawsHtml(pub) : '<p class="laws-none">今夜は法律を作らない設定です。</p>'}</div>
-    <div class="foot">${logo('sm')}<span>議場 <b>${esc(pub.code)}</b></span></div></aside>`;
+    <div class="foot">${logo('sm', true)}<span>議場 <b>${esc(pub.code)}</b></span></div></aside>`;
 }
 const voteLabel = s => s % 60 ? `${s}秒` : `${s / 60}分`;
 /* 設定:基本ルールと法律の有効・無効 */
