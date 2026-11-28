@@ -1080,11 +1080,11 @@ const LAWS = {
     text: () => '次の回に限り、革命が起きた状態で始める。回が終わると失効する。' },
 };
 // 初期設定では候補に出さない法律(設定画面で有効にできる)。全員に同じように効くため、投票で利害が分かれにくい
-const LAW_OFF = ['ban', 'tsure', 'fav', 'joker', 'fate', 'gekokujo', 'kyuhin', 'genzei'];
-const LAW_VER = 6;
+const LAW_OFF = ['ban', 'tsure', 'fav', 'joker', 'fate', 'gekokujo', 'hosho', 'genzei'];   // 最低保障法は点が動くだけで場面が変わらないので、救貧法と入れ替えた
+const LAW_VER = 7;
 // 並び順(設定画面と法律の一覧):初めから候補に入るものを先に、その中は 出し方 → 交換 → 得点 → 一回限り の順
-const LAW_KEYS = ['strong', 'rev3', 'agari', 'mawashi', 'kaisan', 'jono', 'double', 'hosho', 'genjo', 'seiken', 'koukai', 'gyakuten',
-  'ban', 'fav', 'joker', 'tsure', 'fate', 'gekokujo', 'kyuhin', 'genzei'];
+const LAW_KEYS = ['strong', 'rev3', 'agari', 'mawashi', 'kaisan', 'jono', 'kyuhin', 'double', 'genjo', 'seiken', 'koukai', 'gyakuten',
+  'ban', 'fav', 'joker', 'tsure', 'fate', 'gekokujo', 'hosho', 'genzei'];
 if (LAW_KEYS.length !== Object.keys(LAWS).length || !Object.keys(LAWS).every(k => LAW_KEYS.includes(k))) throw new Error('LAW_KEYS と LAWS が食い違っています');
 const KANJI = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
 
@@ -1674,7 +1674,7 @@ function actInner(G, pid, a, now) {
       return false;
     case 'again':
       if (G.phase !== 'diag') return false;
-      Object.assign(G, { phase: 'lobby', round: 0, order: null, laws: [], stats: {}, moments: {}, diag: null, final: null, results: null, history: [], points: {}, lawPts: {}, streak: null, godComment: null, gHist: [], gOnce: [] });
+      Object.assign(G, { phase: 'lobby', round: 0, order: null, laws: [], stats: {}, moments: {}, diag: null, final: null, results: null, history: [], points: {}, lawPts: {}, candHist: [], streak: null, godComment: null, gHist: [], gOnce: [] });
       return true;
     case 'exchange': {
       if (G.phase !== 'exchange') return false;
@@ -2359,15 +2359,19 @@ function startLawSelection(G, now) {
     && !(k === 'jono' && lawParam(G.laws, 'kyuhin')) && !(k === 'kyuhin' && lawParam(G.laws, 'jono')));  // 交換の法律は両立しない
   const cands = [];
   const p = pool.slice();
-  // 前回の候補に出た法案は出にくくする(同じ顔ぶれが続かないように)
-  const wOf = k => LAWS[k].w * ((G.lastCands || []).includes(k) ? 0.25 : 1);
+  // 一晩のうちに同じ法案ばかり出ないようにする。前回の候補はかなり出にくく、2回前の候補も出にくく、
+  // その晩に何度も出た法案ほど出にくくする(4人のときは候補が10種類しかないので、とくに効く)
+  const hist = G.candHist || [], seen = {};
+  hist.forEach(h => h.forEach(k => { seen[k] = (seen[k] || 0) + 1; }));
+  const wOf = k => LAWS[k].w * (hist[hist.length - 1] && hist[hist.length - 1].includes(k) ? 0.1 : 1)
+    * (hist[hist.length - 2] && hist[hist.length - 2].includes(k) ? 0.4 : 1) * Math.pow(0.6, seen[k] || 0);
   while (cands.length < 3 && p.length) {
     const tot = p.reduce((a, k) => a + wOf(k), 0);
     let x = R(G) * tot, i = 0;
     for (; i < p.length; i++) { x -= wOf(p[i]); if (x <= 0) break; }
     cands.push(p.splice(Math.min(i, p.length - 1), 1)[0]);
   }
-  G.lastCands = cands.slice();
+  G.candHist = hist.concat([cands.slice()]);
   if (cands.length >= 3 && G.order) { G.phase = 'mark'; G.pending = { type: 'mark', pid: G.order[0], cands }; G.cpuAt = now + 2500; }
   else if (cands.length >= 2) startVote(G, cands, null, now);
   else if (cands.length === 1) { G.vote = { options: cands, votes: {}, counts: { [cands[0]]: 0 }, result: null }; enact(G, cands[0]); }
